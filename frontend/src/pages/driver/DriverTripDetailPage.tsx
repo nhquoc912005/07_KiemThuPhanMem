@@ -128,6 +128,29 @@ export const DriverTripDetailPage: React.FC = () => {
     return ['Đang thực hiện', 'Đang gặp sự cố'].includes(currentStatusRaw);
   }, [currentStatusRaw]);
 
+  const totalSeatsBooked = useMemo(() => {
+    return (detail?.stops || []).reduce((sum, stop) => sum + Number(stop.SoLuongGhe || 0), 0);
+  }, [detail?.stops]);
+
+  const currentMapLocation = useMemo(() => {
+    if (!detail?.stops?.length) {
+      return detail?.route.LoTrinhDuKien || 'Việt Nam';
+    }
+
+    const activeStop = detail.stops.find((stop) => !['Đã trả khách', 'Khách hủy'].includes(stop.TrangThaiKhach || ''));
+    return activeStop?.DiemDon || detail.stops[0].DiemDon || detail.route.LoTrinhDuKien || 'Việt Nam';
+  }, [detail]);
+
+  const startPointLabel = useMemo(() => {
+    if (!detail) return '--';
+    return detail.route.LoTrinhDuKien?.split(' -> ')[0] || detail.stops[0]?.DiemDon || '--';
+  }, [detail]);
+
+  const routeSummaryLabel = useMemo(() => {
+    if (!detail) return '--';
+    return detail.route.LoTrinhDuKien || `${startPointLabel} -> ${detail.stops[detail.stops.length - 1]?.DiemTra || '--'}`;
+  }, [detail, startPointLabel]);
+
   const reportIncident = async () => {
     if (!detail) return;
     if (incidentDesc.trim().length < 3) {
@@ -246,11 +269,11 @@ export const DriverTripDetailPage: React.FC = () => {
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                <span>Khách: <strong>{detail.stops.length}/{detail.route.SoCho || 16}</strong> chỗ</span>
+                <span>Khách: <strong>{totalSeatsBooked}/{detail.route.SoCho || 0}</strong> chỗ</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                <span>Quãng đường: <strong>14.5km</strong></span>
+                <span>Lộ trình: <strong>{routeSummaryLabel}</strong></span>
               </div>
           </div>
 
@@ -264,26 +287,12 @@ export const DriverTripDetailPage: React.FC = () => {
                       style={{ border: 0, position: 'absolute', inset: 0 }}
                       loading="lazy"
                       allowFullScreen
-                      src={`https://maps.google.com/maps?q=${encodeURIComponent('Đà Nẵng, Việt Nam')}&t=&z=13&ie=UTF8&iwloc=&output=embed`}
+                      src={`https://maps.google.com/maps?q=${encodeURIComponent(currentMapLocation)}&t=&z=13&ie=UTF8&iwloc=&output=embed`}
                  ></iframe>
-                 {/* Map overlay markers */}
-                 {detail.stops.map((s, index) => {
-                    const t = detail.stops.length <= 1 ? 0 : index / (detail.stops.length - 1);
-                    const left = `${15 + t * 60}%`;
-                    const top = `${80 - t * 40}%`;
-                    const isDone = s.TrangThaiKhach === 'Đã đón khách' || s.TrangThaiKhach === 'Đã trả khách';
-                    return (
-                        <div key={s.MaChiTiet} style={{ position: 'absolute', left, top, transform: 'translate(-50%, -100%)' }}>
-                            <svg width="32" height="40" viewBox="0 0 24 32" style={{ filter: 'drop-shadow(0px 4px 4px rgba(0,0,0,0.25))' }}>
-                               <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" fill={isDone ? '#F59E0B' : '#B91C1C'}/>
-                               <circle cx="12" cy="9" r="4" fill="#FFF"/>
-                            </svg>
-                            <div style={{ position: 'absolute', top: 9, left: '50%', transform: 'translate(-50%, -50%)', color: isDone ? '#F59E0B' : '#B91C1C', fontSize: 10, fontWeight: 700 }}>
-                                {index+1}
-                            </div>
-                        </div>
-                    );
-                 })}
+                 <div style={{ position: 'absolute', left: 20, right: 20, bottom: 20, background: 'rgba(255,255,255,0.94)', borderRadius: 12, padding: '12px 16px', boxShadow: '0 10px 25px rgba(0,0,0,0.12)' }}>
+                    <div style={{ fontSize: 12, color: '#64748B', marginBottom: 4 }}>Vị trí bản đồ theo địa chỉ hiện tại</div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: '#0F172A' }}>{currentMapLocation}</div>
+                 </div>
             </div>
 
             {/* Expected Route */}
@@ -305,7 +314,7 @@ export const DriverTripDetailPage: React.FC = () => {
                    <div style={{ flex: 1, border: '1px solid #E5E7EB', borderRadius: 8, padding: '12px 16px', background: '#FFF', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div>
                         <div style={{ fontWeight: 700, color: '#111827', fontSize: 15, marginBottom: 4 }}>Điểm bắt đầu</div>
-                        <div style={{ fontSize: 13, color: '#4B5563' }}>Bến xe Đà Nẵng</div>
+                        <div style={{ fontSize: 13, color: '#4B5563' }}>{startPointLabel}</div>
                       </div>
                       <div style={{ background: '#F3F4F6', color: '#374151', padding: '6px 12px', borderRadius: 6, fontSize: 13, fontWeight: 500, display: 'flex', alignItems: 'center', gap: 8 }}>
                         {currentStatusRaw !== 'Chưa thực hiện' ? 'Đã xuất phát' : 'Đang chờ'}
@@ -327,7 +336,7 @@ export const DriverTripDetailPage: React.FC = () => {
                             <div style={{ fontWeight: 700, color: '#111827', fontSize: 15, marginBottom: 4 }}>{s.TenKhachHang}</div>
                             <div style={{ fontSize: 13, color: '#4B5563' }}>
                                {s.DiemDon}
-                               <div style={{ color: '#9CA3AF', marginTop: 2 }}>+{s.SoLuongGhe} khách đang đợi</div>
+                                <div style={{ color: '#9CA3AF', marginTop: 2 }}>{s.SoLuongGhe} ghế đã đặt</div>
                             </div>
                           </div>
                           <div style={{ position: 'relative' }}>
@@ -371,12 +380,18 @@ export const DriverTripDetailPage: React.FC = () => {
                  <div style={{ width: 64, height: 64, borderRadius: '50%', background: '#DBEAFE', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
                     <span style={{ fontSize: 32, fontWeight: 700, color: '#1D4ED8' }}>?</span>
                  </div>
-                 <h3 style={{ fontSize: 20, fontWeight: 700, color: '#111827', marginBottom: 24 }}>Nhập lý do từ chối / sự cố</h3>
+                 <h3 style={{ fontSize: 20, fontWeight: 700, color: '#111827', marginBottom: 24 }}>Báo cáo sự cố lộ trình</h3>
                  <textarea
                     value={incidentDesc}
                     onChange={e => setIncidentDesc(e.target.value)}
-                    placeholder="Nhập lý do vào đây"
+                    placeholder="Nhập mô tả sự cố"
                     style={{ width: '100%', minHeight: 120, borderRadius: 8, border: '1px solid #D1D5DB', padding: 16, fontSize: 14, outline: 'none', resize: 'none', marginBottom: 12, boxSizing: 'border-box' }}
+                 />
+                 <input
+                    value={incidentLoc}
+                    onChange={e => setIncidentLoc(e.target.value)}
+                    placeholder="Vị trí sự cố (nếu có)"
+                    style={{ width: '100%', height: 44, borderRadius: 8, border: '1px solid #D1D5DB', padding: '0 14px', fontSize: 14, outline: 'none', marginBottom: 12, boxSizing: 'border-box' }}
                  />
                  {incidentError && <div style={{ color: '#B91C1C', marginBottom: 16 }}>{incidentError}</div>}
                  <div style={{ display: 'flex', gap: 16 }}>

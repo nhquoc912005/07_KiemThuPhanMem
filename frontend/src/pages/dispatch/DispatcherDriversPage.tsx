@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { api } from '../../api/client';
 import { DispatcherLayout } from '../../components/DispatcherLayout';
+import { DRIVER_STATUS } from '../../constants/status';
 
 interface Driver {
     MaTaiXe: number;
@@ -99,7 +100,7 @@ export const DispatcherDriversPage: React.FC = () => {
                     }}
                 >
                     <div>STT</div>
-                    <div>Mã NV</div>
+                    <div>Mã tài xế</div>
                     <div style={{ textAlign: 'left' }}>Họ tên</div>
                     <div>SĐT</div>
                     <div>CCCD/CMND</div>
@@ -128,7 +129,7 @@ export const DispatcherDriversPage: React.FC = () => {
                             }}
                         >
                             <div>{index + 1}</div>
-                            <div>{`NV${String(d.MaTaiXe).padStart(8, '0')}`}</div>
+                            <div>{`TX${String(d.MaTaiXe).padStart(8, '0')}`}</div>
                             <div style={{ textAlign: 'left' }}>{d.HoTen}</div>
                             <div>{d.SoDienThoai}</div>
                             <div>{d.CCCD}</div>
@@ -183,7 +184,7 @@ export const DispatcherDriversPage: React.FC = () => {
                     onSuccess={() => {
                         setShowDelete(null);
                         fetchDrivers();
-                        setShowSuccess('Đã chuyển tài xế sang ngưng hoạt động');
+                        setShowSuccess('Đã chuyển tài xế sang ngừng hoạt động');
                     }}
                 />
             )}
@@ -280,7 +281,7 @@ const AddDriverModal: React.FC<AddDriverModalProps> = ({ onClose, onSuccess }) =
         try {
             await api.post('/drivers', {
                 HoTen: name, SoDienThoai: phone, CCCD: cccd,
-                LoaiBangLai: licenseType || null, TrangThaiTaiXe: 'Rảnh'
+                LoaiBangLai: licenseType || null, TrangThaiTaiXe: DRIVER_STATUS.AVAILABLE
             });
             onSuccess();
         } catch (error: unknown) { const err = error as { response?: { data?: { message?: string } }, message?: string };
@@ -307,7 +308,7 @@ const AddDriverModal: React.FC<AddDriverModalProps> = ({ onClose, onSuccess }) =
                         <input type="text" value={name} onChange={e => setName(e.target.value)} style={inputStyle} />
                     </div>
                     <div>
-                        <label style={labelStyle}>Mã NV</label>
+                        <label style={labelStyle}>Mã tài xế</label>
                         <input type="text" disabled value="Hệ thống tự tạo" style={{ ...inputStyle, background: '#f8fafc', color: '#94a3b8' }} />
                     </div>
                     <div>
@@ -392,8 +393,8 @@ const EditDriverModal: React.FC<EditDriverModalProps> = ({ driver, onClose, onSu
                         <input type="text" value={name} onChange={e => setName(e.target.value)} style={inputStyle} />
                     </div>
                     <div>
-                        <label style={labelStyle}>Mã NV</label>
-                        <input type="text" disabled value={`NV${String(driver.MaTaiXe).padStart(8, '0')}`} style={inputStyle} />
+                        <label style={labelStyle}>Mã tài xế</label>
+                        <input type="text" disabled value={`TX${String(driver.MaTaiXe).padStart(8, '0')}`} style={inputStyle} />
                     </div>
                     <div>
                         <label style={labelStyle}>Số điện thoại</label>
@@ -434,16 +435,17 @@ interface DeleteDriverModalProps {
 
 const DeleteDriverModal: React.FC<DeleteDriverModalProps> = ({ driver, onClose, onSuccess }) => {
     const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
-    // Note: Since DB doesn't have an endpoint for DELETING yet, we simulate or call a soft-delete status update
-    // using PUT to "Ngưng hoạt động". Modify exactly to match API if a specific DELETE endpoint exists.
+    // Soft-delete bằng cách cập nhật trạng thái sang "Ngừng hoạt động".
     const handleDelete = async () => {
         setLoading(true);
+        setError(null);
         try {
-            await api.put(`/drivers/${driver.MaTaiXe}`, { ...driver, TrangThaiTaiXe: 'Ngưng hoạt động' });
+            await api.put(`/drivers/${driver.MaTaiXe}`, { ...driver, TrangThaiTaiXe: DRIVER_STATUS.INACTIVE });
             onSuccess();
         } catch (error: unknown) { const err = error as { response?: { data?: { message?: string } }, message?: string };
-            alert('Lỗi: ' + (err?.response?.data?.message || 'Không thể xóa'));
+            setError(err?.response?.data?.message || 'Không thể cập nhật trạng thái tài xế');
         } finally {
             setLoading(false);
         }
@@ -456,13 +458,23 @@ const DeleteDriverModal: React.FC<DeleteDriverModalProps> = ({ driver, onClose, 
                     <svg width="40" height="40" viewBox="0 0 24 24" fill="none"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" stroke="#1E5FA8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
                 </div>
 
-                <h2 style={{ fontSize: 24, fontWeight: 700, fontFamily: 'Roboto, sans-serif', color: '#000', marginBottom: 48 }}>
-                    Xác nhận Xóa Tài Xế
+                <h2 style={{ fontSize: 24, fontWeight: 700, fontFamily: 'Roboto, sans-serif', color: '#000', marginBottom: 16 }}>
+                    Xác nhận ngừng hoạt động tài xế
                 </h2>
+
+                <p style={{ color: '#64748B', margin: '0 0 24px 0' }}>
+                    {driver.HoTen} - {`TX${String(driver.MaTaiXe).padStart(8, '0')}`}
+                </p>
+
+                {error && (
+                    <div style={{ background: 'rgba(248,113,113,0.15)', color: '#dc2626', borderRadius: 8, padding: '10px 12px', marginBottom: 24 }}>
+                        {error}
+                    </div>
+                )}
 
                 <div style={{ display: 'flex', gap: 24, padding: '0 48px', justifyContent: 'center' }}>
                     <button onClick={handleDelete} disabled={loading} style={{ ...primaryBtnStyle, maxWidth: 220 }}>
-                        {loading ? 'Đang xử lý...' : 'Xác nhận xóa'}
+                        {loading ? 'Đang xử lý...' : 'Xác nhận'}
                     </button>
                     <button onClick={onClose} style={{ ...defaultBtnStyle, maxWidth: 220 }}>
                         Hủy

@@ -1,52 +1,164 @@
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
-import { LoginPage } from './pages/LoginPage';
-import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
-import { OverviewPage } from './pages/dispatch/OverviewPage';
-import { PlanRoutePage } from './pages/dispatch/PlanRoutePage';
-import { AdjustRoutePage } from './pages/dispatch/AdjustRoutePage';
-import { TrackStatusPage } from './pages/dispatch/TrackStatusPage';
-import { ResetPasswordPage } from './pages/ResetPasswordPage';
-import { DriverTripsPage } from './pages/driver/DriverTripsPage';
-import { DriverTripDetailPage } from './pages/driver/DriverTripDetailPage';
-import { DriverTripCustomersPage } from './pages/driver/DriverTripCustomersPage';
-import { ProfilePage } from './pages/ProfilePage';
-import { DispatcherDriversPage } from './pages/dispatch/DispatcherDriversPage';
-import { VehiclesPage } from './pages/dispatch/VehiclesPage';
-import { CustomersPage } from './pages/dispatch/CustomersPage';
-import { ReportsPage } from './pages/dispatch/ReportsPage';
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 
+import { ProtectedRoute } from './components/ProtectedRoute'
+import { getDefaultRouteByRole, getStoredSession } from './auth/session'
+import { AdjustRoutePage } from './pages/dispatch/AdjustRoutePage'
+import { CustomersPage } from './pages/dispatch/CustomersPage'
+import { DispatcherDriversPage } from './pages/dispatch/DispatcherDriversPage'
+import { OverviewPage } from './pages/dispatch/OverviewPage'
+import { PlanRoutePage } from './pages/dispatch/PlanRoutePage'
+import { ReportsPage } from './pages/dispatch/ReportsPage'
+import { TrackStatusPage } from './pages/dispatch/TrackStatusPage'
+import { VehiclesPage } from './pages/dispatch/VehiclesPage'
+import { DriverTripCustomersPage } from './pages/driver/DriverTripCustomersPage'
+import { DriverTripDetailPage } from './pages/driver/DriverTripDetailPage'
+import { DriverTripsPage } from './pages/driver/DriverTripsPage'
+import { ForgotPasswordPage } from './pages/ForgotPasswordPage'
+import { LoginPage } from './pages/LoginPage'
+import { ProfilePage } from './pages/ProfilePage'
+import { RegisterPage } from './pages/RegisterPage'
+import { ResetPasswordPage } from './pages/ResetPasswordPage'
+
+const DRIVER_ROLE = 'Tài xế'
+const DISPATCHER_ROLE = 'Nhân viên điều phối'
+
+function RootRedirect() {
+  const session = getStoredSession()
+  if (!session) {
+    return <Navigate to="/login" replace />
+  }
+
+  return <Navigate to={getDefaultRouteByRole(session.user.VaiTro)} replace />
+}
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
+        <Route path="/" element={<RootRedirect />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
-        <Route path="/profile" element={<ProfilePage />} />
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute allowedRoles={[DRIVER_ROLE, DISPATCHER_ROLE]}>
+              <ProfilePage />
+            </ProtectedRoute>
+          }
+        />
 
-        {/* Giao diện tài xế */}
-        <Route path="/driver/trips/assigned" element={<DriverTripsPage />} />
-        <Route path="/driver/trips/completed" element={<DriverTripsPage />} />
-        <Route path="/driver/trips/cancelled" element={<DriverTripsPage />} />
-        <Route path="/driver/trips/:id" element={<DriverTripDetailPage />} />
-        <Route path="/driver/trips/:id/customers" element={<DriverTripCustomersPage />} />
+        <Route
+          path="/driver/trips/assigned"
+          element={
+            <ProtectedRoute allowedRoles={[DRIVER_ROLE]}>
+              <DriverTripsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/driver/trips/completed"
+          element={
+            <ProtectedRoute allowedRoles={[DRIVER_ROLE]}>
+              <DriverTripsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/driver/trips/cancelled"
+          element={
+            <ProtectedRoute allowedRoles={[DRIVER_ROLE]}>
+              <DriverTripsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/driver/trips/:id"
+          element={
+            <ProtectedRoute allowedRoles={[DRIVER_ROLE]}>
+              <DriverTripDetailPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/driver/trips/:id/customers"
+          element={
+            <ProtectedRoute allowedRoles={[DRIVER_ROLE]}>
+              <DriverTripCustomersPage />
+            </ProtectedRoute>
+          }
+        />
 
-        {/* Điều phối lộ trình */}
-        <Route path="/dispatch/overview" element={<OverviewPage />} />
-        <Route path="/dispatch/plan" element={<PlanRoutePage />} />
-        <Route path="/dispatch/adjust" element={<AdjustRoutePage />} />
-        <Route path="/dispatch/track" element={<TrackStatusPage />} />
+        <Route
+          path="/dispatch/overview"
+          element={
+            <ProtectedRoute allowedRoles={[DISPATCHER_ROLE]}>
+              <OverviewPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dispatch/plan"
+          element={
+            <ProtectedRoute allowedRoles={[DISPATCHER_ROLE]}>
+              <PlanRoutePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dispatch/adjust"
+          element={
+            <ProtectedRoute allowedRoles={[DISPATCHER_ROLE]}>
+              <AdjustRoutePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dispatch/track"
+          element={
+            <ProtectedRoute allowedRoles={[DISPATCHER_ROLE]}>
+              <TrackStatusPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dispatch/drivers"
+          element={
+            <ProtectedRoute allowedRoles={[DISPATCHER_ROLE]}>
+              <DispatcherDriversPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dispatch/vehicles"
+          element={
+            <ProtectedRoute allowedRoles={[DISPATCHER_ROLE]}>
+              <VehiclesPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dispatch/customers"
+          element={
+            <ProtectedRoute allowedRoles={[DISPATCHER_ROLE]}>
+              <CustomersPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dispatch/reports"
+          element={
+            <ProtectedRoute allowedRoles={[DISPATCHER_ROLE]}>
+              <ReportsPage />
+            </ProtectedRoute>
+          }
+        />
 
-        <Route path="/dispatch/drivers" element={<DispatcherDriversPage />} />
-        <Route path="/dispatch/vehicles" element={<VehiclesPage />} />
-        <Route path="/dispatch/customers" element={<CustomersPage />} />
-        <Route path="/dispatch/reports" element={<ReportsPage />} />
-
-        <Route path="*" element={<Navigate to="/login" replace />} />
+        <Route path="*" element={<RootRedirect />} />
       </Routes>
     </BrowserRouter>
-  );
+  )
 }
 
-export default App;
+export default App

@@ -31,8 +31,7 @@ export const ForgotPasswordPage: React.FC = () => {
     setLoading(true);
     try {
       const res = await api.post('/auth/forgot-password', { phoneNumber: phone });
-      const otpHint = res.data?.otp ? ` (OTP demo: ${res.data.otp})` : '';
-      setMessage((res.data?.message || 'Đã gửi mã xác thực, vui lòng kiểm tra điện thoại') + otpHint);
+      setMessage(res.data?.message || 'Đã gửi mã xác thực, vui lòng kiểm tra backend demo');
 
       setSuccessData({
         phoneNumber: phone,

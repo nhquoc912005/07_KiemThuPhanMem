@@ -1,62 +1,138 @@
-import React, { useEffect, useState } from 'react';
-import { DispatcherLayout } from '../../components/DispatcherLayout';
+import React, { useEffect, useMemo, useState } from 'react';
 import { api } from '../../api/client';
+import { DispatcherLayout } from '../../components/DispatcherLayout';
 
-interface SimpleRoute {
+interface RouteSummary {
   MaLoTrinh: number;
   LoTrinhDuKien: string | null;
+  GhiChu: string | null;
   ThoiGianBatDau: string;
   TrangThaiLoTrinh: string;
+  BienSo: string;
+  LoaiXe: string;
+  SoCho: number;
+  TenTaiXe: string;
+  SoDienThoaiTaiXe: string;
+  SoKhach: number;
+  TongGhe: number;
+}
+
+interface RouteStop {
+  MaChiTiet: number;
+  MaVe: number;
+  TenKhachHang: string;
+  SoDienThoai: string;
+  DiemDon: string;
+  DiemTra: string;
+  SoLuongGhe: number;
+  KhungGioTrungChuyen: string | null;
+  TrangThaiKhach: string | null;
+}
+
+interface RouteDetailResponse {
+  route: RouteSummary;
+  stops: RouteStop[];
+}
+
+function toDateTimeLocal(value?: string | null) {
+  if (!value) return '';
+  const date = new Date(value);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const hour = String(date.getHours()).padStart(2, '0');
+  const minute = String(date.getMinutes()).padStart(2, '0');
+  return `${year}-${month}-${day}T${hour}:${minute}`;
 }
 
 export const AdjustRoutePage: React.FC = () => {
-  const [routes, setRoutes] = useState<SimpleRoute[]>([]);
+  const [routes, setRoutes] = useState<RouteSummary[]>([]);
   const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [detail, setDetail] = useState<RouteDetailResponse | null>(null);
+  const [plannedRoute, setPlannedRoute] = useState('');
   const [note, setNote] = useState('');
-  const [reason, setReason] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [startTime, setStartTime] = useState('');
+  const [loadingList, setLoadingList] = useState(false);
+  const [loadingDetail, setLoadingDetail] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchRoutes = async () => {
-      setLoading(true);
-      try {
-        const res = await api.get<SimpleRoute[]>('/routes');
-        setRoutes(res.data);
-        if (res.data.length > 0) {
-          setSelectedId(res.data[0].MaLoTrinh);
-          setNote(res.data[0].LoTrinhDuKien || '');
-        }
-      } catch (e) {
-        setError('Không tải được danh sách lộ trình');
-      } finally {
-        setLoading(false);
-      }
-    };
+  const loadRoutes = async () => {
+    setLoadingList(true);
+    setError(null);
 
-    fetchRoutes();
+    try {
+      const res = await api.get<RouteSummary[]>('/routes');
+      setRoutes(res.data);
+
+      if (!selectedId && res.data.length > 0) {
+        setSelectedId(res.data[0].MaLoTrinh);
+      }
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
+      setError(err.response?.data?.message ?? 'Không tải được danh sách lộ trình');
+    } finally {
+      setLoadingList(false);
+    }
+  };
+
+  const loadRouteDetail = async (routeId: number) => {
+    setLoadingDetail(true);
+    setError(null);
+
+    try {
+      const res = await api.get<RouteDetailResponse>(`/routes/${routeId}`);
+      setDetail(res.data);
+      setPlannedRoute(res.data.route.LoTrinhDuKien || '');
+      setNote(res.data.route.GhiChu || '');
+      setStartTime(toDateTimeLocal(res.data.route.ThoiGianBatDau));
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
+      setDetail(null);
+      setError(err.response?.data?.message ?? 'Không tải được chi tiết lộ trình');
+    } finally {
+      setLoadingDetail(false);
+    }
+  };
+
+  useEffect(() => {
+    void loadRoutes();
   }, []);
 
-  const current = routes.find((r) => r.MaLoTrinh === selectedId) || null;
+  useEffect(() => {
+    if (!selectedId) return;
+    void loadRouteDetail(selectedId);
+  }, [selectedId]);
+
+  const currentRoute = useMemo(
+    () => routes.find((route) => route.MaLoTrinh === selectedId) || detail?.route || null,
+    [detail?.route, routes, selectedId]
+  );
 
   const handleSave = async () => {
-    if (!current) return;
+    if (!currentRoute) return;
+
     setSaving(true);
     setError(null);
     setMessage(null);
+
     try {
-      const res = await api.put(`/routes/${current.MaLoTrinh}`, {
-        LoTrinhDuKien: note,
-        TrangThaiLoTrinh: current.TrangThaiLoTrinh
+      const res = await api.put<RouteSummary>(`/routes/${currentRoute.MaLoTrinh}`, {
+        ThoiGianBatDau: startTime || undefined,
+        LoTrinhDuKien: plannedRoute.trim(),
+        GhiChu: note.trim(),
+        TrangThaiLoTrinh: currentRoute.TrangThaiLoTrinh
       });
-      setMessage('Đã lưu điều chỉnh lộ trình');
+
       setRoutes((prev) =>
-        prev.map((r) => (r.MaLoTrinh === res.data.MaLoTrinh ? res.data : r))
+        prev.map((route) => (route.MaLoTrinh === res.data.MaLoTrinh ? { ...route, ...res.data } : route))
       );
-    } catch (error: unknown) { const err = error as { response?: { data?: { message?: string } }, message?: string };
-      setError(err?.response?.data?.message ?? 'Lỗi khi lưu điều chỉnh');
+      setMessage('Đã lưu điều chỉnh lộ trình');
+      await loadRouteDetail(currentRoute.MaLoTrinh);
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
+      setError(err.response?.data?.message ?? 'Lỗi khi lưu điều chỉnh');
     } finally {
       setSaving(false);
     }
@@ -74,64 +150,71 @@ export const AdjustRoutePage: React.FC = () => {
           alignItems: 'flex-start'
         }}
       >
-        {/* Danh sách lộ trình cần điều chỉnh */}
         <div
           style={{
             background: '#FFFFFF',
             borderRadius: 10,
             border: '1px solid #E5E7EB',
             padding: 16,
-            minHeight: 380
+            minHeight: 420
           }}
         >
           <div style={{ fontWeight: 600, marginBottom: 8 }}>Danh sách lộ trình</div>
-          {loading ? (
+          {loadingList ? (
             <div>Đang tải...</div>
           ) : routes.length === 0 ? (
             <div>Chưa có lộ trình nào.</div>
           ) : (
-            routes.map((r) => (
+            routes.map((route) => (
               <div
-                key={r.MaLoTrinh}
-                onClick={() => {
-                  setSelectedId(r.MaLoTrinh);
-                  setNote(r.LoTrinhDuKien || '');
-                }}
+                key={route.MaLoTrinh}
+                onClick={() => setSelectedId(route.MaLoTrinh)}
                 style={{
                   borderRadius: 12,
-                  border:
-                    selectedId === r.MaLoTrinh ? '2px solid #2563EB' : '1px solid #E5E7EB',
+                  border: selectedId === route.MaLoTrinh ? '2px solid #2563EB' : '1px solid #E5E7EB',
                   padding: 16,
                   marginBottom: 12,
                   cursor: 'pointer',
-                  background: selectedId === r.MaLoTrinh ? '#EFF6FF' : '#FFFFFF',
-                  transition: 'all 0.2s'
+                  background: selectedId === route.MaLoTrinh ? '#EFF6FF' : '#FFFFFF'
                 }}
               >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                    <div style={{ fontWeight: 700, fontSize: 16, color: '#111827' }}>LT{String(r.MaLoTrinh).padStart(3, '0')}</div>
-                    <div style={{ padding: '4px 8px', borderRadius: 4, background: r.TrangThaiLoTrinh === 'Đang thực hiện' ? '#DBEAFE' : '#F3F4F6', color: r.TrangThaiLoTrinh === 'Đang thực hiện' ? '#1E40AF' : '#4B5563', fontSize: 12, fontWeight: 500 }}>
-                        {r.TrangThaiLoTrinh}
-                    </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12, gap: 8 }}>
+                  <div style={{ fontWeight: 700, fontSize: 16, color: '#111827' }}>
+                    LT{String(route.MaLoTrinh).padStart(3, '0')}
+                  </div>
+                  <div
+                    style={{
+                      padding: '4px 8px',
+                      borderRadius: 999,
+                      background: route.TrangThaiLoTrinh === 'Đang thực hiện' ? '#DBEAFE' : '#F3F4F6',
+                      color: route.TrangThaiLoTrinh === 'Đang thực hiện' ? '#1E40AF' : '#4B5563',
+                      fontSize: 12,
+                      fontWeight: 600
+                    }}
+                  >
+                    {route.TrangThaiLoTrinh}
+                  </div>
                 </div>
                 <div style={{ fontSize: 13, color: '#475569', marginBottom: 4 }}>
-                    Xe: <span style={{ color: '#111827' }}>51C-11111</span>
+                  Xe: <span style={{ color: '#111827' }}>{route.BienSo}</span>
                 </div>
                 <div style={{ fontSize: 13, color: '#475569', marginBottom: 4 }}>
-                    Tài xế: <span style={{ color: '#111827' }}>Lê Thanh Nam</span>
+                  Tài xế: <span style={{ color: '#111827' }}>{route.TenTaiXe}</span>
                 </div>
                 <div style={{ fontSize: 13, color: '#475569', marginBottom: 4 }}>
-                    Thời gian: <span style={{ color: '#111827' }}>{r.ThoiGianBatDau ? new Date(r.ThoiGianBatDau).toLocaleString('vi-VN') : '06:00:00 17/1/2026'}</span>
+                  Thời gian:{' '}
+                  <span style={{ color: '#111827' }}>
+                    {new Date(route.ThoiGianBatDau).toLocaleString('vi-VN')}
+                  </span>
                 </div>
                 <div style={{ fontSize: 13, color: '#475569' }}>
-                    Hành khách: <span style={{ color: '#111827' }}>1</span>
+                  Tổng ghế: <span style={{ color: '#111827' }}>{route.TongGhe || 0}</span>
                 </div>
               </div>
             ))
           )}
         </div>
 
-        {/* Form điều chỉnh */}
         <div
           style={{
             background: '#FFFFFF',
@@ -140,151 +223,161 @@ export const AdjustRoutePage: React.FC = () => {
             padding: 16
           }}
         >
-          {current ? (
+          {loadingDetail ? (
+            <div>Đang tải chi tiết...</div>
+          ) : !detail ? (
+            <div>Hãy chọn một lộ trình bên trái để điều chỉnh.</div>
+          ) : (
             <>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, paddingBottom: 16, borderBottom: '1px solid #E5E7EB' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, paddingBottom: 16, borderBottom: '1px solid #E5E7EB' }}>
                 <h3 style={{ fontSize: 16, fontWeight: 700, color: '#111827', margin: 0 }}>
-                    Chi tiết lộ trình: LT{String(current.MaLoTrinh).padStart(3, '0')}
+                  Chi tiết lộ trình: LT{String(detail.route.MaLoTrinh).padStart(3, '0')}
                 </h3>
-                <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6B7280' }}>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                </button>
-            </div>
+                <span
+                  style={{
+                    padding: '6px 12px',
+                    borderRadius: 999,
+                    background: detail.route.TrangThaiLoTrinh === 'Đang thực hiện' ? '#DBEAFE' : '#F3F4F6',
+                    color: detail.route.TrangThaiLoTrinh === 'Đang thực hiện' ? '#1D4ED8' : '#475569',
+                    fontSize: 13,
+                    fontWeight: 600
+                  }}
+                >
+                  {detail.route.TrangThaiLoTrinh}
+                </span>
+              </div>
 
-            <div style={{ marginBottom: 16 }}>
+              <div style={{ marginBottom: 16 }}>
                 <div style={{ fontSize: 13, fontWeight: 600, color: '#475569', marginBottom: 6 }}>Xe trung chuyển</div>
                 <input
-                    defaultValue="51B-67890 (Sức chứa: 4 ghế)"
-                    style={{
-                        width: '100%',
-                        height: 42,
-                        borderRadius: 8,
-                        border: '1px solid #CBD5E1',
-                        padding: '0 12px',
-                        fontSize: 14,
-                        color: '#111827',
-                        outline: 'none'
-                    }}
+                  value={`${detail.route.BienSo} (${detail.route.LoaiXe}, ${detail.route.SoCho} chỗ)`}
+                  readOnly
+                  style={{ width: '100%', height: 42, borderRadius: 8, border: '1px solid #CBD5E1', padding: '0 12px', fontSize: 14, color: '#111827', outline: 'none', background: '#F8FAFC', boxSizing: 'border-box' }}
                 />
-            </div>
+              </div>
 
-            <div style={{ marginBottom: 16 }}>
+              <div style={{ marginBottom: 16 }}>
                 <div style={{ fontSize: 13, fontWeight: 600, color: '#475569', marginBottom: 6 }}>Tài xế</div>
                 <input
-                    defaultValue="Nguyễn Minh Tuấn - 0901234567 (Rảnh)"
-                    style={{
-                        width: '100%',
-                        height: 42,
-                        borderRadius: 8,
-                        border: '1px solid #CBD5E1',
-                        padding: '0 12px',
-                        fontSize: 14,
-                        color: '#111827',
-                        outline: 'none'
-                    }}
+                  value={`${detail.route.TenTaiXe} - ${detail.route.SoDienThoaiTaiXe || 'Chưa có số'} (${detail.route.TrangThaiLoTrinh})`}
+                  readOnly
+                  style={{ width: '100%', height: 42, borderRadius: 8, border: '1px solid #CBD5E1', padding: '0 12px', fontSize: 14, color: '#111827', outline: 'none', background: '#F8FAFC', boxSizing: 'border-box' }}
                 />
-            </div>
+              </div>
 
-            <div style={{ marginBottom: 16 }}>
+              <div style={{ marginBottom: 16 }}>
                 <div style={{ fontSize: 13, fontWeight: 600, color: '#475569', marginBottom: 6 }}>Thời gian bắt đầu</div>
-                <div style={{ position: 'relative' }}>
-                    <input type="datetime-local" defaultValue="2026-01-16T11:00" style={{ width: '100%', height: 42, padding: '0 12px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 14, color: '#111827', outline: 'none' }} />
-                </div>
-            </div>
+                <input
+                  type="datetime-local"
+                  value={startTime}
+                  onChange={(e) => setStartTime(e.target.value)}
+                  style={{ width: '100%', height: 42, padding: '0 12px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 14, color: '#111827', outline: 'none', boxSizing: 'border-box' }}
+                />
+              </div>
 
-            <div style={{ marginBottom: 16 }}>
+              <div style={{ marginBottom: 16 }}>
                 <div style={{ fontSize: 13, fontWeight: 600, color: '#475569', marginBottom: 6 }}>Lộ trình dự kiến</div>
                 <input
-                    defaultValue="Q5 → Q1 → Nhà xe Phương Trang"
-                    value={note}
-                    onChange={(e) => setNote(e.target.value)}
-                    style={{
-                        width: '100%',
-                        height: 42,
-                        borderRadius: 8,
-                        border: '1px solid #CBD5E1',
-                        padding: '0 12px',
-                        fontSize: 14,
-                        color: '#111827',
-                        outline: 'none'
-                    }}
+                  value={plannedRoute}
+                  onChange={(e) => setPlannedRoute(e.target.value)}
+                  style={{ width: '100%', height: 42, borderRadius: 8, border: '1px solid #CBD5E1', padding: '0 12px', fontSize: 14, color: '#111827', outline: 'none', boxSizing: 'border-box' }}
                 />
-            </div>
+              </div>
 
-            <div style={{ marginBottom: 24 }}>
-                <div style={{ fontSize: 13, fontWeight: 600, color: '#475569', marginBottom: 6 }}>Danh sách hành khách (1)</div>
-                <input
-                    defaultValue="VE006 - Vũ Thị F"
-                    style={{
-                        width: '100%',
-                        height: 42,
-                        borderRadius: 8,
-                        border: '1px solid #CBD5E1',
-                        padding: '0 12px',
-                        fontSize: 14,
-                        color: '#111827',
-                        outline: 'none'
-                    }}
+              <div style={{ marginBottom: 16 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: '#475569', marginBottom: 6 }}>Ghi chú điều phối</div>
+                <textarea
+                  value={note}
+                  onChange={(e) => setNote(e.target.value)}
+                  rows={3}
+                  style={{ width: '100%', borderRadius: 8, border: '1px solid #CBD5E1', padding: '10px 12px', fontSize: 14, color: '#111827', outline: 'none', resize: 'vertical', boxSizing: 'border-box' }}
                 />
-            </div>
+              </div>
 
-          {error && (
-            <div style={{ background: '#FEE2E2', borderRadius: 8, padding: '10px 14px', color: '#B91C1C', marginBottom: 16, fontSize: 14 }}>
-              {error}
-            </div>
-          )}
+              <div style={{ marginBottom: 24 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: '#475569', marginBottom: 10 }}>
+                  Danh sách hành khách ({detail.stops.length})
+                </div>
+                <div style={{ border: '1px solid #E5E7EB', borderRadius: 8, overflow: 'hidden' }}>
+                  {detail.stops.length === 0 ? (
+                    <div style={{ padding: 16, color: '#64748b' }}>Chưa có hành khách nào trong lộ trình này.</div>
+                  ) : (
+                    detail.stops.map((stop) => (
+                      <div key={stop.MaChiTiet} style={{ padding: '12px 14px', borderTop: '1px solid #E5E7EB', display: 'grid', gridTemplateColumns: '140px 1fr 1fr 90px 130px', gap: 12, alignItems: 'center', fontSize: 13 }}>
+                        <div style={{ fontWeight: 600, color: '#111827' }}>VE{String(stop.MaVe).padStart(3, '0')}</div>
+                        <div>
+                          <div style={{ fontWeight: 600, color: '#111827' }}>{stop.TenKhachHang}</div>
+                          <div style={{ color: '#64748b' }}>{stop.SoDienThoai}</div>
+                        </div>
+                        <div style={{ color: '#475569' }}>
+                          <div>Đón: {stop.DiemDon}</div>
+                          <div>Trả: {stop.DiemTra}</div>
+                        </div>
+                        <div style={{ color: '#111827', fontWeight: 600 }}>{stop.SoLuongGhe} ghế</div>
+                        <div style={{ color: '#475569' }}>{stop.TrangThaiKhach || 'Đang chờ'}</div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
 
-          {message && (
-            <div style={{ background: '#D1FAE5', borderRadius: 8, padding: '10px 14px', color: '#047857', marginBottom: 16, fontSize: 14 }}>
-              {message}
-            </div>
-          )}
+              {error && (
+                <div style={{ background: '#FEE2E2', borderRadius: 8, padding: '10px 14px', color: '#B91C1C', marginBottom: 16, fontSize: 14 }}>
+                  {error}
+                </div>
+              )}
 
-          <div style={{ display: 'flex', gap: 12 }}>
-            <button
-              onClick={handleSave}
-              style={{
-                flex: 1,
-                padding: '12px 24px',
-                borderRadius: 8,
-                border: 'none',
-                background: '#2563EB',
-                color: '#FFFFFF',
-                fontSize: 15,
-                fontWeight: 600,
-                cursor: 'pointer',
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-                gap: 8
-              }}
-              disabled={!current || saving}
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
-              {saving ? 'Đang cập nhật...' : 'Cập nhật lộ trình'}
-            </button>
-            <button
-              style={{
-                padding: '12px 24px',
-                borderRadius: 8,
-                border: 'none',
-                background: '#F1F5F9',
-                color: '#475569',
-                fontSize: 15,
-                fontWeight: 600,
-                cursor: 'pointer'
-              }}
-            >
-              Hủy
-            </button>
-          </div>
-          </>
-          ) : (
-            <div>Hãy chọn một lộ trình bên trái để điều chỉnh.</div>
+              {message && (
+                <div style={{ background: '#D1FAE5', borderRadius: 8, padding: '10px 14px', color: '#047857', marginBottom: 16, fontSize: 14 }}>
+                  {message}
+                </div>
+              )}
+
+              <div style={{ display: 'flex', gap: 12 }}>
+                <button
+                  onClick={handleSave}
+                  disabled={saving}
+                  style={{
+                    flex: 1,
+                    padding: '12px 24px',
+                    borderRadius: 8,
+                    border: 'none',
+                    background: '#2563EB',
+                    color: '#FFFFFF',
+                    fontSize: 15,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    opacity: saving ? 0.7 : 1
+                  }}
+                >
+                  {saving ? 'Đang cập nhật...' : 'Cập nhật lộ trình'}
+                </button>
+                <button
+                  onClick={() => {
+                    setPlannedRoute(detail.route.LoTrinhDuKien || '');
+                    setNote(detail.route.GhiChu || '');
+                    setStartTime(toDateTimeLocal(detail.route.ThoiGianBatDau));
+                    setMessage(null);
+                    setError(null);
+                  }}
+                  style={{
+                    padding: '12px 24px',
+                    borderRadius: 8,
+                    border: 'none',
+                    background: '#F1F5F9',
+                    color: '#475569',
+                    fontSize: 15,
+                    fontWeight: 600,
+                    cursor: 'pointer'
+                  }}
+                >
+                  Khôi phục
+                </button>
+              </div>
+            </>
           )}
         </div>
       </div>
     </DispatcherLayout>
   );
 };
-

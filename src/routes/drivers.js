@@ -1,55 +1,122 @@
 const express = require('express');
+
 const { getPool, sql } = require('../db');
+const {
+  ACTIVE_ROUTE_STATUSES,
+  DRIVER_STATUSES
+} = require('../constants/status');
+const { sendError, sendSuccess } = require('../utils/http');
+const {
+  isValidNationalId,
+  isValidPhoneNumber,
+  toPositiveInteger
+} = require('../utils/validation');
 
 const router = express.Router();
 
-// GET /drivers - danh sách tài xế
-router.get('/', async (req, res) => {
+const DRIVER_COLUMNS = `
+  MaTaiXe,
+  HoTen,
+  SoDienThoai,
+  CCCD,
+  LoaiBangLai,
+  TrangThaiTaiXe,
+  MaTaiKhoan
+`;
+
+const DRIVER_OUTPUT_COLUMNS = `
+  INSERTED.MaTaiXe,
+  INSERTED.HoTen,
+  INSERTED.SoDienThoai,
+  INSERTED.CCCD,
+  INSERTED.LoaiBangLai,
+  INSERTED.TrangThaiTaiXe,
+  INSERTED.MaTaiKhoan
+`;
+
+const ALLOWED_DRIVER_STATUSES = new Set(Object.values(DRIVER_STATUSES));
+const ACTIVE_ROUTE_STATUS_SQL = ACTIVE_ROUTE_STATUSES.map((status) => `N'${status}'`).join(', ');
+
+function getDriverPayload(body = {}) {
+  return {
+    HoTen: String(body.HoTen || '').trim(),
+    SoDienThoai: String(body.SoDienThoai || '').trim(),
+    CCCD: String(body.CCCD || '').trim(),
+    LoaiBangLai: body.LoaiBangLai ? String(body.LoaiBangLai).trim() : null,
+    TrangThaiTaiXe: body.TrangThaiTaiXe ? String(body.TrangThaiTaiXe).trim() : null
+  };
+}
+
+function validateDriverPayload(driver) {
+  if (!driver.HoTen || !driver.SoDienThoai || !driver.CCCD) {
+    return 'Họ tên, số điện thoại và CCCD là bắt buộc';
+  }
+
+  if (!isValidPhoneNumber(driver.SoDienThoai)) {
+    return 'Số điện thoại không hợp lệ (10 chữ số, bắt đầu bằng 0)';
+  }
+
+  if (!isValidNationalId(driver.CCCD)) {
+    return 'CCCD không hợp lệ (12 chữ số)';
+  }
+
+  if (driver.TrangThaiTaiXe && !ALLOWED_DRIVER_STATUSES.has(driver.TrangThaiTaiXe)) {
+    return 'Trạng thái tài xế không hợp lệ';
+  }
+
+  return null;
+}
+
+router.get('/', async (_req, res) => {
   try {
     const pool = await getPool();
-    const result = await pool.request().query('SELECT * FROM TaiXe');
-    res.json(result.recordset);
+    const result = await pool.request().query(`
+      SELECT ${DRIVER_COLUMNS}
+      FROM TaiXe
+      WHERE ISNULL(TrangThaiTaiXe, N'') <> N'${DRIVER_STATUSES.INACTIVE}'
+      ORDER BY MaTaiXe DESC
+    `);
+
+    return sendSuccess(res, result.recordset, 'Lấy danh sách tài xế thành công');
   } catch (err) {
     console.error('Get drivers error:', err);
-    res.status(500).json({ message: 'Lỗi lấy danh sách tài xế', detail: err.message });
+    return sendError(res, 500, 'Lỗi lấy danh sách tài xế', 'SERVER_ERROR');
   }
 });
 
-// GET /drivers/:id - chi tiết tài xế
 router.get('/:id', async (req, res) => {
-  const { id } = req.params;
+  const id = toPositiveInteger(req.params.id);
+  if (id == null) {
+    return sendError(res, 400, 'Mã tài xế không hợp lệ', 'VALIDATION_ERROR');
+  }
+
   try {
     const pool = await getPool();
     const result = await pool
       .request()
       .input('id', sql.Int, id)
-      .query('SELECT * FROM TaiXe WHERE MaTaiXe = @id');
+      .query(`
+        SELECT ${DRIVER_COLUMNS}
+        FROM TaiXe
+        WHERE MaTaiXe = @id
+      `);
 
     if (result.recordset.length === 0) {
-      return res.status(404).json({ message: 'Không tìm thấy tài xế' });
+      return sendError(res, 404, 'Không tìm thấy tài xế', 'NOT_FOUND');
     }
 
-    res.json(result.recordset[0]);
+    return sendSuccess(res, result.recordset[0], 'Lấy thông tin tài xế thành công');
   } catch (err) {
     console.error('Get driver detail error:', err);
-    res.status(500).json({ message: 'Lỗi lấy thông tin tài xế', detail: err.message });
+    return sendError(res, 500, 'Lỗi lấy thông tin tài xế', 'SERVER_ERROR');
   }
 });
 
-// POST /drivers - thêm tài xế
 router.post('/', async (req, res) => {
-  const { HoTen, SoDienThoai, CCCD, LoaiBangLai, TrangThaiTaiXe } = req.body || {};
-
-  if (!HoTen || !SoDienThoai || !CCCD) {
-    return res.status(400).json({ message: 'Họ tên, SĐT, CCCD là bắt buộc' });
-  }
-
-  if (!/^0\d{9}$/.test(SoDienThoai)) {
-    return res.status(400).json({ message: 'Số điện thoại không hợp lệ (10 chữ số, bắt đầu bằng 0)' });
-  }
-
-  if (!/^\d{12}$/.test(CCCD)) {
-    return res.status(400).json({ message: 'CCCD/CMND không hợp lệ (12 chữ số)' });
+  const driver = getDriverPayload(req.body);
+  const validationMessage = validateDriverPayload(driver);
+  if (validationMessage) {
+    return sendError(res, 400, validationMessage, 'VALIDATION_ERROR');
   }
 
   try {
@@ -57,49 +124,44 @@ router.post('/', async (req, res) => {
 
     const existing = await pool
       .request()
-      .input('phone', sql.VarChar(15), SoDienThoai)
-      .input('cccd', sql.VarChar(20), CCCD)
+      .input('phone', sql.VarChar(15), driver.SoDienThoai)
+      .input('cccd', sql.VarChar(20), driver.CCCD)
       .query('SELECT 1 FROM TaiXe WHERE SoDienThoai = @phone OR CCCD = @cccd');
 
     if (existing.recordset.length > 0) {
-      return res.status(409).json({ message: 'Tài xế đã tồn tại (trùng SĐT hoặc CCCD)' });
+      return sendError(res, 409, 'Tài xế đã tồn tại với số điện thoại hoặc CCCD này', 'CONFLICT');
     }
 
     const result = await pool
       .request()
-      .input('HoTen', sql.NVarChar(100), HoTen)
-      .input('SoDienThoai', sql.VarChar(15), SoDienThoai)
-      .input('CCCD', sql.VarChar(20), CCCD)
-      .input('LoaiBangLai', sql.NVarChar(50), LoaiBangLai || null)
-      .input('TrangThaiTaiXe', sql.NVarChar(30), TrangThaiTaiXe || 'Rảnh')
+      .input('HoTen', sql.NVarChar(100), driver.HoTen)
+      .input('SoDienThoai', sql.VarChar(15), driver.SoDienThoai)
+      .input('CCCD', sql.VarChar(20), driver.CCCD)
+      .input('LoaiBangLai', sql.NVarChar(50), driver.LoaiBangLai)
+      .input('TrangThaiTaiXe', sql.NVarChar(30), driver.TrangThaiTaiXe || DRIVER_STATUSES.AVAILABLE)
       .query(`
         INSERT INTO TaiXe (HoTen, SoDienThoai, CCCD, LoaiBangLai, TrangThaiTaiXe)
-        OUTPUT INSERTED.*
+        OUTPUT ${DRIVER_OUTPUT_COLUMNS}
         VALUES (@HoTen, @SoDienThoai, @CCCD, @LoaiBangLai, @TrangThaiTaiXe)
       `);
 
-    res.status(201).json(result.recordset[0]);
+    return sendSuccess(res, result.recordset[0], 'Tạo tài xế thành công', 201);
   } catch (err) {
     console.error('Create driver error:', err);
-    res.status(500).json({ message: 'Lỗi tạo tài xế', detail: err.message });
+    return sendError(res, 500, 'Lỗi tạo tài xế', 'SERVER_ERROR');
   }
 });
 
-// PUT /drivers/:id - chỉnh sửa tài xế
 router.put('/:id', async (req, res) => {
-  const { id } = req.params;
-  const { HoTen, SoDienThoai, CCCD, LoaiBangLai, TrangThaiTaiXe } = req.body || {};
-
-  if (!HoTen || !SoDienThoai || !CCCD) {
-    return res.status(400).json({ message: 'Họ tên, SĐT, CCCD là bắt buộc' });
+  const id = toPositiveInteger(req.params.id);
+  if (id == null) {
+    return sendError(res, 400, 'Mã tài xế không hợp lệ', 'VALIDATION_ERROR');
   }
 
-  if (!/^0\d{9}$/.test(SoDienThoai)) {
-    return res.status(400).json({ message: 'Số điện thoại không hợp lệ (10 chữ số, bắt đầu bằng 0)' });
-  }
-
-  if (!/^\d{12}$/.test(CCCD)) {
-    return res.status(400).json({ message: 'CCCD/CMND không hợp lệ (12 chữ số)' });
+  const driver = getDriverPayload(req.body);
+  const validationMessage = validateDriverPayload(driver);
+  if (validationMessage) {
+    return sendError(res, 400, validationMessage, 'VALIDATION_ERROR');
   }
 
   try {
@@ -108,35 +170,45 @@ router.put('/:id', async (req, res) => {
     const existing = await pool
       .request()
       .input('id', sql.Int, id)
-      .query('SELECT * FROM TaiXe WHERE MaTaiXe = @id');
+      .query(`
+        SELECT ${DRIVER_COLUMNS}
+        FROM TaiXe
+        WHERE MaTaiXe = @id
+      `);
 
     if (existing.recordset.length === 0) {
-      return res.status(404).json({ message: 'Không tìm thấy tài xế' });
+      return sendError(res, 404, 'Không tìm thấy tài xế', 'NOT_FOUND');
     }
 
     const existingConflicts = await pool
       .request()
       .input('id', sql.Int, id)
-      .input('phone', sql.VarChar(15), SoDienThoai)
-      .input('cccd', sql.VarChar(20), CCCD)
+      .input('phone', sql.VarChar(15), driver.SoDienThoai)
+      .input('cccd', sql.VarChar(20), driver.CCCD)
       .query(`
-        SELECT 1 FROM TaiXe
+        SELECT 1
+        FROM TaiXe
         WHERE (SoDienThoai = @phone OR CCCD = @cccd)
           AND MaTaiXe <> @id
       `);
 
     if (existingConflicts.recordset.length > 0) {
-      return res.status(409).json({ message: 'SĐT/CCCD đã tồn tại cho tài xế khác' });
+      return sendError(res, 409, 'Số điện thoại hoặc CCCD đã tồn tại cho tài xế khác', 'CONFLICT');
+    }
+
+    const nextDriverStatus = driver.TrangThaiTaiXe || existing.recordset[0].TrangThaiTaiXe;
+    if (!ALLOWED_DRIVER_STATUSES.has(nextDriverStatus)) {
+      return sendError(res, 400, 'Trạng thái tài xế không hợp lệ', 'VALIDATION_ERROR');
     }
 
     const result = await pool
       .request()
       .input('id', sql.Int, id)
-      .input('HoTen', sql.NVarChar(100), HoTen)
-      .input('SoDienThoai', sql.VarChar(15), SoDienThoai)
-      .input('CCCD', sql.VarChar(20), CCCD)
-      .input('LoaiBangLai', sql.NVarChar(50), LoaiBangLai || existing.recordset[0].LoaiBangLai)
-      .input('TrangThaiTaiXe', sql.NVarChar(30), TrangThaiTaiXe || existing.recordset[0].TrangThaiTaiXe)
+      .input('HoTen', sql.NVarChar(100), driver.HoTen)
+      .input('SoDienThoai', sql.VarChar(15), driver.SoDienThoai)
+      .input('CCCD', sql.VarChar(20), driver.CCCD)
+      .input('LoaiBangLai', sql.NVarChar(50), driver.LoaiBangLai)
+      .input('TrangThaiTaiXe', sql.NVarChar(30), nextDriverStatus)
       .query(`
         UPDATE TaiXe
         SET HoTen = @HoTen,
@@ -144,20 +216,22 @@ router.put('/:id', async (req, res) => {
             CCCD = @CCCD,
             LoaiBangLai = @LoaiBangLai,
             TrangThaiTaiXe = @TrangThaiTaiXe
-        OUTPUT INSERTED.*
+        OUTPUT ${DRIVER_OUTPUT_COLUMNS}
         WHERE MaTaiXe = @id
       `);
 
-    res.json(result.recordset[0]);
+    return sendSuccess(res, result.recordset[0], 'Cập nhật tài xế thành công');
   } catch (err) {
     console.error('Update driver error:', err);
-    res.status(500).json({ message: 'Lỗi cập nhật tài xế', detail: err.message });
+    return sendError(res, 500, 'Lỗi cập nhật tài xế', 'SERVER_ERROR');
   }
 });
 
-// DELETE /drivers/:id - xóa / ngừng hoạt động tài xế
 router.delete('/:id', async (req, res) => {
-  const { id } = req.params;
+  const id = toPositiveInteger(req.params.id);
+  if (id == null) {
+    return sendError(res, 400, 'Mã tài xế không hợp lệ', 'VALIDATION_ERROR');
+  }
 
   try {
     const pool = await getPool();
@@ -169,36 +243,32 @@ router.delete('/:id', async (req, res) => {
         SELECT TOP 1 1
         FROM LoTrinhTrungChuyen
         WHERE MaTaiXe = @id
-          AND TrangThaiLoTrinh IN (N'Đang thực hiện', N'Chưa thực hiện')
+          AND TrangThaiLoTrinh IN (${ACTIVE_ROUTE_STATUS_SQL})
       `);
 
     if (busyRoutes.recordset.length > 0) {
-      return res
-        .status(409)
-        .json({ message: 'Không thể xóa/khóa tài xế đang có lộ trình đã phân công' });
+      return sendError(res, 409, 'Không thể ngưng hoạt động tài xế đang có lộ trình active', 'CONFLICT');
     }
 
-    // mềm: chuyển trạng thái sang Ngừng hoạt động
     const result = await pool
       .request()
       .input('id', sql.Int, id)
       .query(`
         UPDATE TaiXe
-        SET TrangThaiTaiXe = N'Ngừng hoạt động'
-        OUTPUT INSERTED.*
+        SET TrangThaiTaiXe = N'${DRIVER_STATUSES.INACTIVE}'
+        OUTPUT ${DRIVER_OUTPUT_COLUMNS}
         WHERE MaTaiXe = @id
       `);
 
     if (result.recordset.length === 0) {
-      return res.status(404).json({ message: 'Không tìm thấy tài xế' });
+      return sendError(res, 404, 'Không tìm thấy tài xế', 'NOT_FOUND');
     }
 
-    res.json({ message: 'Cập nhật trạng thái tài xế thành Ngừng hoạt động', driver: result.recordset[0] });
+    return sendSuccess(res, result.recordset[0], 'Đã chuyển tài xế sang ngừng hoạt động');
   } catch (err) {
     console.error('Delete/disable driver error:', err);
-    res.status(500).json({ message: 'Lỗi cập nhật trạng thái tài xế', detail: err.message });
+    return sendError(res, 500, 'Lỗi cập nhật trạng thái tài xế', 'SERVER_ERROR');
   }
 });
 
 module.exports = router;
-

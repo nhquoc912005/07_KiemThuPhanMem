@@ -1,12 +1,13 @@
 const express = require('express');
+
 const { getPool, sql } = require('../db');
+const { sendError, sendSuccess } = require('../utils/http');
 
 const router = express.Router();
 
-// GET /tickets - danh sách vé trung chuyển, join thông tin khách hàng
-// Query optional: status=Cần trung chuyển, keyword, timeSlot
 router.get('/', async (req, res) => {
-  const { status, keyword } = req.query;
+  const status = String(req.query.status || '').trim();
+  const keyword = String(req.query.keyword || '').trim();
 
   try {
     const pool = await getPool();
@@ -24,7 +25,7 @@ router.get('/', async (req, res) => {
         k.DiaChiTra
       FROM VeTrungChuyen v
       JOIN KhachHang k ON v.MaKhachHang = k.MaKhachHang
-      WHERE 1 = 1
+      WHERE ISNULL(k.TrangThai, N'') <> N'Ngừng hoạt động'
     `;
 
     if (status) {
@@ -33,20 +34,25 @@ router.get('/', async (req, res) => {
     }
 
     if (keyword) {
-      query +=
-        ' AND (k.TenKhachHang LIKE @kw OR k.SoDienThoai LIKE @kw OR k.DiaChiDon LIKE @kw OR k.DiaChiTra LIKE @kw)';
+      query += `
+        AND (
+          k.TenKhachHang LIKE @kw OR
+          k.SoDienThoai LIKE @kw OR
+          k.DiaChiDon LIKE @kw OR
+          k.DiaChiTra LIKE @kw
+        )
+      `;
       request.input('kw', sql.NVarChar(100), `%${keyword}%`);
     }
 
     query += ' ORDER BY v.MaVe DESC';
 
     const result = await request.query(query);
-    res.json(result.recordset);
+    return sendSuccess(res, result.recordset, 'Lấy danh sách vé trung chuyển thành công');
   } catch (err) {
     console.error('Get tickets error:', err);
-    res.status(500).json({ message: 'Lỗi lấy danh sách vé trung chuyển', detail: err.message });
+    return sendError(res, 500, 'Lỗi lấy danh sách vé trung chuyển', 'SERVER_ERROR');
   }
 });
 
 module.exports = router;
-

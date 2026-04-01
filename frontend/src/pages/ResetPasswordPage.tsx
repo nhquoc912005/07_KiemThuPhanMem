@@ -101,8 +101,7 @@ export const ResetPasswordPage: React.FC = () => {
     setResendLoading(true);
     try {
       const res = await api.post('/auth/forgot-password', { phoneNumber: phone });
-      const otpHint = res.data?.otp ? ` (OTP demo: ${res.data.otp})` : '';
-      setMessage((res.data?.message || 'Đã gửi mã OTP') + otpHint);
+      setMessage(res.data?.message || 'Đã gửi mã OTP');
       setCountdown(res.data?.expiresInSeconds ?? 60);
     } catch (error: unknown) { const err = error as { response?: { data?: { message?: string } }, message?: string };
       setError(err?.response?.data?.message ?? 'Không thể gửi lại OTP');
