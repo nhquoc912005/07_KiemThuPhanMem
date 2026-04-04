@@ -330,7 +330,7 @@ export const DriverTripDetailPage: React.FC = () => {
                   const pState = s.TrangThaiKhach || '';
                   const isFinished = pState === 'Đã đón khách' || pState === 'Đã trả khách' || pState === 'Khách hủy';
                   const isTripActive = currentStatusRaw === 'Đang thực hiện';
-                  
+
                   // Default styles (Pending / Not Started Trip)
                   let boxBg = '#FFFFFF';
                   let boxBorder = '1px solid #E5E7EB';
@@ -339,7 +339,7 @@ export const DriverTripDetailPage: React.FC = () => {
 
                   if (isTripActive) {
                     if (isFinished) {
-                      boxBg = '#F0FDF4'; 
+                      boxBg = '#F0FDF4';
                       boxBorder = '1px solid #86EFAC';
                       numBg = '#16A34A';
                       numColor = '#FFFFFF';
@@ -360,42 +360,15 @@ export const DriverTripDetailPage: React.FC = () => {
 
                   return (
                     <div key={s.MaChiTiet} style={{ display: 'flex', gap: 20, alignItems: 'center', position: 'relative', zIndex: 1 }}>
-                       <div style={{ width: 48, height: 48, borderRadius: 8, background: isDone ? '#F59E0B' : '#E5E7EB', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: isDone ? '#FFF' : '#374151', fontWeight: 600, fontSize: 18 }}>
-                         {index + 1}
-                       </div>
-                       <div style={{ flex: 1, border: '1px solid #E5E7EB', borderRadius: 8, padding: '12px 16px', background: isDone ? '#FEFCE8' : '#FFF', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <div>
-                            <div style={{ fontWeight: 700, color: '#111827', fontSize: 15, marginBottom: 4 }}>{s.TenKhachHang}</div>
-                            <div style={{ fontSize: 13, color: '#4B5563' }}>
-                               {s.DiemDon}
-                                <div style={{ color: '#9CA3AF', marginTop: 2 }}>{s.SoLuongGhe} ghế đã đặt</div>
-                            </div>
-                          </div>
-                          <div style={{ position: 'relative' }}>
-                            <select
-                              value={s.TrangThaiKhach || ''}
-                              onChange={(e) => updateStopStatus(s.MaChiTiet, e.target.value || 'Đang chờ')}
-                              disabled={!canUpdateStops || saving}
-                              style={{
-                                appearance: 'none',
-                                background: isDone ? '#FFFFFF' : '#F3F4F6',
-                                color: '#374151',
-                                padding: '6px 32px 6px 16px',
-                                borderRadius: 6,
-                                border: 'none',
-                                fontSize: 13,
-                                fontWeight: 500,
-                                cursor: 'pointer',
-                                outline: 'none',
-                                boxShadow: isDone ? '0 1px 2px rgba(0,0,0,0.05)' : 'none'
-                              }}
-                            >
-                              <option value="">Đang chờ</option>
-                              <option value="Đã đến điểm đón">Đã đến</option>
-                              <option value="Đã đón khách">Đã đón</option>
-                              <option value="Khách hủy">Hủy chuyến</option>
-                            </select>
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ position: 'absolute', right: 10, top: 8, pointerEvents: 'none', color: '#6B7280' }}><path d="M6 9l6 6 6-6"/></svg>
+                      <div style={{ width: 48, height: 48, borderRadius: 8, background: numBg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: numColor, fontWeight: 600, fontSize: 18 }}>
+                        {index + 1}
+                      </div>
+                      <div style={{ flex: 1, border: boxBorder, borderRadius: 8, padding: '12px 16px', background: boxBg, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div>
+                          <div style={{ fontWeight: 700, color: '#111827', fontSize: 15, marginBottom: 4 }}>{s.TenKhachHang}</div>
+                          <div style={{ fontSize: 13, color: '#4B5563' }}>
+                            {s.DiemDon}
+                            <div style={{ color: '#9CA3AF', marginTop: 2 }}>{s.SoLuongGhe} ghế đã đặt</div>
                           </div>
                         </div>
                         <div style={{ position: 'relative' }}>
@@ -405,23 +378,22 @@ export const DriverTripDetailPage: React.FC = () => {
                             disabled={!canUpdateStops || saving}
                             style={{
                               appearance: 'none',
-                              background: '#FFFFFF',
+                              background: isFinished ? '#FFFFFF' : '#F3F4F6',
                               color: '#374151',
                               padding: '6px 32px 6px 16px',
                               borderRadius: 6,
-                              border: '1px solid #D1D5DB',
+                              border: isFinished ? '1px solid #D1D5DB' : 'none',
                               fontSize: 13,
                               fontWeight: 500,
-                              cursor: 'pointer',
+                              cursor: canUpdateStops && !saving ? 'pointer' : 'not-allowed',
                               outline: 'none',
-                              boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+                              boxShadow: isFinished ? '0 1px 2px rgba(0,0,0,0.05)' : 'none'
                             }}
                           >
                             <option value="">Đang chờ</option>
                             <option value="Đã đến điểm đón">Đã đến</option>
                             <option value="Đã đón khách">Đã đón</option>
-                            {/* Cho phép chọn Đã trả khách tại trạm Bến xe thay vì riêng rẽ */}
-                            <option value="Khách hủy">Hủy</option>
+                            <option value="Khách hủy">Hủy chuyến</option>
                           </select>
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ position: 'absolute', right: 10, top: 8, pointerEvents: 'none', color: '#6B7280' }}><path d="M6 9l6 6 6-6"/></svg>
                         </div>
@@ -433,12 +405,12 @@ export const DriverTripDetailPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Popup báo cáo sự cố / Nhập lý do từ chối */}
+          {/* Popup báo cáo sự cố */}
           {showIncidentModal && (
             <div style={{ position: 'fixed', inset: 0, background: 'rgba(255,255,255,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 60 }}>
               <div style={{ width: 400, background: '#FFFFFF', borderRadius: 16, padding: 32, boxShadow: '0 20px 40px rgba(0,0,0,0.1)', textAlign: 'center' }}>
                  <div style={{ width: 64, height: 64, borderRadius: '50%', background: '#DBEAFE', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
-                    <span style={{ fontSize: 32, fontWeight: 700, color: '#1D4ED8' }}>?</span>
+                    <span style={{ fontSize: 32, fontWeight: 700, color: '#1D4ED8' }}>!</span>
                  </div>
                  <h3 style={{ fontSize: 20, fontWeight: 700, color: '#111827', marginBottom: 24 }}>Báo cáo sự cố lộ trình</h3>
                  <textarea
@@ -466,4 +438,3 @@ export const DriverTripDetailPage: React.FC = () => {
     </DriverLayout>
   );
 };
-

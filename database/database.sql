@@ -212,16 +212,56 @@ VALUES
     ('43B-012.34', N'Xe 16 chỗ', 16, N'Rảnh'),
     ('43B-246.80', N'Xe 7 chỗ', 7, N'Rảnh');
 
--- Một vài khách hàng & vé mẫu
+-- Một vài khách hàng và vé mẫu
 INSERT INTO KhachHang (TenKhachHang, SoDienThoai, DiaChiDon, DiaChiTra, TrangThai)
 VALUES
-    (N'Nguyễn Văn A', '0389123456', N'272 Xô Viết Nghệ Tĩnh', N'Bến xe Đà Nẵng', N'Hoạt động'),
-    (N'Trần Thị B', '0389123452', N'56 Chu Mạnh Trinh', N'Bến xe Đà Nẵng', N'Hoạt động');
+    (N'Hà Văn Nam', '0389123456', N'56 Chu Mạnh Trinh', N'Bến xe Đà Nẵng', N'Hoạt động'),
+    (N'Nguyễn Thị Thuận', '0389123452', N'36 Tú Quỳ', N'Bến xe Đà Nẵng', N'Hoạt động'),
+    (N'Lê Minh Dai', '0981234567', N'12 Nguyễn Văn Linh', N'Bến xe Đà Nẵng', N'Hoạt động'),
+    (N'Phạm Thị Dung', '0912345678', N'34 Lê Duẩn', N'Bến xe Đà Nẵng', N'Hoạt động'),
+    (N'Trần Hoàng Bách', '0901234567', N'56 Trần Phú', N'Bến xe Đà Nẵng', N'Hoạt động'),
+    (N'Nguyễn Văn Phương', '0922333444', N'78 Hùng Vương', N'Bến xe Đà Nẵng', N'Hoạt động'),
+    (N'Lý Thị Giang', '0933444555', N'90 Điện Biên Phủ', N'Bến xe Đà Nẵng', N'Hoạt động'),
+    (N'Võ Thành Hòa', '0944555666', N'123 Nguyễn Tất Thành', N'Bến xe Đà Nẵng', N'Hoạt động'),
+    (N'Đỗ Minh Hiếu', '0955666777', N'45 Bạch Đằng', N'Bến xe Đà Nẵng', N'Hoạt động'),
+    (N'Bùi Văn Hoàng', '0966777888', N'67 Trần Hưng Đạo', N'Bến xe Đà Nẵng', N'Hoạt động'),
+    (N'Ngô Tuấn Anh', '0977888999', N'89 Lê Lợi', N'Bến xe Đà Nẵng', N'Hoạt động'),
+    (N'Phan Thị Lan', '0988999000', N'101 Nguyễn Hoàng', N'Bến xe Đà Nẵng', N'Hoạt động'),
+    (N'Đặng Hữu Minh', '0999000111', N'202 Tôn Đức Thắng', N'Bến xe Đà Nẵng', N'Hoạt động'),
+    (N'Hồ Ngọc Nhi', '0911222333', N'303 Nguyễn Lương Bằng', N'Bến xe Đà Nẵng', N'Hoạt động'),
+    (N'Dương Quốc Đạt', '0922333444', N'404 Phạm Hùng', N'Bến xe Đà Nẵng', N'Hoạt động'),
+    (N'Mai Anh Phương', '0933444555', N'505 Lê Trọng Tấn', N'Bến xe Đà Nẵng', N'Hoạt động'),
+    (N'Trịnh Cẩm Quang', '0944555666', N'606 Trường Chinh', N'Bến xe Đà Nẵng', N'Hoạt động'),
+    (N'Đinh Trọng Thành', '0955666777', N'707 Điện Biên Phủ', N'Bến xe Đà Nẵng', N'Hoạt động'),
+    (N'Lâm Bảo Sơn', '0966777888', N'808 Hải Phòng', N'Bến xe Đà Nẵng', N'Hoạt động'),
+    (N'Thái Huy Thông', '0977888999', N'909 Núi Thành', N'Bến xe Đà Nẵng', N'Hoạt động'),
+    (N'Châu Gia Uy', '0988999000', N'1010 Tiểu La', N'Bến xe Đà Nẵng', N'Hoạt động'),
+    (N'Trương Hữu Vũ', '0999000111', N'1111 Phan Đăng Lưu', N'Bến xe Đà Nẵng', N'Hoạt động');
 
 INSERT INTO VeTrungChuyen (KhungGioTrungChuyen, SoLuongGhe, TrangThaiVe, MaKhachHang)
 VALUES
     (N'7:00 - 9:00', 1, N'Cần trung chuyển', 1),
-    (N'7:00 - 9:00', 2, N'Cần trung chuyển', 2);
+    (N'7:00 - 9:00', 2, N'Cần trung chuyển', 2),
+    (N'7:00 - 9:00', 1, N'Cần trung chuyển', 3),
+    (N'7:00 - 9:00', 1, N'Cần trung chuyển', 4),
+    (N'7:00 - 9:00', 2, N'Cần trung chuyển', 5),
+    (N'7:00 - 9:00', 1, N'Cần trung chuyển', 6),
+    (N'9:00 - 9:00', 1, N'Cần trung chuyển', 7),
+    (N'9:00 - 9:00', 2, N'Cần trung chuyển', 8),
+    (N'9:00 - 9:00', 1, N'Cần trung chuyển', 9),
+    (N'9:00 - 9:00', 1, N'Cần trung chuyển', 10),
+    (N'9:00 - 9:00', 2, N'Cần trung chuyển', 11),
+    (N'9:00 - 9:00', 1, N'Cần trung chuyển', 12),
+    (N'11:00 - 13:00', 1, N'Cần trung chuyển', 13),
+    (N'11:00 - 13:00', 2, N'Cần trung chuyển', 14),
+    (N'11:00 - 13:00', 1, N'Cần trung chuyển', 15),
+    (N'11:00 - 13:00', 1, N'Cần trung chuyển', 16),
+    (N'11:00 - 13:00', 2, N'Cần trung chuyển', 17),
+    (N'11:00 - 13:00', 1, N'Cần trung chuyển', 18),
+    (N'15:00 - 17:00', 1, N'Cần trung chuyển', 19),
+    (N'7:00 - 9:00', 2, N'Cần trung chuyển', 20),
+    (N'9:00 - 11:00', 1, N'Cần trung chuyển', 21),
+    (N'13:00 - 15:00', 1, N'Cần trung chuyển', 22);
 
 ------------------------------------------------------------
 -- 5. Tạo một lộ trình mẫu + chi tiết + theo dõi trạng thái
