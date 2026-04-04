@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
+import { getDefaultRouteByRole, getStoredSession, isDriverRole, saveAuthSession } from '../auth/session';
 
 export const LoginPage: React.FC = () => {
   const [username, setUsername] = useState('');
@@ -11,39 +12,45 @@ export const LoginPage: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
 
   const navigate = useNavigate();
+  const location = useLocation();
 
-  // Xoá lỗi khi người dùng bắt đầu nhập liệu lại
+  useEffect(() => {
+    const session = getStoredSession();
+    if (session?.user && session.accessToken) {
+      navigate(getDefaultRouteByRole(session.user.VaiTro), { replace: true });
+    }
+  }, [navigate]);
+
   useEffect(() => {
     if (error) setError(null);
-  }, [username, password]);
+  }, [username, password, error]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setLoading(true);
+
     try {
       const res = await api.post('/auth/login', { username, password });
       const user = res.data.user;
-      if (remember) {
-        localStorage.setItem('user', JSON.stringify(user));
-      } else {
-        sessionStorage.setItem('user', JSON.stringify(user));
-      }
-      const role: string = user?.VaiTro || '';
-      if (role.includes('Tài xế')) {
-        navigate('/driver/trips/assigned');
-      } else {
-        navigate('/dispatch/overview');
-      }
-    } catch (error: unknown) { const err = error as { response?: { data?: { message?: string } }, message?: string };
-      setError(err?.response?.data?.message ?? 'Đăng nhập thất bại');
+      const accessToken = res.data.accessToken;
+      saveAuthSession(user, accessToken, remember);
+
+      const fromPath = (location.state as { from?: string } | null)?.from;
+      const fallbackPath = getDefaultRouteByRole(user?.VaiTro);
+      const canUseRequestedPath =
+        !!fromPath &&
+        ((fromPath.startsWith('/driver') && isDriverRole(user?.VaiTro)) ||
+          (fromPath.startsWith('/dispatch') && !isDriverRole(user?.VaiTro)) ||
+          fromPath === '/profile');
+
+      navigate(canUseRequestedPath ? fromPath : fallbackPath, { replace: true });
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
+      setError(err.response?.data?.message ?? 'Đăng nhập thất bại');
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleForgotPassword = () => {
-    navigate('/forgot-password');
   };
 
   return (
@@ -167,9 +174,7 @@ export const LoginPage: React.FC = () => {
           </p>
 
           <form onSubmit={handleSubmit} style={{ maxWidth: 416, margin: '0 auto' }}>
-            <label style={{ display: 'block', marginBottom: 8, fontSize: 18 }}>
-              Tên đăng nhập
-            </label>
+            <label style={{ display: 'block', marginBottom: 8, fontSize: 18 }}>Tên đăng nhập</label>
             <div
               style={{
                 background: '#fff',
@@ -240,46 +245,17 @@ export const LoginPage: React.FC = () => {
                   justifyContent: 'center'
                 }}
               >
-                <svg
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
                   {showPassword ? (
                     <>
-                      <path
-                        d="M12 5C7 5 3.27 8.11 2 12C3.27 15.89 7 19 12 19C17 19 20.73 15.89 22 12C20.73 8.11 17 5 12 5Z"
-                        stroke="#1E5FA8"
-                        strokeWidth="1.8"
-                      />
-                      <path
-                        d="M12 9C9.79 9 8 10.79 8 13C8 15.21 9.79 17 12 17C14.21 17 16 15.21 16 13C16 10.79 14.21 9 12 9Z"
-                        stroke="#1E5FA8"
-                        strokeWidth="1.8"
-                      />
+                      <path d="M12 5C7 5 3.27 8.11 2 12C3.27 15.89 7 19 12 19C17 19 20.73 15.89 22 12C20.73 8.11 17 5 12 5Z" stroke="#1E5FA8" strokeWidth="1.8" />
+                      <path d="M12 9C9.79 9 8 10.79 8 13C8 15.21 9.79 17 12 17C14.21 17 16 15.21 16 13C16 10.79 14.21 9 12 9Z" stroke="#1E5FA8" strokeWidth="1.8" />
                     </>
                   ) : (
                     <>
-                      <path
-                        d="M3 4L21 20"
-                        stroke="#1E5FA8"
-                        strokeWidth="1.8"
-                        strokeLinecap="round"
-                      />
-                      <path
-                        d="M10.58 5.08C11.04 5.02 11.51 5 12 5C17 5 20.73 8.11 22 12C21.64 13.15 21.01 14.23 20.18 15.18"
-                        stroke="#1E5FA8"
-                        strokeWidth="1.8"
-                        strokeLinecap="round"
-                      />
-                      <path
-                        d="M6.2 6.2C4.47 7.37 3.18 9.04 2.5 11C3.77 14.89 7.5 18 12.5 18C13.78 18 15 17.78 16.12 17.38"
-                        stroke="#1E5FA8"
-                        strokeWidth="1.8"
-                        strokeLinecap="round"
-                      />
+                      <path d="M3 4L21 20" stroke="#1E5FA8" strokeWidth="1.8" strokeLinecap="round" />
+                      <path d="M10.58 5.08C11.04 5.02 11.51 5 12 5C17 5 20.73 8.11 22 12C21.64 13.15 21.01 14.23 20.18 15.18" stroke="#1E5FA8" strokeWidth="1.8" strokeLinecap="round" />
+                      <path d="M6.2 6.2C4.47 7.37 3.18 9.04 2.5 11C3.77 14.89 7.5 18 12.5 18C13.78 18 15 17.78 16.12 17.38" stroke="#1E5FA8" strokeWidth="1.8" strokeLinecap="round" />
                     </>
                   )}
                 </svg>
@@ -314,7 +290,7 @@ export const LoginPage: React.FC = () => {
                   textDecoration: 'underline',
                   cursor: 'pointer'
                 }}
-                onClick={handleForgotPassword}
+                onClick={() => navigate('/forgot-password')}
               >
                 Quên mật khẩu?
               </button>
@@ -334,7 +310,7 @@ export const LoginPage: React.FC = () => {
                   background: 'rgba(248,113,113,0.2)',
                   borderRadius: 8,
                   padding: '8px 12px',
-                  color: '#FEE2E2',
+                  color: '#FEE2E2'
                 }}
               >
                 {error}
@@ -359,6 +335,29 @@ export const LoginPage: React.FC = () => {
             >
               {loading ? 'Đang xử lý...' : 'ĐĂNG NHẬP'}
             </button>
+
+            <div
+              style={{
+                marginTop: 14,
+                textAlign: 'center',
+                fontSize: 14
+              }}
+            >
+              Chưa có tài khoản?{' '}
+              <button
+                type="button"
+                onClick={() => navigate('/register')}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#FBBF24',
+                  textDecoration: 'underline',
+                  cursor: 'pointer'
+                }}
+              >
+                Đăng ký
+              </button>
+            </div>
           </form>
 
           <div
@@ -381,4 +380,3 @@ export const LoginPage: React.FC = () => {
     </div>
   );
 };
-

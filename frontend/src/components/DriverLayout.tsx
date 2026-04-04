@@ -1,18 +1,34 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { clearAuthSession, getStoredUser } from '../auth/session';
 
 interface DriverLayoutProps {
   children: React.ReactNode;
+}
+
+function getDisplayInitials() {
+  const user = getStoredUser();
+  if (!user) return 'U';
+
+  const source = user.HoTen || user.TenDangNhap || 'User';
+  return (
+    source
+      .trim()
+      .split(/\s+/)
+      .slice(0, 2)
+      .map((part) => part[0]?.toUpperCase() || '')
+      .join('') || 'U'
+  );
 }
 
 export const DriverLayout: React.FC<DriverLayoutProps> = ({ children }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const userInitials = getDisplayInitials();
 
   const handleLogout = () => {
-    localStorage.removeItem('user');
-    sessionStorage.removeItem('user');
+    clearAuthSession();
     navigate('/login');
   };
 
@@ -101,7 +117,24 @@ export const DriverLayout: React.FC<DriverLayoutProps> = ({ children }) => {
             {/* User Section */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
               <div style={{display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer'}} onClick={() => navigate('/profile')}>
-                <img src="https://i.pravatar.cc/150?img=11" alt="Avatar" style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover', border: '2px solid #fff' }} />
+                <div
+                  aria-label="Ảnh đại diện tài xế"
+                  style={{
+                    width: 36,
+                    height: 36,
+                    borderRadius: '50%',
+                    border: '2px solid #fff',
+                    background: 'linear-gradient(135deg, #1E5FA8 0%, #0A3B73 100%)',
+                    color: '#FFFFFF',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: 13,
+                    fontWeight: 700
+                  }}
+                >
+                  {userInitials}
+                </div>
               </div>
               <button
                 onClick={() => setShowLogoutConfirm(true)}

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { DriverLayout } from '../../components/DriverLayout';
 import { api } from '../../api/client';
+import { getStoredUser } from '../../auth/session';
 
 interface DriverTrip {
   MaLoTrinh: number;
@@ -46,8 +47,7 @@ export const DriverTripsPage: React.FC = () => {
     setError(null);
 
     try {
-      const rawUser = localStorage.getItem('user') || sessionStorage.getItem('user');
-      const user = rawUser ? JSON.parse(rawUser) : null;
+      const user = getStoredUser();
       const driverId = user?.MaTaiXe;
 
       if (!driverId) {

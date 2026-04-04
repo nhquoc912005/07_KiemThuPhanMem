@@ -1,26 +1,44 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { clearAuthSession, getStoredUser } from '../auth/session';
 
 interface DispatcherLayoutProps {
   children: React.ReactNode;
   activeSubTab?: 'overview' | 'plan' | 'adjust' | 'track';
 }
 
+function getDisplayInitials() {
+  const user = getStoredUser();
+  if (!user) return 'U';
+
+  const source = user.HoTen || user.TenDangNhap || 'User';
+  return (
+    source
+      .trim()
+      .split(/\s+/)
+      .slice(0, 2)
+      .map((part) => part[0]?.toUpperCase() || '')
+      .join('') || 'U'
+  );
+}
+
 export const DispatcherLayout: React.FC<DispatcherLayoutProps> = ({
   children,
   activeSubTab = 'overview'
 }) => {
+  const location = useLocation();
   const navigate = useNavigate();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const userInitials = getDisplayInitials();
 
   const handleLogout = () => {
-    localStorage.removeItem('user');
-    sessionStorage.removeItem('user');
+    clearAuthSession();
     navigate('/login');
   };
 
   const getMainNavClass = (active: boolean) => `layout-nav-tab ${active ? 'active' : ''}`;
   const getSubNavClass = (key: DispatcherLayoutProps['activeSubTab']) => `layout-subnav-tab ${key === activeSubTab ? 'active' : ''}`;
+  const pathname = location.pathname;
 
 
   return (
@@ -58,17 +76,24 @@ export const DispatcherLayout: React.FC<DispatcherLayoutProps> = ({
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
-            <img 
-              src="https://ui-avatars.com/api/?name=User&background=1E5FA8&color=fff&size=40" 
-              alt="User Avatar" 
+            <div
+              aria-label="Ảnh đại diện người dùng"
               style={{
                 width: 40,
                 height: 40,
                 borderRadius: '50%',
-                objectFit: 'cover',
-                border: '2px solid rgba(30, 95, 168, 0.2)'
+                border: '2px solid rgba(30, 95, 168, 0.2)',
+                background: 'linear-gradient(135deg, #1E5FA8 0%, #0A3B73 100%)',
+                color: '#FFFFFF',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontWeight: 700,
+                fontSize: 14
               }}
-            />
+            >
+              {userInitials}
+            </div>
             
             <button
               onClick={() => setShowLogoutConfirm(true)}
@@ -98,24 +123,24 @@ export const DispatcherLayout: React.FC<DispatcherLayoutProps> = ({
         {/* Main nav */}
         <nav className="layout-nav">
           <Link to="/dispatch/overview" style={{ textDecoration: 'none' }}>
-            <div className={getMainNavClass(window.location.pathname.startsWith('/dispatch/overview') || window.location.pathname.startsWith('/dispatch/plan') || window.location.pathname.startsWith('/dispatch/adjust') || window.location.pathname.startsWith('/dispatch/track'))}>Điều phối lộ trình</div>
+            <div className={getMainNavClass(pathname.startsWith('/dispatch/overview') || pathname.startsWith('/dispatch/plan') || pathname.startsWith('/dispatch/adjust') || pathname.startsWith('/dispatch/track'))}>Điều phối lộ trình</div>
           </Link>
           <Link to="/dispatch/vehicles" style={{ textDecoration: 'none' }}>
-            <div className={getMainNavClass(window.location.pathname.startsWith('/dispatch/vehicles'))}>Quản lý xe</div>
+            <div className={getMainNavClass(pathname.startsWith('/dispatch/vehicles'))}>Quản lý xe</div>
           </Link>
           <Link to="/dispatch/drivers" style={{ textDecoration: 'none' }}>
-            <div className={getMainNavClass(window.location.pathname.startsWith('/dispatch/drivers'))}>Quản lý tài xế</div>
+            <div className={getMainNavClass(pathname.startsWith('/dispatch/drivers'))}>Quản lý tài xế</div>
           </Link>
           <Link to="/dispatch/customers" style={{ textDecoration: 'none' }}>
-            <div className={getMainNavClass(window.location.pathname.startsWith('/dispatch/customers'))}>Quản lý khách hàng</div>
+            <div className={getMainNavClass(pathname.startsWith('/dispatch/customers'))}>Quản lý khách hàng</div>
           </Link>
           <Link to="/dispatch/reports" style={{ textDecoration: 'none' }}>
-            <div className={getMainNavClass(window.location.pathname.startsWith('/dispatch/reports'))}>Báo cáo</div>
+            <div className={getMainNavClass(pathname.startsWith('/dispatch/reports'))}>Báo cáo</div>
           </Link>
         </nav>
 
         {/* Sub tabs */}
-        {window.location.pathname.match(/^\/dispatch\/(overview|plan|adjust|track)/) && (
+        {pathname.match(/^\/dispatch\/(overview|plan|adjust|track)/) && (
           <div className="layout-subnav">
             <Link to="/dispatch/overview" style={{ textDecoration: 'none' }}>
               <div className={getSubNavClass('overview')}>Tổng quan</div>

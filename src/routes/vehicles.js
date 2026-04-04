@@ -1,47 +1,119 @@
 const express = require('express');
+
 const { getPool, sql } = require('../db');
+const { VEHICLE_STATUSES } = require('../constants/status');
+const { sendError, sendSuccess } = require('../utils/http');
+const {
+  isValidSeatCount,
+  isValidVehiclePlate,
+  normalizeVehiclePlate,
+  toPositiveInteger
+} = require('../utils/validation');
 
 const router = express.Router();
 
-// GET /vehicles - danh sách xe
-router.get('/', async (req, res) => {
+const VEHICLE_COLUMNS = `
+  MaXe,
+  BienSo,
+  LoaiXe,
+  SoCho,
+  TrangThaiXe
+`;
+const VEHICLE_OUTPUT_COLUMNS = `
+  INSERTED.MaXe,
+  INSERTED.BienSo,
+  INSERTED.LoaiXe,
+  INSERTED.SoCho,
+  INSERTED.TrangThaiXe
+`;
+const VEHICLE_DELETED_COLUMNS = `
+  DELETED.MaXe,
+  DELETED.BienSo,
+  DELETED.LoaiXe,
+  DELETED.SoCho,
+  DELETED.TrangThaiXe
+`;
+
+const ALLOWED_VEHICLE_STATUSES = new Set(Object.values(VEHICLE_STATUSES));
+
+function getVehiclePayload(body = {}) {
+  return {
+    BienSo: normalizeVehiclePlate(body.BienSo),
+    LoaiXe: String(body.LoaiXe || '').trim(),
+    SoCho: toPositiveInteger(body.SoCho),
+    TrangThaiXe: body.TrangThaiXe ? String(body.TrangThaiXe).trim() : VEHICLE_STATUSES.AVAILABLE
+  };
+}
+
+function validateVehicleInput(vehicle) {
+  if (!vehicle.BienSo || !vehicle.LoaiXe || vehicle.SoCho == null) {
+    return 'Biển số, loại xe và số chỗ là bắt buộc';
+  }
+
+  if (!isValidVehiclePlate(vehicle.BienSo)) {
+    return 'Biển số không hợp lệ. Ví dụ: 43B-123.45';
+  }
+
+  if (!isValidSeatCount(vehicle.SoCho)) {
+    return 'Số chỗ phải là số nguyên từ 4 đến 45';
+  }
+
+  if (!ALLOWED_VEHICLE_STATUSES.has(vehicle.TrangThaiXe)) {
+    return 'Trạng thái xe không hợp lệ';
+  }
+
+  return null;
+}
+
+router.get('/', async (_req, res) => {
   try {
     const pool = await getPool();
-    const result = await pool.request().query('SELECT * FROM XeTrungChuyen');
-    res.json(result.recordset);
+    const result = await pool.request().query(`
+      SELECT ${VEHICLE_COLUMNS}
+      FROM XeTrungChuyen
+      ORDER BY MaXe DESC
+    `);
+
+    return sendSuccess(res, result.recordset, 'Lấy danh sách xe thành công');
   } catch (err) {
     console.error('Get vehicles error:', err);
-    res.status(500).json({ message: 'Lỗi lấy danh sách xe', detail: err.message });
+    return sendError(res, 500, 'Lỗi lấy danh sách xe', 'SERVER_ERROR');
   }
 });
 
-// GET /vehicles/:id - chi tiết xe
 router.get('/:id', async (req, res) => {
-  const { id } = req.params;
+  const id = toPositiveInteger(req.params.id);
+  if (id == null) {
+    return sendError(res, 400, 'Mã xe không hợp lệ', 'VALIDATION_ERROR');
+  }
+
   try {
     const pool = await getPool();
     const result = await pool
       .request()
       .input('id', sql.Int, id)
-      .query('SELECT * FROM XeTrungChuyen WHERE MaXe = @id');
+      .query(`
+        SELECT ${VEHICLE_COLUMNS}
+        FROM XeTrungChuyen
+        WHERE MaXe = @id
+      `);
 
     if (result.recordset.length === 0) {
-      return res.status(404).json({ message: 'Không tìm thấy xe' });
+      return sendError(res, 404, 'Không tìm thấy xe', 'NOT_FOUND');
     }
 
-    res.json(result.recordset[0]);
+    return sendSuccess(res, result.recordset[0], 'Lấy thông tin xe thành công');
   } catch (err) {
     console.error('Get vehicle detail error:', err);
-    res.status(500).json({ message: 'Lỗi lấy thông tin xe', detail: err.message });
+    return sendError(res, 500, 'Lỗi lấy thông tin xe', 'SERVER_ERROR');
   }
 });
 
-// POST /vehicles - thêm xe
 router.post('/', async (req, res) => {
-  const { BienSo, LoaiXe, SoCho, TrangThaiXe } = req.body || {};
-
-  if (!BienSo || !LoaiXe || !SoCho) {
-    return res.status(400).json({ message: 'Biển số, loại xe, số chỗ là bắt buộc' });
+  const vehicle = getVehiclePayload(req.body);
+  const validationMessage = validateVehicleInput(vehicle);
+  if (validationMessage) {
+    return sendError(res, 400, validationMessage, 'VALIDATION_ERROR');
   }
 
   try {
@@ -49,39 +121,42 @@ router.post('/', async (req, res) => {
 
     const existing = await pool
       .request()
-      .input('BienSo', sql.VarChar(50), BienSo)
+      .input('BienSo', sql.VarChar(50), vehicle.BienSo)
       .query('SELECT 1 FROM XeTrungChuyen WHERE BienSo = @BienSo');
 
     if (existing.recordset.length > 0) {
-      return res.status(409).json({ message: 'Xe đã tồn tại (trùng biển số)' });
+      return sendError(res, 409, 'Xe đã tồn tại với biển số này', 'CONFLICT');
     }
 
     const result = await pool
       .request()
-      .input('BienSo', sql.VarChar(50), BienSo)
-      .input('LoaiXe', sql.NVarChar(50), LoaiXe)
-      .input('SoCho', sql.Int, SoCho)
-      .input('TrangThaiXe', sql.NVarChar(30), TrangThaiXe || 'Rảnh')
+      .input('BienSo', sql.VarChar(50), vehicle.BienSo)
+      .input('LoaiXe', sql.NVarChar(50), vehicle.LoaiXe)
+      .input('SoCho', sql.Int, vehicle.SoCho)
+      .input('TrangThaiXe', sql.NVarChar(30), vehicle.TrangThaiXe)
       .query(`
         INSERT INTO XeTrungChuyen (BienSo, LoaiXe, SoCho, TrangThaiXe)
-        OUTPUT INSERTED.*
+        OUTPUT ${VEHICLE_OUTPUT_COLUMNS}
         VALUES (@BienSo, @LoaiXe, @SoCho, @TrangThaiXe)
       `);
 
-    res.status(201).json(result.recordset[0]);
+    return sendSuccess(res, result.recordset[0], 'Tạo xe thành công', 201);
   } catch (err) {
     console.error('Create vehicle error:', err);
-    res.status(500).json({ message: 'Lỗi tạo xe', detail: err.message });
+    return sendError(res, 500, 'Lỗi tạo xe', 'SERVER_ERROR');
   }
 });
 
-// PUT /vehicles/:id - cập nhật xe
 router.put('/:id', async (req, res) => {
-  const { id } = req.params;
-  const { BienSo, LoaiXe, SoCho, TrangThaiXe } = req.body || {};
+  const id = toPositiveInteger(req.params.id);
+  if (id == null) {
+    return sendError(res, 400, 'Mã xe không hợp lệ', 'VALIDATION_ERROR');
+  }
 
-  if (!BienSo || !LoaiXe || !SoCho) {
-    return res.status(400).json({ message: 'Biển số, loại xe, số chỗ là bắt buộc' });
+  const vehicle = getVehiclePayload(req.body);
+  const validationMessage = validateVehicleInput(vehicle);
+  if (validationMessage) {
+    return sendError(res, 400, validationMessage, 'VALIDATION_ERROR');
   }
 
   try {
@@ -90,49 +165,55 @@ router.put('/:id', async (req, res) => {
     const existing = await pool
       .request()
       .input('id', sql.Int, id)
-      .query('SELECT * FROM XeTrungChuyen WHERE MaXe = @id');
+      .query(`
+        SELECT ${VEHICLE_COLUMNS}
+        FROM XeTrungChuyen
+        WHERE MaXe = @id
+      `);
 
     if (existing.recordset.length === 0) {
-      return res.status(404).json({ message: 'Không tìm thấy xe' });
+      return sendError(res, 404, 'Không tìm thấy xe', 'NOT_FOUND');
     }
 
     const existingPlate = await pool
       .request()
       .input('id', sql.Int, id)
-      .input('BienSo', sql.VarChar(50), BienSo)
+      .input('BienSo', sql.VarChar(50), vehicle.BienSo)
       .query('SELECT 1 FROM XeTrungChuyen WHERE BienSo = @BienSo AND MaXe <> @id');
 
     if (existingPlate.recordset.length > 0) {
-      return res.status(409).json({ message: 'Biển số đã tồn tại cho xe khác' });
+      return sendError(res, 409, 'Biển số đã tồn tại cho xe khác', 'CONFLICT');
     }
 
     const result = await pool
       .request()
       .input('id', sql.Int, id)
-      .input('BienSo', sql.VarChar(50), BienSo)
-      .input('LoaiXe', sql.NVarChar(50), LoaiXe)
-      .input('SoCho', sql.Int, SoCho)
-      .input('TrangThaiXe', sql.NVarChar(30), TrangThaiXe || existing.recordset[0].TrangThaiXe)
+      .input('BienSo', sql.VarChar(50), vehicle.BienSo)
+      .input('LoaiXe', sql.NVarChar(50), vehicle.LoaiXe)
+      .input('SoCho', sql.Int, vehicle.SoCho)
+      .input('TrangThaiXe', sql.NVarChar(30), vehicle.TrangThaiXe)
       .query(`
         UPDATE XeTrungChuyen
         SET BienSo = @BienSo,
             LoaiXe = @LoaiXe,
             SoCho = @SoCho,
             TrangThaiXe = @TrangThaiXe
-        OUTPUT INSERTED.*
+        OUTPUT ${VEHICLE_OUTPUT_COLUMNS}
         WHERE MaXe = @id
       `);
 
-    res.json(result.recordset[0]);
+    return sendSuccess(res, result.recordset[0], 'Cập nhật xe thành công');
   } catch (err) {
     console.error('Update vehicle error:', err);
-    res.status(500).json({ message: 'Lỗi cập nhật xe', detail: err.message });
+    return sendError(res, 500, 'Lỗi cập nhật xe', 'SERVER_ERROR');
   }
 });
 
-// DELETE /vehicles/:id - xóa xe (theo rule: không xóa nếu đang phân công lộ trình)
 router.delete('/:id', async (req, res) => {
-  const { id } = req.params;
+  const id = toPositiveInteger(req.params.id);
+  if (id == null) {
+    return sendError(res, 400, 'Mã xe không hợp lệ', 'VALIDATION_ERROR');
+  }
 
   try {
     const pool = await getPool();
@@ -143,24 +224,27 @@ router.delete('/:id', async (req, res) => {
       .query('SELECT TOP 1 1 FROM LoTrinhTrungChuyen WHERE MaXe = @id');
 
     if (relatedRoutes.recordset.length > 0) {
-      return res.status(409).json({ message: 'Không thể xóa xe đang được phân công lộ trình' });
+      return sendError(res, 409, 'Không thể xóa xe đã từng được phân công lộ trình', 'CONFLICT');
     }
 
     const result = await pool
       .request()
       .input('id', sql.Int, id)
-      .query('DELETE FROM XeTrungChuyen OUTPUT DELETED.* WHERE MaXe = @id');
+      .query(`
+        DELETE FROM XeTrungChuyen
+        OUTPUT ${VEHICLE_DELETED_COLUMNS}
+        WHERE MaXe = @id
+      `);
 
     if (result.recordset.length === 0) {
-      return res.status(404).json({ message: 'Không tìm thấy xe' });
+      return sendError(res, 404, 'Không tìm thấy xe', 'NOT_FOUND');
     }
 
-    res.json({ message: 'Xóa xe thành công', vehicle: result.recordset[0] });
+    return sendSuccess(res, result.recordset[0], 'Xóa xe thành công');
   } catch (err) {
     console.error('Delete vehicle error:', err);
-    res.status(500).json({ message: 'Lỗi xóa xe', detail: err.message });
+    return sendError(res, 500, 'Lỗi xóa xe', 'SERVER_ERROR');
   }
 });
 
 module.exports = router;
-

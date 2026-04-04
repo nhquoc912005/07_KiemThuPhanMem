@@ -3,6 +3,8 @@ const cors = require('cors');
 require('dotenv').config();
 
 const { getPool } = require('./db');
+const { requireAuth, requireRole } = require('./middleware/auth');
+const { DISPATCHER_ROLE, ensurePasswordHashes } = require('./utils/auth');
 
 const authRoutes = require('./routes/auth');
 const customerRoutes = require('./routes/customers');
@@ -17,7 +19,6 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Simple health check
 app.get('/health', async (req, res) => {
   try {
     const pool = await getPool();
@@ -28,16 +29,14 @@ app.get('/health', async (req, res) => {
   }
 });
 
-// API routes
 app.use('/api/v1/auth', authRoutes);
-app.use('/api/v1/customers', customerRoutes);
-app.use('/api/v1/vehicles', vehicleRoutes);
-app.use('/api/v1/drivers', driverRoutes);
-app.use('/api/v1/routes', routeRoutes);
-app.use('/api/v1/tickets', ticketRoutes);
-app.use('/api/v1/reports', reportRoutes);
+app.use('/api/v1/customers', requireAuth, requireRole(DISPATCHER_ROLE), customerRoutes);
+app.use('/api/v1/vehicles', requireAuth, requireRole(DISPATCHER_ROLE), vehicleRoutes);
+app.use('/api/v1/drivers', requireAuth, requireRole(DISPATCHER_ROLE), driverRoutes);
+app.use('/api/v1/routes', requireAuth, routeRoutes);
+app.use('/api/v1/tickets', requireAuth, requireRole(DISPATCHER_ROLE), ticketRoutes);
+app.use('/api/v1/reports', requireAuth, requireRole(DISPATCHER_ROLE), reportRoutes);
 
-// 404 handler
 app.use((req, res) => {
   res.status(404).json({ message: 'Not found' });
 });
@@ -45,8 +44,13 @@ app.use((req, res) => {
 const PORT = process.env.APP_PORT || 3000;
 
 getPool()
-  .then(() => {
-    app.listen(PORT, () => {
+  .then(async () => {
+    const migratedCount = await ensurePasswordHashes();
+    if (migratedCount > 0) {
+      console.log(`Migrated ${migratedCount} account password(s) to bcrypt hashes`);
+    }
+
+    app.listen(PORT, '0.0.0.0', () => {
       console.log(`API server listening on port ${PORT}`);
     });
   })
@@ -54,4 +58,3 @@ getPool()
     console.error('Failed to start server due to DB error:', err);
     process.exit(1);
   });
-
