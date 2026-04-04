@@ -65,7 +65,7 @@ export const DriverTripDetailPage: React.FC = () => {
         const err = e as { response?: { data?: { message?: string } } };
         setError(
           err?.response?.data?.message ??
-            'Lỗi tải thông tin, xin vui lòng thử lại sau.'
+          'Lỗi tải thông tin, xin vui lòng thử lại sau.'
         );
       } finally {
         setLoading(false);
@@ -101,12 +101,12 @@ export const DriverTripDetailPage: React.FC = () => {
       setDetail((prev) =>
         prev
           ? {
-              ...prev,
-              stops: prev.stops.map((s) =>
-                s.MaChiTiet === stopId ? { ...s, TrangThaiKhach: newStatus } : s
-              ),
-              route: res.data?.routeAutoCompleted ? { ...prev.route, TrangThaiLoTrinh: 'Hoàn thành' } : prev.route
-            }
+            ...prev,
+            stops: prev.stops.map((s) =>
+              s.MaChiTiet === stopId ? { ...s, TrangThaiKhach: newStatus } : s
+            ),
+            route: res.data?.routeAutoCompleted ? { ...prev.route, TrangThaiLoTrinh: 'Hoàn thành' } : prev.route
+          }
           : prev
       );
       setMessage(res.data?.routeAutoCompleted ? 'Đã cập nhật. Chuyến đã hoàn thành.' : 'Đã cập nhật trạng thái khách.');
@@ -204,54 +204,54 @@ export const DriverTripDetailPage: React.FC = () => {
                   {currentStatus}
                 </span>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg>
                   <span>{detail.route.ThoiGianBatDau ? new Date(detail.route.ThoiGianBatDau).toLocaleDateString('vi-VN') : '--'}</span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                   <span>
-                      {detail.route.ThoiGianBatDau ? new Date(detail.route.ThoiGianBatDau).toLocaleTimeString('vi-VN', {hour:'2-digit', minute:'2-digit'}) : '00:00'}
-                      {' - '}
-                      {detail.route.ThoiGianKetThuc ? new Date(detail.route.ThoiGianKetThuc).toLocaleTimeString('vi-VN', {hour:'2-digit', minute:'2-digit'}) : '--:--'}
-                   </span>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
+                  <span>
+                    {detail.route.ThoiGianBatDau ? new Date(detail.route.ThoiGianBatDau).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : '00:00'}
+                    {' - '}
+                    {detail.route.ThoiGianKetThuc ? new Date(detail.route.ThoiGianKetThuc).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : '--:--'}
+                  </span>
                 </div>
               </div>
             </div>
 
             <div style={{ display: 'flex', gap: 12 }}>
+              <button
+                onClick={() => {
+                  setIncidentError(null); setIncidentDesc(''); setIncidentLoc(''); setShowIncidentModal(true);
+                }}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 8, padding: '10px 16px', borderRadius: 8, border: 'none', background: '#E5E7EB', color: '#374151', fontWeight: 600, cursor: 'pointer'
+                }}
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></svg>
+                Báo cáo sự cố
+              </button>
+              <button
+                onClick={() => navigate(`/driver/trips/${routeId}/customers`)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 8, padding: '10px 16px', borderRadius: 8, border: 'none', background: '#DBEAFE', color: '#1E3A8A', fontWeight: 600, cursor: 'pointer'
+                }}
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
+                Danh sách khách hàng
+              </button>
+              {currentStatusRaw !== 'Hoàn thành' && (
                 <button
-                  onClick={() => {
-                    setIncidentError(null); setIncidentDesc(''); setIncidentLoc(''); setShowIncidentModal(true);
-                  }}
+                  disabled={saving}
+                  onClick={() => updateTripStatus(currentStatusRaw === 'Chưa thực hiện' ? 'Đang thực hiện' : 'Hoàn thành')}
                   style={{
-                    display: 'flex', alignItems: 'center', gap: 8, padding: '10px 16px', borderRadius: 8, border: 'none', background: '#E5E7EB', color: '#374151', fontWeight: 600, cursor: 'pointer'
+                    display: 'flex', alignItems: 'center', gap: 8, padding: '10px 20px', borderRadius: 8, border: 'none',
+                    background: '#059669', color: '#FFF', fontWeight: 600, cursor: 'pointer', opacity: saving ? 0.7 : 1
                   }}
                 >
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-                  Báo cáo sự cố
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M5 12l5 5L20 7" /></svg>
+                  {currentStatusRaw === 'Chưa thực hiện' ? 'Bắt đầu chuyến' : 'Hoàn thành'}
                 </button>
-                <button
-                  onClick={() => navigate(`/driver/trips/${routeId}/customers`)}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: 8, padding: '10px 16px', borderRadius: 8, border: 'none', background: '#DBEAFE', color: '#1E3A8A', fontWeight: 600, cursor: 'pointer'
-                  }}
-                >
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                  Danh sách khách hàng
-                </button>
-                {currentStatusRaw !== 'Hoàn thành' && (
-                  <button
-                    disabled={saving}
-                    onClick={() => updateTripStatus(currentStatusRaw === 'Chưa thực hiện' ? 'Đang thực hiện' : 'Hoàn thành')}
-                    style={{
-                      display: 'flex', alignItems: 'center', gap: 8, padding: '10px 20px', borderRadius: 8, border: 'none',
-                      background: '#059669', color: '#FFF', fontWeight: 600, cursor: 'pointer', opacity: saving ? 0.7 : 1
-                    }}
-                  >
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M5 12l5 5L20 7"/></svg>
-                    {currentStatusRaw === 'Chưa thực hiện' ? 'Bắt đầu chuyến' : 'Hoàn thành'}
-                  </button>
-                )}
+              )}
             </div>
           </div>
 
@@ -298,7 +298,7 @@ export const DriverTripDetailPage: React.FC = () => {
             {/* Expected Route */}
             <div style={{ padding: 24, paddingRight: 32, overflowY: 'auto', maxHeight: 650 }}>
               <h3 style={{ fontSize: 15, fontWeight: 700, color: '#111827', marginBottom: 24 }}>LỘ TRÌNH DỰ KIẾN</h3>
-              
+
               <div style={{ display: 'flex', flexDirection: 'column', gap: 20, position: 'relative' }}>
                 <div style={{ position: 'absolute', top: 30, bottom: 30, left: 24, width: 1, borderLeft: '1px dashed #D1D5DB', zIndex: 0 }} />
                 
@@ -308,24 +308,56 @@ export const DriverTripDetailPage: React.FC = () => {
                      {currentStatusRaw !== 'Chưa thực hiện' ? (
                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FFF" strokeWidth="3"><path d="M5 12l5 5L20 7"/></svg>
                      ) : (
-                       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6B7280" strokeWidth="3"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6B7280" strokeWidth="3"><path d="M5 12l5 5L20 7"/></svg>
                      )}
                    </div>
-                   <div style={{ flex: 1, border: '1px solid #E5E7EB', borderRadius: 8, padding: '12px 16px', background: '#FFF', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                   <div style={{ flex: 1, border: currentStatusRaw !== 'Chưa thực hiện' ? '1px solid #16A34A' : '1px solid #E5E7EB', borderRadius: 8, padding: '12px 16px', background: '#FFF', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div>
                         <div style={{ fontWeight: 700, color: '#111827', fontSize: 15, marginBottom: 4 }}>Điểm bắt đầu</div>
                         <div style={{ fontSize: 13, color: '#4B5563' }}>{startPointLabel}</div>
                       </div>
-                      <div style={{ background: '#F3F4F6', color: '#374151', padding: '6px 12px', borderRadius: 6, fontSize: 13, fontWeight: 500, display: 'flex', alignItems: 'center', gap: 8 }}>
-                        {currentStatusRaw !== 'Chưa thực hiện' ? 'Đã xuất phát' : 'Đang chờ'}
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 9l6 6 6-6"/></svg>
+                      <div>
+                        <div style={{ background: '#F3F4F6', color: '#374151', padding: '6px 12px', border: '1px solid #D1D5DB', borderRadius: 6, fontSize: 13, fontWeight: 500, display: 'flex', alignItems: 'center', gap: 8 }}>
+                          {currentStatusRaw !== 'Chưa thực hiện' ? 'Đã xuất phát' : 'Đang chờ'}
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 9l6 6 6-6"/></svg>
+                        </div>
                       </div>
                    </div>
                 </div>
 
-                {/* Các điểm đón khách */}
+                {/* Các điểm khách hàng (Flat List) */}
                 {detail.stops.map((s, index) => {
-                  const isDone = s.TrangThaiKhach === 'Đã đón khách' || s.TrangThaiKhach === 'Đã trả khách';
+                  const pState = s.TrangThaiKhach || '';
+                  const isFinished = pState === 'Đã đón khách' || pState === 'Đã trả khách' || pState === 'Khách hủy';
+                  const isTripActive = currentStatusRaw === 'Đang thực hiện';
+                  
+                  // Default styles (Pending / Not Started Trip)
+                  let boxBg = '#FFFFFF';
+                  let boxBorder = '1px solid #E5E7EB';
+                  let numBg = '#E5E7EB';
+                  let numColor = '#374151';
+
+                  if (isTripActive) {
+                    if (isFinished) {
+                      boxBg = '#F0FDF4'; 
+                      boxBorder = '1px solid #86EFAC';
+                      numBg = '#16A34A';
+                      numColor = '#FFFFFF';
+                    } else if (index === detail.stops.findIndex(st => !['Đã đón khách', 'Đã trả khách', 'Khách hủy'].includes(st.TrangThaiKhach || ''))) {
+                      // Active point
+                      boxBg = '#EFF6FF';
+                      boxBorder = '1px solid #93C5FD';
+                      numBg = '#1E3A8A';
+                      numColor = '#FFFFFF';
+                    } else {
+                      // Upcoming point
+                      boxBg = '#FEFCE8';
+                      boxBorder = '1px solid #FDE047';
+                      numBg = '#F59E0B';
+                      numColor = '#FFFFFF';
+                    }
+                  }
+
                   return (
                     <div key={s.MaChiTiet} style={{ display: 'flex', gap: 20, alignItems: 'center', position: 'relative', zIndex: 1 }}>
                        <div style={{ width: 48, height: 48, borderRadius: 8, background: isDone ? '#F59E0B' : '#E5E7EB', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: isDone ? '#FFF' : '#374151', fontWeight: 600, fontSize: 18 }}>
@@ -365,7 +397,35 @@ export const DriverTripDetailPage: React.FC = () => {
                             </select>
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ position: 'absolute', right: 10, top: 8, pointerEvents: 'none', color: '#6B7280' }}><path d="M6 9l6 6 6-6"/></svg>
                           </div>
-                       </div>
+                        </div>
+                        <div style={{ position: 'relative' }}>
+                          <select
+                            value={pState}
+                            onChange={(e) => updateStopStatus(s.MaChiTiet, e.target.value || 'Đang chờ')}
+                            disabled={!canUpdateStops || saving}
+                            style={{
+                              appearance: 'none',
+                              background: '#FFFFFF',
+                              color: '#374151',
+                              padding: '6px 32px 6px 16px',
+                              borderRadius: 6,
+                              border: '1px solid #D1D5DB',
+                              fontSize: 13,
+                              fontWeight: 500,
+                              cursor: 'pointer',
+                              outline: 'none',
+                              boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+                            }}
+                          >
+                            <option value="">Đang chờ</option>
+                            <option value="Đã đến điểm đón">Đã đến</option>
+                            <option value="Đã đón khách">Đã đón</option>
+                            {/* Cho phép chọn Đã trả khách tại trạm Bến xe thay vì riêng rẽ */}
+                            <option value="Khách hủy">Hủy</option>
+                          </select>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ position: 'absolute', right: 10, top: 8, pointerEvents: 'none', color: '#6B7280' }}><path d="M6 9l6 6 6-6"/></svg>
+                        </div>
+                      </div>
                     </div>
                   );
                 })}

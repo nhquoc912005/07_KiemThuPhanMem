@@ -25,6 +25,9 @@ export const DriverTripsPage: React.FC = () => {
   const [rejectReason, setRejectReason] = useState('');
   const [rejectSaving, setRejectSaving] = useState(false);
   const [rejectError, setRejectError] = useState<string | null>(null);
+  
+  const [gpsStatus, setGpsStatus] = useState<string>('checking'); // checking, granted, denied
+  
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -77,36 +80,51 @@ export const DriverTripsPage: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [statusFilter, path]);
 
+  useEffect(() => {
+    if ('geolocation' in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        () => setGpsStatus('granted'),
+        () => setGpsStatus('denied'),
+        { enableHighAccuracy: true }
+      );
+    } else {
+      setGpsStatus('denied');
+    }
+  }, []);
+
   const handleView = (id: number) => {
     navigate(`/driver/trips/${id}`);
   };
 
   const renderStatusBadge = (status: string) => {
     const label = status === 'Chưa thực hiện' ? 'Chưa bắt đầu' : status;
-    let bg = '#E5E7EB';
-    let color = '#111827';
+    let bg = '#F3F4F6';
+    let color = '#374151';
+    
     if (status.includes('Hoàn thành')) {
-      bg = '#DBFFE3';
-      color = '#246928';
+      bg = '#DCFCE7';
+      color = '#16A34A';
     } else if (status.includes('Đang')) {
-      bg = '#D2EAFF';
-      color = '#0C476F';
+      bg = '#DBEAFE';
+      color = '#1E40AF';
     } else if (status.includes('sự cố')) {
-      bg = '#E9D5FF';
-      color = '#6B21A8';
+      bg = '#F3E8FF';
+      color = '#7E22CE';
     } else if (status.includes('Chưa')) {
-      bg = 'rgba(248,255,205,0.83)';
-      color = '#7E6704';
+      bg = '#FEF9C3';
+      color = '#A16207';
     } else if (status.includes('Hủy')) {
-      bg = '#BCBCBC';
-      color = '#E6E6E6';
+      bg = '#F3F4F6';
+      color = '#4B5563';
     }
+    
     return (
       <span
         style={{
           padding: '6px 14px',
           borderRadius: 999,
           fontSize: 14,
+          fontWeight: 500,
           background: bg,
           color
         }}
@@ -164,167 +182,192 @@ export const DriverTripsPage: React.FC = () => {
 
   return (
     <DriverLayout>
+      {gpsStatus === 'denied' && (
+        <div style={{ background: '#FEF2F2', border: '1px solid #F87171', color: '#B91C1C', padding: '12px 16px', borderRadius: 8, marginBottom: 20, display: 'flex', alignItems: 'center', gap: 12 }}>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          <div>
+            <strong>Cảnh báo:</strong> Ứng dụng chưa được cấp quyền truy cập Vị trí (GPS). Việc cập nhật lộ trình thực tế sẽ không hoạt động chính xác. Vui lòng cấp quyền trong cài đặt trình duyệt.
+          </div>
+        </div>
+      )}
+
       {/* Thẻ thống kê tổng quan */}
-      <div className="stats-grid">
+      <div 
+        style={{ 
+          display: 'grid', 
+          gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', 
+          gap: 24, 
+          marginBottom: 32,
+          position: 'relative',
+          zIndex: 10
+        }}
+      >
         <div
           style={{
-            width: '100%',
-            maxWidth: 360,
-            flex: '1 1 280px',
-            minWidth: 220,
-            padding: '17px 34px 26px',
             background: '#FFFFFF',
-            borderRadius: 10,
-            border: '1px solid #BCBCBC',
-            boxShadow: '0px 2px 4px rgba(0,0,0,0.25)',
+            borderRadius: 8,
+            padding: '24px',
+            boxShadow: '0 4px 6px rgba(0,0,0,0.05)',
+            border: '1px solid #E5E7EB',
             display: 'flex',
             flexDirection: 'column',
-            gap: 12
+            gap: 8
           }}
         >
-          <div style={{ color: '#545454', fontSize: 20 }}>Tổng chuyến được giao</div>
-          <div style={{ color: '#1E5FA8', fontSize: 30, fontWeight: 700 }}>
+          <div style={{ color: '#4B5563', fontSize: 16, fontWeight: 500 }}>Tổng chuyến được giao</div>
+          <div style={{ color: '#1E5FA8', fontSize: 36, fontWeight: 700 }}>
             {totalAssigned.toString().padStart(2, '0')}
           </div>
         </div>
 
         <div
           style={{
-            width: '100%',
-            maxWidth: 360,
-            flex: '1 1 280px',
-            minWidth: 220,
-            padding: '17px 34px 26px',
             background: '#FFFFFF',
-            borderRadius: 10,
-            border: '1px solid #BCBCBC',
-            boxShadow: '0px 2px 4px rgba(0,0,0,0.25)',
+            borderRadius: 8,
+            padding: '24px',
+            boxShadow: '0 4px 6px rgba(0,0,0,0.05)',
+            border: '1px solid #E5E7EB',
             display: 'flex',
             flexDirection: 'column',
-            gap: 12
+            gap: 8
           }}
         >
-          <div style={{ color: '#545454', fontSize: 20 }}>Đã hoàn thành</div>
-          <div style={{ color: '#008000', fontSize: 30, fontWeight: 700 }}>
+          <div style={{ color: '#4B5563', fontSize: 16, fontWeight: 500 }}>Đã hoàn thành</div>
+          <div style={{ color: '#16A34A', fontSize: 36, fontWeight: 700 }}>
             {totalCompleted.toString().padStart(2, '0')}
           </div>
         </div>
 
         <div
           style={{
-            width: '100%',
-            maxWidth: 360,
-            flex: '1 1 280px',
-            minWidth: 220,
-            padding: '17px 34px 26px',
             background: '#FFFFFF',
-            borderRadius: 10,
-            border: '1px solid #BCBCBC',
-            boxShadow: '0px 2px 4px rgba(0,0,0,0.25)',
+            borderRadius: 8,
+            padding: '24px',
+            boxShadow: '0 4px 6px rgba(0,0,0,0.05)',
+            border: '1px solid #E5E7EB',
             display: 'flex',
             flexDirection: 'column',
-            gap: 12
+            gap: 8
           }}
         >
-          <div style={{ color: '#545454', fontSize: 20 }}>Đã từ chối</div>
-          <div style={{ color: '#FF4D4F', fontSize: 30, fontWeight: 700 }}>
+          <div style={{ color: '#4B5563', fontSize: 16, fontWeight: 500 }}>Đã từ chối</div>
+          <div style={{ color: '#DC2626', fontSize: 36, fontWeight: 700 }}>
             {totalCancelled.toString().padStart(2, '0')}
           </div>
         </div>
       </div>
 
-      <div className="table-responsive-wrapper">
+      <div 
+        style={{ 
+          background: '#FFFFFF', 
+          borderRadius: 12, 
+          boxShadow: '0 4px 20px rgba(0,0,0,0.08)', 
+          overflow: 'hidden',
+          position: 'relative',
+          zIndex: 10,
+          border: '1px solid #E5E7EB'
+        }}
+      >
         {loading ? (
-          <div>Đang tải...</div>
+          <div style={{ padding: 40, textAlign: 'center' }}>Đang tải...</div>
         ) : error ? (
-          <div style={{ color: '#B91C1C' }}>{error}</div>
+          <div style={{ padding: 40, textAlign: 'center', color: '#B91C1C' }}>{error}</div>
         ) : trips.length === 0 ? (
-          <div>
+          <div style={{ padding: 40, textAlign: 'center', color: '#6B7280' }}>
             {statusFilter == null
               ? 'Chưa có chuyến nào được phân công'
               : 'Không có chuyến nào.'}
           </div>
         ) : (
-          <div className="table-responsive-container">
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
+          <div style={{ width: '100%', overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 15, textAlign: 'center' }}>
               <thead>
-              <tr style={{ background: '#EFF6FF' }}>
-                <th style={{ padding: 8, textAlign: 'left' }}>STT</th>
-                <th style={{ padding: 8, textAlign: 'left' }}>Mã chuyến</th>
-                <th style={{ padding: 8, textAlign: 'left' }}>Biển số</th>
-                <th style={{ padding: 8, textAlign: 'left' }}>Thời gian bắt đầu</th>
-                <th style={{ padding: 8, textAlign: 'left' }}>Thời gian kết thúc</th>
-                <th style={{ padding: 8, textAlign: 'left' }}>Trạng thái</th>
-                <th style={{ padding: 8, textAlign: 'left' }}>Hành động</th>
+              <tr style={{ background: '#E0F2FE', color: '#111827' }}>
+                <th style={{ padding: '16px 24px', fontWeight: 600 }}>STT</th>
+                <th style={{ padding: '16px 24px', fontWeight: 600 }}>Mã chuyến</th>
+                <th style={{ padding: '16px 24px', fontWeight: 600 }}>Biển số</th>
+                <th style={{ padding: '16px 24px', fontWeight: 600 }}>Thời gian bắt đầu</th>
+                <th style={{ padding: '16px 24px', fontWeight: 600 }}>Thời gian kết thúc</th>
+                <th style={{ padding: '16px 24px', fontWeight: 600 }}>Trạng thái</th>
+                <th style={{ padding: '16px 24px', fontWeight: 600 }}>Hành động</th>
               </tr>
             </thead>
             <tbody>
               {trips.map((t, index) => (
-                <tr key={t.MaLoTrinh} style={{ borderTop: '1px solid #E5E7EB' }}>
-                  <td style={{ padding: 8 }}>{index + 1}</td>
-                  <td style={{ padding: 8 }}>
+                <tr key={t.MaLoTrinh} style={{ borderTop: '1px solid #E5E7EB', height: 72 }}>
+                  <td style={{ padding: 16, fontWeight: 600, color: '#111827' }}>{index + 1}</td>
+                  <td style={{ padding: 16, color: '#374151' }}>
                     {`CX${t.MaLoTrinh.toString().padStart(8, '0')}`}
                   </td>
-                  <td style={{ padding: 8 }}>{t.BienSo || '--'}</td>
-                  <td style={{ padding: 8 }}>
-                    {new Date(t.ThoiGianBatDau).toLocaleString('vi-VN')}
+                  <td style={{ padding: 16, color: '#374151' }}>{t.BienSo || '--'}</td>
+                  <td style={{ padding: 16, color: '#374151' }}>
+                    {new Date(t.ThoiGianBatDau).toLocaleString('vi-VN', {hour: '2-digit', minute:'2-digit', day:'2-digit', month:'2-digit', year:'numeric'})}
                   </td>
-                  <td style={{ padding: 8 }}>
+                  <td style={{ padding: 16, color: '#374151' }}>
                     {t.ThoiGianKetThuc
-                      ? new Date(t.ThoiGianKetThuc).toLocaleString('vi-VN')
+                      ? new Date(t.ThoiGianKetThuc).toLocaleString('vi-VN', {hour: '2-digit', minute:'2-digit', day:'2-digit', month:'2-digit', year:'numeric'})
                       : '--'}
                   </td>
-                  <td style={{ padding: 8 }}>{renderStatusBadge(t.TrangThaiLoTrinh)}</td>
-                  <td style={{ padding: 8, position: 'relative' }}>
+                  <td style={{ padding: 16 }}>{renderStatusBadge(t.TrangThaiLoTrinh)}</td>
+                  <td style={{ padding: 16, position: 'relative' }}>
                     <div
                       style={{
                         display: 'flex',
                         alignItems: 'center',
+                        justifyContent: 'center',
                         gap: 8
                       }}
                     >
-                      <button
-                        onClick={() => handleView(t.MaLoTrinh)}
-                        style={{
-                          flex: 1,
-                          padding: '10px 8px',
-                          borderRadius: 10,
-                          border: 'none',
-                          background: '#008000',
-                          boxShadow: '0px 3px 4px rgba(0,0,0,0.25)',
-                          color: '#fff',
-                          fontSize: 14,
-                          fontWeight: 700,
-                          cursor: 'pointer',
-                          whiteSpace: 'nowrap'
-                        }}
-                      >
-                        Xem lộ trình
-                      </button>
-                      <div
-                        style={{
-                          width: 4,
-                          height: 18,
-                          background: '#000000'
-                        }}
-                      />
+                      {t.TrangThaiLoTrinh === 'Đã hủy' ? (
+                        <div
+                          style={{
+                            padding: '8px 16px',
+                            borderRadius: 6,
+                            background: '#D1D5DB',
+                            color: '#6B7280',
+                            fontSize: 14,
+                            fontWeight: 600,
+                            whiteSpace: 'nowrap'
+                          }}
+                        >
+                          Đã từ chối
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => handleView(t.MaLoTrinh)}
+                          style={{
+                            padding: '8px 16px',
+                            borderRadius: 6,
+                            border: 'none',
+                            background: '#16A34A',
+                            color: '#FFFFFF',
+                            fontSize: 14,
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            whiteSpace: 'nowrap'
+                          }}
+                        >
+                          Xem lộ trình
+                        </button>
+                      )}
+                      
                       <button
                         type="button"
                         onClick={() => openMenu(t.MaLoTrinh)}
                         style={{
                           width: 32,
                           height: 32,
-                          borderRadius: 8,
-                          border: '1px solid #333333',
-                          background: '#FFFFFF',
-                          boxShadow: '0px 2px 4px rgba(0,0,0,0.25)',
+                          borderRadius: 6,
+                          border: 'none',
+                          background: 'transparent',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          cursor: 'pointer'
+                          cursor: 'pointer',
+                          color: '#4B5563'
                         }}
                       >
-                        <span style={{ fontSize: 18, lineHeight: 1 }}>⋮</span>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>
                       </button>
                     </div>
 
@@ -443,7 +486,7 @@ export const DriverTripsPage: React.FC = () => {
                   justifyContent: 'center'
                 }}
               >
-                <span style={{ color: '#0A3B73', fontSize: 28, fontWeight: 700 }}>!</span>
+                <span style={{ color: '#0A3B73', fontSize: 28, fontWeight: 700 }}>?</span>
               </div>
             </div>
             <div style={{ paddingBottom: 8, alignSelf: 'stretch' }}>

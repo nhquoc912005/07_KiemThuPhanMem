@@ -54,6 +54,31 @@ export const DriverTripCustomersPage: React.FC = () => {
     fetchDetail();
   }, [routeId]);
 
+  const stopsSequence = useMemo(() => {
+    if (!detail) return [];
+    const seq: { id: string; location: string; type: 'pickup' | 'dropoff'; passengers: DriverStop[] }[] = [];
+
+    const pickups = new Map<string, DriverStop[]>();
+    detail.stops.forEach((s) => {
+      if (!pickups.has(s.DiemDon)) pickups.set(s.DiemDon, []);
+      pickups.get(s.DiemDon)!.push(s);
+    });
+    pickups.forEach((passengers, loc) => {
+      seq.push({ id: `pickup-${loc}`, location: loc, type: 'pickup', passengers });
+    });
+
+    const dropoffs = new Map<string, DriverStop[]>();
+    detail.stops.forEach((s) => {
+      if (!dropoffs.has(s.DiemTra)) dropoffs.set(s.DiemTra, []);
+      dropoffs.get(s.DiemTra)!.push(s);
+    });
+    dropoffs.forEach((passengers, loc) => {
+      seq.push({ id: `dropoff-${loc}`, location: loc, type: 'dropoff', passengers });
+    });
+
+    return seq;
+  }, [detail]);
+
   const stats = useMemo(() => {
     const stops = detail?.stops ?? [];
     const total = stops.length;
@@ -188,43 +213,59 @@ export const DriverTripCustomersPage: React.FC = () => {
             </button>
           </div>
 
-          {/* Bảng danh sách khách hàng */}
-          <div style={{ background: '#FFFFFF', borderRadius: 12, overflow: 'hidden', border: '1px solid #D1D5DB' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 15, textAlign: 'center' }}>
-              <thead>
-                <tr style={{ background: '#104A66', color: '#FFF' }}>
-                  <th style={{ padding: '16px', fontWeight: 600 }}>STT</th>
-                  <th style={{ padding: '16px', fontWeight: 600 }}>Tên khách hàng</th>
-                  <th style={{ padding: '16px', fontWeight: 600 }}>Số điện thoại</th>
-                  <th style={{ padding: '16px', fontWeight: 600 }}>Điểm đón</th>
-                  <th style={{ padding: '16px', fontWeight: 600 }}>Điểm trả</th>
-                  <th style={{ padding: '16px', fontWeight: 600 }}>Số lượng ghế</th>
-                  <th style={{ padding: '16px', fontWeight: 600 }}>Thời gian đón dự kiến</th>
-                  <th style={{ padding: '16px', fontWeight: 600 }}>Trạng thái</th>
-                </tr>
-              </thead>
-              <tbody>
-                {detail.stops.map((s, index) => (
-                  <tr key={s.MaChiTiet} style={{ borderBottom: '1px solid #E5E7EB', background: index % 2 === 0 ? '#FFFFFF' : '#FAFAFA' }}>
-                    <td style={{ padding: '16px', color: '#111827', fontWeight: 600 }}>{index + 1}</td>
-                    <td style={{ padding: '16px', color: '#111827' }}>{s.TenKhachHang}</td>
-                    <td style={{ padding: '16px', color: '#111827' }}>{s.SoDienThoai}</td>
-                    <td style={{ padding: '16px', color: '#111827' }}>{s.DiemDon}</td>
-                    <td style={{ padding: '16px', color: '#111827' }}>{s.DiemTra}</td>
-                    <td style={{ padding: '16px', color: '#111827' }}>{s.SoLuongGhe}</td>
-                    <td style={{ padding: '16px', color: '#111827' }}>
-                      {s.ThoiGianDonDuKien ? new Date(s.ThoiGianDonDuKien).toLocaleTimeString('vi-VN', {hour:'2-digit', minute:'2-digit', hour12: true}).toUpperCase() : '--:--'}
-                    </td>
-                    <td style={{ padding: '16px' }}>{statusBadge(s.TrangThaiKhach)}</td>
-                  </tr>
-                ))}
-                {detail.stops.length === 0 && (
-                  <tr>
-                    <td colSpan={8} style={{ padding: '24px', textAlign: 'center', color: '#6B7280' }}>Không có khách hàng nào</td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+          {/* Danh sách hành khách theo điểm dừng */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+            {stopsSequence.map((group, gIndex) => {
+               const isDropoff = group.type === 'dropoff';
+               return (
+                 <div key={group.id} style={{ background: '#FFFFFF', borderRadius: 12, overflow: 'hidden', border: '1px solid #D1D5DB' }}>
+                   <div style={{ background: isDropoff ? '#FEE2E2' : '#E0F2FE', padding: '16px 24px', borderBottom: '1px solid #D1D5DB', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                     <h3 style={{ margin: 0, fontSize: 18, color: '#111827' }}>
+                       <span style={{ color: isDropoff ? '#DC2626' : '#0284C7', fontWeight: 800, marginRight: 8 }}>
+                         {isDropoff ? '[TRẢ]' : '[ĐÓN]'}
+                       </span>
+                       Trạm {gIndex + 1}: {group.location}
+                     </h3>
+                     <span style={{ fontSize: 14, fontWeight: 600, color: '#4B5563' }}>{group.passengers.length} khách</span>
+                   </div>
+                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 15, textAlign: 'center' }}>
+                     <thead style={{ background: '#F9FAFB', borderBottom: '1px solid #E5E7EB' }}>
+                        <tr>
+                          <th style={{ padding: '12px 16px', fontWeight: 600, color: '#374151', width: 60 }}>STT</th>
+                          <th style={{ padding: '12px 16px', fontWeight: 600, color: '#374151', textAlign: 'left' }}>Khách hàng</th>
+                          <th style={{ padding: '12px 16px', fontWeight: 600, color: '#374151', width: 100 }}>Số ghế</th>
+                          <th style={{ padding: '12px 16px', fontWeight: 600, color: '#374151', width: 130 }}>Thời gian</th>
+                          <th style={{ padding: '12px 16px', fontWeight: 600, color: '#374151', width: 160 }}>Trạng thái</th>
+                        </tr>
+                     </thead>
+                     <tbody>
+                        {group.passengers.map((s, idx) => (
+                          <tr key={s.MaChiTiet} style={{ borderBottom: '1px solid #E5E7EB' }}>
+                            <td style={{ padding: '16px' }}>{idx + 1}</td>
+                            <td style={{ padding: '16px', textAlign: 'left' }}>
+                              <div style={{ fontWeight: 600, color: '#111827' }}>{s.TenKhachHang}</div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6B7280" strokeWidth="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                                <a href={`tel:${s.SoDienThoai}`} style={{ color: '#2563EB', textDecoration: 'none', fontWeight: 500 }}>{s.SoDienThoai}</a>
+                              </div>
+                            </td>
+                            <td style={{ padding: '16px', fontWeight: 600, color: '#374151' }}>{s.SoLuongGhe}</td>
+                            <td style={{ padding: '16px', color: '#4B5563' }}>
+                              {s.ThoiGianDonDuKien ? new Date(s.ThoiGianDonDuKien).toLocaleTimeString('vi-VN', {hour:'2-digit', minute:'2-digit', hour12: false}) : '--:--'}
+                            </td>
+                            <td style={{ padding: '16px' }}>{statusBadge(s.TrangThaiKhach)}</td>
+                          </tr>
+                        ))}
+                     </tbody>
+                   </table>
+                 </div>
+               );
+            })}
+            {stopsSequence.length === 0 && (
+               <div style={{ padding: '40px 24px', textAlign: 'center', color: '#6B7280', border: '1px dashed #D1D5DB', borderRadius: 12 }}>
+                 Không có khách hàng nào trong chuyến này.
+               </div>
+            )}
           </div>
         </>
       )}
