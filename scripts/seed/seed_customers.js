@@ -1,4 +1,4 @@
-const { getPool, sql } = require('../../src/db');
+const { getPool, sql } = require('../../backend/src/db');
 
 async function seed() {
     try {

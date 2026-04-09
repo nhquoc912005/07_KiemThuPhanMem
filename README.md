@@ -17,32 +17,42 @@ Project dùng để demo các luồng chính:
 
 ```text
 .
+├─ backend/
+│  ├─ src/
+│  │  ├─ constants/
+│  │  ├─ middleware/
+│  │  ├─ routes/
+│  │  ├─ utils/
+│  │  ├─ app.js
+│  │  ├─ db.js
+│  │  └─ server.js
+│  ├─ tests/
+│  ├─ .env.example
+│  └─ package.json
 ├─ database/
 │  └─ database.sql
 ├─ docs/
 ├─ scripts/
-│  ├─ fix/
 │  ├─ seed/
-│  └─ test/
-├─ src/
-│  ├─ constants/
-│  ├─ middleware/
-│  ├─ routes/
-│  ├─ utils/
-│  ├─ db.js
-│  └─ server.js
+│  └─ smoke/
 ├─ frontend/
 │  ├─ src/
-│  │  ├─ api/
+│  │  ├─ app/
+│  │  ├─ assets/
 │  │  ├─ auth/
 │  │  ├─ components/
 │  │  ├─ constants/
-│  │  └─ pages/
-│  ├─ .env
+│  │  ├─ features/
+│  │  ├─ hooks/
+│  │  ├─ layouts/
+│  │  ├─ pages/
+│  │  ├─ services/
+│  │  │  └─ api/
+│  │  ├─ types/
+│  │  └─ utils/
+│  ├─ tests/
+│  ├─ .env.example
 │  └─ package.json
-├─ .env
-├─ .env.example
-├─ package.json
 └─ README.md
 ```
 
@@ -56,7 +66,7 @@ Project dùng để demo các luồng chính:
 
 ### Backend
 
-Tạo file `.env` từ `.env.example`:
+Tạo file `backend/.env` từ `backend/.env.example`:
 
 ```env
 APP_PORT=5000
@@ -109,6 +119,7 @@ Mật khẩu trong script seed đã được hash bcrypt.
 ### Backend
 
 ```bash
+cd backend
 npm install
 ```
 
@@ -126,6 +137,7 @@ Mở 2 terminal.
 ### Backend
 
 ```bash
+cd backend
 npm start
 ```
 
@@ -158,6 +170,7 @@ npm run build
 Chạy khi backend đang mở:
 
 ```bash
+cd backend
 npm run smoke
 ```
 
@@ -184,6 +197,7 @@ SMOKE_DRIVER_PASSWORD=123456
 Các script seed bổ sung nằm trong `scripts/seed/` và đã được gắn npm scripts:
 
 ```bash
+cd backend
 npm run seed:customers
 npm run seed:dashboard
 npm run seed:driver-demo
@@ -230,6 +244,6 @@ Auth đang ở mức phù hợp đồ án / demo local:
 
 ## Ghi chú
 
-- Repo đã được dọn theo hướng `database/`, `scripts/`, `docs/`.
+- Repo được tổ chức theo hướng `backend/`, `frontend/`, `database/`, `docs/`, `scripts/`.
 - `node_modules`, build output, cache và log đã được ignore trong `.gitignore`.
 - Nếu muốn reset dữ liệu sạch hoàn toàn, cách nhanh nhất là chạy lại `database/database.sql`.

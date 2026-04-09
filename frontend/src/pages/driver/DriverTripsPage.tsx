@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { DriverLayout } from '../../components/DriverLayout';
-import { api } from '../../api/client';
+import { api } from '../../services/api/client';
 import { getStoredUser } from '../../auth/session';
 
 interface DriverTrip {

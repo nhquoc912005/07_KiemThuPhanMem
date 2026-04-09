@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { api } from '../../api/client';
+import { api } from '../../services/api/client';
 import { getStoredUser } from '../../auth/session';
 import { DispatcherLayout } from '../../components/DispatcherLayout';
 import { DRIVER_STATUS, TICKET_STATUS, VEHICLE_STATUS } from '../../constants/status';
@@ -192,7 +192,7 @@ export const PlanRoutePage: React.FC = () => {
     setError(null);
 
     try {
-      const res = await api.post<CreatedRouteResponse>('/routes', {
+      const res = await api.post<CreatedRouteResponse>('/route-plans', {
         MaXe: selectedVehicle.MaXe,
         MaTaiXe: selectedDriver.MaTaiXe,
         MaNhanVien: currentUser.MaNhanVien,
@@ -339,34 +339,36 @@ export const PlanRoutePage: React.FC = () => {
               <div style={{ fontSize: 14, color: '#475569' }}>Cần tối thiểu {totalSeatsNeeded} ghế</div>
             </div>
 
-            <div className="cards-grid">
-              {vehicles.map((vehicle) => {
-                const canFit = vehicle.SoCho >= totalSeatsNeeded && vehicle.TrangThaiXe === VEHICLE_STATUS.AVAILABLE;
-                const isSelected = selectedVehicleId === vehicle.MaXe;
+            <div style={selectionListScrollStyle}>
+              <div className="cards-grid" style={{ marginBottom: 0 }}>
+                {vehicles.map((vehicle) => {
+                  const canFit = vehicle.SoCho >= totalSeatsNeeded && vehicle.TrangThaiXe === VEHICLE_STATUS.AVAILABLE;
+                  const isSelected = selectedVehicleId === vehicle.MaXe;
 
-                return (
-                  <div
-                    key={vehicle.MaXe}
-                    onClick={() => canFit && setSelectedVehicleId(vehicle.MaXe)}
-                    style={{
-                      border: `2px solid ${isSelected ? '#155DFC' : '#E5E7EB'}`,
-                      borderRadius: 12,
-                      padding: 20,
-                      cursor: canFit ? 'pointer' : 'not-allowed',
-                      opacity: canFit ? 1 : 0.6,
-                      background: isSelected ? '#EFF6FF' : '#FFFFFF'
-                    }}
-                  >
-                    <div style={{ fontSize: 16, fontWeight: 700, color: '#155DFC', marginBottom: 8 }}>{vehicle.BienSo}</div>
-                    <div style={{ fontSize: 13, color: '#475569', marginBottom: 8 }}>Loại xe: {vehicle.LoaiXe}</div>
-                    <div style={{ fontSize: 13, color: '#475569', marginBottom: 8 }}>Sức chứa: {vehicle.SoCho} ghế</div>
-                    <div style={{ fontSize: 13, color: '#475569', marginBottom: 8 }}>Trạng thái: {vehicle.TrangThaiXe}</div>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: canFit ? '#10B981' : '#EF4444' }}>
-                      {canFit ? 'Đủ điều kiện phân công' : 'Không khả dụng cho nhóm vé này'}
+                  return (
+                    <div
+                      key={vehicle.MaXe}
+                      onClick={() => canFit && setSelectedVehicleId(vehicle.MaXe)}
+                      style={{
+                        border: `2px solid ${isSelected ? '#155DFC' : '#E5E7EB'}`,
+                        borderRadius: 12,
+                        padding: 20,
+                        cursor: canFit ? 'pointer' : 'not-allowed',
+                        opacity: canFit ? 1 : 0.6,
+                        background: isSelected ? '#EFF6FF' : '#FFFFFF'
+                      }}
+                    >
+                      <div style={{ fontSize: 16, fontWeight: 700, color: '#155DFC', marginBottom: 8 }}>{vehicle.BienSo}</div>
+                      <div style={{ fontSize: 13, color: '#475569', marginBottom: 8 }}>Loại xe: {vehicle.LoaiXe}</div>
+                      <div style={{ fontSize: 13, color: '#475569', marginBottom: 8 }}>Sức chứa: {vehicle.SoCho} ghế</div>
+                      <div style={{ fontSize: 13, color: '#475569', marginBottom: 8 }}>Trạng thái: {vehicle.TrangThaiXe}</div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: canFit ? '#10B981' : '#EF4444' }}>
+                        {canFit ? 'Đủ điều kiện phân công' : 'Không khả dụng cho nhóm vé này'}
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
 
             <div style={{ display: 'flex', gap: 16 }}>
@@ -384,35 +386,64 @@ export const PlanRoutePage: React.FC = () => {
           <div style={{ background: '#FFFFFF', border: '1px solid #F3F4F6', borderRadius: 14, padding: 24, boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
             <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 24, color: '#101828' }}>Chọn tài xế phù hợp</h3>
 
-            <div className="cards-grid-drivers">
-              {drivers.map((driver) => {
-                const isAvailable = driver.TrangThaiTaiXe === DRIVER_STATUS.AVAILABLE;
-                const isSelected = selectedDriverId === driver.MaTaiXe;
+            <div style={selectionListScrollStyle}>
+              <div className="cards-grid-drivers" style={{ marginBottom: 0 }}>
+                {drivers.map((driver) => {
+                  const isAvailable = driver.TrangThaiTaiXe === DRIVER_STATUS.AVAILABLE;
+                  const isSelected = selectedDriverId === driver.MaTaiXe;
+                  const statusBadge = buildStatusBadge(driver.TrangThaiTaiXe);
 
-                return (
-                  <div
-                    key={driver.MaTaiXe}
-                    onClick={() => isAvailable && setSelectedDriverId(driver.MaTaiXe)}
-                    style={{
-                      border: `2px solid ${isSelected ? '#2B7FFF' : '#E5E7EB'}`,
-                      borderRadius: 14,
-                      padding: 20,
-                      cursor: isAvailable ? 'pointer' : 'not-allowed',
-                      background: isSelected ? '#EFF6FF' : '#FFFFFF',
-                      opacity: isAvailable ? 1 : 0.65
-                    }}
-                  >
-                    <div style={{ fontSize: 15, fontWeight: 700, color: '#101828', marginBottom: 8 }}>{driver.HoTen}</div>
-                    <div style={{ fontSize: 13, color: '#475569', marginBottom: 6 }}>SĐT: {driver.SoDienThoai}</div>
-                    <div style={{ fontSize: 13, color: '#475569', marginBottom: 6 }}>
-                      Mã tài xế: TX{String(driver.MaTaiXe).padStart(3, '0')}
+                  return (
+                    <div
+                      key={driver.MaTaiXe}
+                      onClick={() => isAvailable && setSelectedDriverId(driver.MaTaiXe)}
+                      style={{
+                        border: `2px solid ${isSelected ? '#2B7FFF' : '#E5E7EB'}`,
+                        borderRadius: 14,
+                        padding: 20,
+                        cursor: isAvailable ? 'pointer' : 'not-allowed',
+                        background: isSelected ? '#EFF6FF' : '#FFFFFF',
+                        opacity: isAvailable ? 1 : 0.65,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: 16
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 16, minWidth: 0 }}>
+                        <div
+                          style={{
+                            width: 48,
+                            height: 48,
+                            borderRadius: '999px',
+                            background: isAvailable ? '#16A34A' : '#94A3B8',
+                            color: '#FFFFFF',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontWeight: 800,
+                            fontSize: 18,
+                            flex: '0 0 auto'
+                          }}
+                        >
+                          {String(driver.HoTen || 'T').trim().charAt(0).toUpperCase()}
+                        </div>
+
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ fontSize: 15, fontWeight: 800, color: '#101828', marginBottom: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {driver.HoTen}
+                          </div>
+                          <div style={{ fontSize: 13, color: '#64748B', fontWeight: 600 }}>
+                            Mã: TX{String(driver.MaTaiXe).padStart(3, '0')}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div style={statusBadge}>{driver.TrangThaiTaiXe}</div>
                     </div>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: isAvailable ? '#10B981' : '#D97706' }}>
-                      {driver.TrangThaiTaiXe}
-                    </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
 
             <div style={{ display: 'flex', gap: 12 }}>
@@ -505,6 +536,40 @@ export const PlanRoutePage: React.FC = () => {
       </div>
     </DispatcherLayout>
   );
+};
+
+const selectionListScrollStyle: React.CSSProperties = {
+  maxHeight: 'min(560px, 60vh)',
+  overflowY: 'auto',
+  overscrollBehavior: 'contain',
+  scrollBehavior: 'smooth',
+  paddingRight: 6,
+  marginBottom: 32
+};
+
+function buildStatusBadge(status: string): React.CSSProperties {
+  if (status === DRIVER_STATUS.AVAILABLE) {
+    return { background: '#E0F2FE', color: '#0B63CE', border: '1px solid #BFDBFE', ...statusBadgeBase };
+  }
+
+  if (status === DRIVER_STATUS.IN_PROGRESS) {
+    return { background: '#FEE2E2', color: '#B42318', border: '1px solid #FECDD3', ...statusBadgeBase };
+  }
+
+  if (status === DRIVER_STATUS.ASSIGNED) {
+    return { background: '#FEF9C3', color: '#92400E', border: '1px solid #FDE68A', ...statusBadgeBase };
+  }
+
+  return { background: '#F3F4F6', color: '#475569', border: '1px solid #E5E7EB', ...statusBadgeBase };
+}
+
+const statusBadgeBase: React.CSSProperties = {
+  padding: '8px 12px',
+  borderRadius: 10,
+  fontSize: 12,
+  fontWeight: 800,
+  whiteSpace: 'nowrap',
+  flex: '0 0 auto'
 };
 
 interface StepChipProps {

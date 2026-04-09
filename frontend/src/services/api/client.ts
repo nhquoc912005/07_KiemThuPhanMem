@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { clearAuthSession, getStoredAccessToken } from '../auth/session';
+import { clearAuthSession, getStoredAccessToken } from '../../auth/session';
 
 const host = window.location.hostname;
 const defaultBaseUrl = `http://${host}:5000/api/v1`;

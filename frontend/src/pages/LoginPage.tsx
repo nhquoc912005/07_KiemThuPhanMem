@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { api } from '../api/client';
+import { api } from '../services/api/client';
 import { getDefaultRouteByRole, getStoredSession, isDriverRole, saveAuthSession } from '../auth/session';
 
 export const LoginPage: React.FC = () => {

@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { api } from '../../api/client';
+import React, { useEffect, useRef, useState } from 'react';
+import { api } from '../../services/api/client';
 import { DispatcherLayout } from '../../components/DispatcherLayout';
 import { CUSTOMER_STATUS } from '../../constants/status';
 
@@ -19,6 +19,8 @@ export const CustomersPage: React.FC = () => {
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
   const [deletingCustomer, setDeletingCustomer] = useState<Customer | null>(null);
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [phoneError, setPhoneError] = useState<string | null>(null);
+  const phoneInputRef = useRef<HTMLInputElement | null>(null);
 
   const [form, setForm] = useState<{
     TenKhachHang: string
@@ -58,6 +60,7 @@ export const CustomersPage: React.FC = () => {
 
   const handleEditClick = (customer: Customer) => {
     setEditingCustomer(customer);
+    setPhoneError(null);
     setForm({
       TenKhachHang: customer.TenKhachHang,
       SoDienThoai: customer.SoDienThoai,
@@ -67,16 +70,31 @@ export const CustomersPage: React.FC = () => {
     });
   };
 
+  const closeEditModal = () => {
+    setEditingCustomer(null);
+    setPhoneError(null);
+  };
+
   const handleSaveEdit = async () => {
     if (!editingCustomer) return;
 
+    const normalizedPhoneNumber = normalizePhoneNumber(form.SoDienThoai);
+    if (!isValidVietnamPhoneNumber(normalizedPhoneNumber)) {
+      setPhoneError('Số điện thoại không hợp lệ !!!');
+      phoneInputRef.current?.focus();
+      return;
+    }
+
     setSaving(true);
     try {
-      const res = await api.put<Customer>(`/customers/${editingCustomer.MaKhachHang}`, form);
+      const res = await api.put<Customer>(`/customers/${editingCustomer.MaKhachHang}`, {
+        ...form,
+        SoDienThoai: normalizedPhoneNumber
+      });
       setCustomers((prev) =>
         prev.map((customer) => (customer.MaKhachHang === res.data.MaKhachHang ? res.data : customer))
       );
-      setEditingCustomer(null);
+      closeEditModal();
       setNotification({ type: 'success', message: 'Cập nhật thông tin khách hàng thành công' });
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
@@ -153,48 +171,66 @@ export const CustomersPage: React.FC = () => {
               </div>
             </div>
           ))
-        )}
+      )}
       </div>
 
       {editingCustomer && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
-          <div style={{ width: 720, maxWidth: '95%', background: '#fff', padding: 32, borderRadius: 16, boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }}>
-            <h2 style={{ marginTop: 0, marginBottom: 24, fontSize: 24 }}>Chỉnh sửa thông tin khách hàng</h2>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-              <Field label="Mã khách hàng">
-                <input value={formatCustomerId(editingCustomer.MaKhachHang)} disabled style={fieldInputStyle(true)} />
-              </Field>
-              <Field label="Họ và tên">
-                <input value={form.TenKhachHang} onChange={(e) => setForm((prev) => ({ ...prev, TenKhachHang: e.target.value }))} style={fieldInputStyle()} />
-              </Field>
-              <Field label="Số điện thoại">
-                <input value={form.SoDienThoai} onChange={(e) => setForm((prev) => ({ ...prev, SoDienThoai: e.target.value }))} style={fieldInputStyle()} />
-              </Field>
-              <Field label="Trạng thái">
-                <select
-                  value={form.TrangThai}
-                  onChange={(e) => setForm((prev) => ({ ...prev, TrangThai: e.target.value }))}
-                  style={fieldInputStyle()}
-                >
-                  <option value={CUSTOMER_STATUS.ACTIVE}>{CUSTOMER_STATUS.ACTIVE}</option>
-                  <option value={CUSTOMER_STATUS.INACTIVE}>{CUSTOMER_STATUS.INACTIVE}</option>
-                </select>
-              </Field>
-              <Field label="Từ địa chỉ">
-                <input value={form.DiaChiDon} onChange={(e) => setForm((prev) => ({ ...prev, DiaChiDon: e.target.value }))} style={fieldInputStyle()} />
-              </Field>
-              <Field label="Đến địa chỉ">
-                <input value={form.DiaChiTra} onChange={(e) => setForm((prev) => ({ ...prev, DiaChiTra: e.target.value }))} style={fieldInputStyle()} />
-              </Field>
-            </div>
+        <div
+          style={editModalOverlayStyle}
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) {
+              closeEditModal();
+            }
+          }}
+        >
+          <div style={editModalStyle} onMouseDown={(event) => event.stopPropagation()}>
+            <button type="button" aria-label="Đóng" onClick={closeEditModal} style={editModalCloseButtonStyle}>
+              X
+            </button>
 
-            <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 24 }}>
-              <button onClick={() => setEditingCustomer(null)} style={secondaryButtonStyle}>
-                Hủy bỏ
-              </button>
-              <button onClick={handleSaveEdit} disabled={saving} style={primaryButtonStyle}>
-                {saving ? 'Đang lưu...' : 'Lưu'}
-              </button>
+            <h2 style={editModalTitleStyle}>Chỉnh sửa thông tin</h2>
+
+            <div style={editModalGridStyle}>
+              <EditField label="Mã khách hàng" required>
+                <input value={formatCustomerId(editingCustomer.MaKhachHang)} disabled style={editModalInputStyle({ disabled: true })} />
+              </EditField>
+
+              <EditField label="Từ địa chỉ" required>
+                <input value={form.DiaChiDon} onChange={(e) => setForm((prev) => ({ ...prev, DiaChiDon: e.target.value }))} style={editModalInputStyle()} />
+              </EditField>
+
+              <EditField label="Họ và tên" required>
+                <input value={form.TenKhachHang} onChange={(e) => setForm((prev) => ({ ...prev, TenKhachHang: e.target.value }))} style={editModalInputStyle()} />
+              </EditField>
+
+              <EditField label="Đến địa chỉ" required>
+                <input value={form.DiaChiTra} onChange={(e) => setForm((prev) => ({ ...prev, DiaChiTra: e.target.value }))} style={editModalInputStyle()} />
+              </EditField>
+
+              <EditField label="Số điện thoại" required>
+                <input
+                  ref={phoneInputRef}
+                  value={form.SoDienThoai}
+                  onChange={(e) => {
+                    const nextValue = e.target.value;
+                    setForm((prev) => ({ ...prev, SoDienThoai: nextValue }));
+                    if (phoneError && isValidVietnamPhoneNumber(normalizePhoneNumber(nextValue))) {
+                      setPhoneError(null);
+                    }
+                  }}
+                  style={editModalInputStyle({ invalid: Boolean(phoneError) })}
+                />
+                {phoneError && <div style={phoneErrorTextStyle}>{phoneError}</div>}
+              </EditField>
+
+              <div style={editModalActionsCellStyle}>
+                <button type="button" onClick={handleSaveEdit} disabled={saving} style={editModalPrimaryButtonStyle}>
+                  {saving ? 'Đang lưu...' : 'Lưu'}
+                </button>
+                <button type="button" onClick={closeEditModal} style={editModalSecondaryButtonStyle}>
+                  Hủy bỏ
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -238,18 +274,6 @@ export const CustomersPage: React.FC = () => {
   );
 };
 
-const fieldInputStyle = (disabled = false): React.CSSProperties => ({
-  width: '100%',
-  height: 44,
-  boxSizing: 'border-box',
-  background: disabled ? '#F8FAFC' : '#FFFFFF',
-  border: '1px solid rgba(0, 0, 0, 0.15)',
-  borderRadius: 10,
-  padding: '0 14px',
-  fontSize: 15,
-  color: '#000000'
-});
-
 const primaryButtonStyle: React.CSSProperties = {
   flex: 1,
   padding: '12px 0',
@@ -274,9 +298,142 @@ const secondaryButtonStyle: React.CSSProperties = {
   cursor: 'pointer'
 };
 
-const Field: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
+function normalizePhoneNumber(raw: string) {
+  return String(raw || '')
+    .trim()
+    .replace(/[\s.-]/g, '');
+}
+
+function isValidVietnamPhoneNumber(raw: string) {
+  const phone = normalizePhoneNumber(raw);
+  return /^0\d{9}$/.test(phone) || /^\+84\d{9}$/.test(phone) || /^84\d{9}$/.test(phone);
+}
+
+const editModalOverlayStyle: React.CSSProperties = {
+  position: 'fixed',
+  inset: 0,
+  background: 'rgba(15, 23, 42, 0.35)',
+  backdropFilter: 'blur(2px)',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  padding: 24,
+  zIndex: 1000
+};
+
+const editModalStyle: React.CSSProperties = {
+  width: 960,
+  maxWidth: '100%',
+  background: '#FFFFFF',
+  borderRadius: 16,
+  padding: '28px 32px 32px',
+  boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)',
+  position: 'relative'
+};
+
+const editModalTitleStyle: React.CSSProperties = {
+  margin: 0,
+  marginBottom: 22,
+  fontSize: 34,
+  fontWeight: 800,
+  color: '#111827'
+};
+
+const editModalCloseButtonStyle: React.CSSProperties = {
+  position: 'absolute',
+  top: 18,
+  right: 18,
+  width: 44,
+  height: 44,
+  borderRadius: 10,
+  border: 'none',
+  background: 'transparent',
+  fontSize: 34,
+  lineHeight: 1,
+  cursor: 'pointer',
+  color: '#111827'
+};
+
+const editModalGridStyle: React.CSSProperties = {
+  display: 'grid',
+  gridTemplateColumns: '1fr 1fr',
+  columnGap: 44,
+  rowGap: 28
+};
+
+const editModalLabelStyle: React.CSSProperties = {
+  fontSize: 22,
+  fontWeight: 500,
+  color: '#111827',
+  marginBottom: 10
+};
+
+const requiredMarkStyle: React.CSSProperties = {
+  color: '#EF4444',
+  fontWeight: 700,
+  marginLeft: 6
+};
+
+const editModalInputStyle = (options?: { disabled?: boolean; invalid?: boolean }): React.CSSProperties => ({
+  width: '100%',
+  height: 58,
+  boxSizing: 'border-box',
+  borderRadius: 12,
+  padding: '0 18px',
+  fontSize: 22,
+  color: '#111827',
+  border: `1.5px solid ${options?.invalid ? '#EF4444' : '#9CA3AF'}`,
+  background: options?.disabled ? '#F3F4F6' : options?.invalid ? '#FEE2E2' : '#FFFFFF',
+  outline: 'none'
+});
+
+const phoneErrorTextStyle: React.CSSProperties = {
+  marginTop: 12,
+  fontSize: 20,
+  fontWeight: 600,
+  color: '#EF4444'
+};
+
+const editModalActionsCellStyle: React.CSSProperties = {
+  display: 'flex',
+  justifyContent: 'flex-end',
+  alignItems: 'center',
+  gap: 18,
+  paddingTop: 42
+};
+
+const editModalPrimaryButtonStyle: React.CSSProperties = {
+  height: 58,
+  minWidth: 220,
+  padding: '0 28px',
+  background: '#1D4ED8',
+  borderRadius: 12,
+  border: 'none',
+  color: '#FFFFFF',
+  fontSize: 22,
+  fontWeight: 800,
+  cursor: 'pointer'
+};
+
+const editModalSecondaryButtonStyle: React.CSSProperties = {
+  height: 58,
+  minWidth: 200,
+  padding: '0 28px',
+  background: '#FFFFFF',
+  borderRadius: 12,
+  border: '1.5px solid #9CA3AF',
+  color: '#111827',
+  fontSize: 22,
+  fontWeight: 800,
+  cursor: 'pointer'
+};
+
+const EditField: React.FC<{ label: string; required?: boolean; children: React.ReactNode }> = ({ label, required, children }) => (
   <div>
-    <label style={{ display: 'block', marginBottom: 8, fontSize: 15, fontWeight: 600 }}>{label}</label>
+    <div style={editModalLabelStyle}>
+      {label}
+      {required ? <span style={requiredMarkStyle}>*</span> : null}
+    </div>
     {children}
   </div>
 );

@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { api } from '../api/client';
+import { api } from '../services/api/client';
 
 export const ResetPasswordPage: React.FC = () => {
   const location = useLocation();

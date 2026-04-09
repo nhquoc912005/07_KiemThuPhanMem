@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { api } from '../../api/client';
+import { api } from '../../services/api/client';
 import { DispatcherLayout } from '../../components/DispatcherLayout';
 
 interface ReportRow {

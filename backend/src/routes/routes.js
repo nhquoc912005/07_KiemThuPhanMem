@@ -176,6 +176,47 @@ async function syncResources(db, route, routeStatus) {
       SET TrangThaiTaiXe = @TrangThaiTaiXe
       WHERE MaTaiXe = @MaTaiXe
     `);
+
+  // Sync sang external_* để danh sách chọn xe/tài xế (UI) phản ánh đúng trạng thái.
+  const externalVehicleAvailability =
+    vehicleStatus === 'Đã phân công'
+      ? 'ASSIGNED'
+      : vehicleStatus === 'Đang chạy'
+        ? 'ON_TRIP'
+        : vehicleStatus === 'Bảo trì'
+          ? 'MAINTENANCE'
+          : 'AVAILABLE';
+
+  const externalDriverAvailability =
+    driverStatus === 'Đã phân công'
+      ? 'ASSIGNED'
+      : driverStatus === 'Đang thực hiện'
+        ? 'BUSY'
+        : driverStatus === 'Không sẵn sàng' || driverStatus === 'Ngừng hoạt động'
+          ? 'OFF'
+          : 'AVAILABLE';
+
+  await db
+    .request()
+    .input('MaXe', sql.Int, route.MaXe)
+    .input('availability', sql.NVarChar(20), externalVehicleAvailability)
+    .query(`
+      UPDATE external_vehicles
+      SET availability_status = @availability,
+          updated_at = GETDATE()
+      WHERE legacy_ma_xe = @MaXe
+    `);
+
+  await db
+    .request()
+    .input('MaTaiXe', sql.Int, route.MaTaiXe)
+    .input('availability', sql.NVarChar(20), externalDriverAvailability)
+    .query(`
+      UPDATE external_drivers
+      SET availability_status = @availability,
+          updated_at = GETDATE()
+      WHERE legacy_ma_tai_xe = @MaTaiXe
+    `);
 }
 
 async function syncTicketsForCancelledRoute(db, routeId) {

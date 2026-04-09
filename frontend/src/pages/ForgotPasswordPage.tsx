@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { api } from '../api/client';
+import { api } from '../services/api/client';
 
 export const ForgotPasswordPage: React.FC = () => {
   const [phone, setPhone] = useState('');
