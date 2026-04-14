@@ -246,12 +246,12 @@ VALUES
     (N'7:00 - 9:00', 1, N'Cần trung chuyển', 4),
     (N'7:00 - 9:00', 2, N'Cần trung chuyển', 5),
     (N'7:00 - 9:00', 1, N'Cần trung chuyển', 6),
-    (N'9:00 - 9:00', 1, N'Cần trung chuyển', 7),
-    (N'9:00 - 9:00', 2, N'Cần trung chuyển', 8),
-    (N'9:00 - 9:00', 1, N'Cần trung chuyển', 9),
-    (N'9:00 - 9:00', 1, N'Cần trung chuyển', 10),
-    (N'9:00 - 9:00', 2, N'Cần trung chuyển', 11),
-    (N'9:00 - 9:00', 1, N'Cần trung chuyển', 12),
+    (N'9:00 - 11:00', 1, N'Cần trung chuyển', 7),
+    (N'9:00 - 11:00', 2, N'Cần trung chuyển', 8),
+    (N'9:00 - 11:00', 1, N'Cần trung chuyển', 9),
+    (N'9:00 - 11:00', 1, N'Cần trung chuyển', 10),
+    (N'9:00 - 11:00', 2, N'Cần trung chuyển', 11),
+    (N'9:00 - 11:00', 1, N'Cần trung chuyển', 12),
     (N'11:00 - 13:00', 1, N'Cần trung chuyển', 13),
     (N'11:00 - 13:00', 2, N'Cần trung chuyển', 14),
     (N'11:00 - 13:00', 1, N'Cần trung chuyển', 15),
@@ -297,3 +297,5 @@ VALUES (N'Đang tại Quận 5', N'Đang thực hiện', @MaLoTrinh1);
 --  Tên đăng nhập: taixe1
 --  Mật khẩu:      123456
 
+SELECT*FROM ChiTietLoTrinh
+select*from KhachHang
