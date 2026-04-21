@@ -1,6 +1,8 @@
 const express = require('express');
 const { getPool, sql } = require('../db');
+const { loadRoutePlanSyncState, syncRoutePlanProjection } = require('../services/routePlanSyncService');
 const { DISPATCHER_ROLE, DRIVER_ROLE } = require('../utils/auth');
+const { sendError, sendSuccess } = require('../utils/http');
 
 const router = express.Router();
 
@@ -33,6 +35,14 @@ const FINAL_ROUTE_STATUSES = ['Hoàn thành', 'Đã hủy'];
 const DONE_STOP_STATUSES = new Set(['Đã trả khách', 'Khách hủy']);
 const ALLOWED_STOP_STATUSES = ['Đã đến điểm đón', 'Đã đón khách', 'Đã trả khách', 'Khách hủy'];
 
+const VALID_ROUTE_STATUSES = new Set([...ACTIVE_ROUTE_STATUSES, ...FINAL_ROUTE_STATUSES]);
+const DRIVER_ALLOWED_ROUTE_STATUSES = new Set([
+  ACTIVE_ROUTE_STATUSES[1],
+  FINAL_ROUTE_STATUSES[0],
+  FINAL_ROUTE_STATUSES[1]
+]);
+const ROUTE_SYNC_POLL_INTERVAL_SECONDS = 15;
+
 function toUniqueIntList(values) {
   return [...new Set((Array.isArray(values) ? values : []).map((value) => Number(value)).filter(Number.isInteger))];
 }
@@ -43,10 +53,63 @@ function parseDateTime(value) {
   return Number.isNaN(date.getTime()) ? null : date;
 }
 
+function toMinuteTimestamp(value) {
+  const parsed = value instanceof Date ? value : parseDateTime(value);
+  if (!parsed) return null;
+  return Math.floor(parsed.getTime() / 60000);
+}
+
+function hasDateTimeChanged(nextValue, currentValue) {
+  return toMinuteTimestamp(nextValue) !== toMinuteTimestamp(currentValue);
+}
+
+function hasTrimmedTextChanged(nextValue, currentValue) {
+  return String(nextValue || '').trim() !== String(currentValue || '').trim();
+}
+
 function buildRoutePlanText(tickets) {
   const pickupPoints = [...new Set(tickets.map((ticket) => String(ticket.DiaChiDon || '').trim()).filter(Boolean))];
   const dropPoints = [...new Set(tickets.map((ticket) => String(ticket.DiaChiTra || '').trim()).filter(Boolean))];
   return [...pickupPoints, ...dropPoints].join(' -> ');
+}
+
+function buildDriverSyncContract(routeId) {
+  return {
+    mode: 'POLL',
+    eventsEndpoint: `/api/v1/routes/${routeId}/sync-events`,
+    routeDetailEndpoint: `/api/v1/routes/${routeId}`,
+    recommendedIntervalSeconds: ROUTE_SYNC_POLL_INTERVAL_SECONDS
+  };
+}
+
+function buildRouteSyncPayload(routeId, syncState) {
+  return {
+    available: Boolean(syncState),
+    contract: buildDriverSyncContract(routeId),
+    state: syncState || {
+      routePlanId: null,
+      planCode: null,
+      status: null,
+      plannedStartAt: null,
+      plannedEndAt: null,
+      notes: null,
+      updatedAt: null,
+      latestEventId: null,
+      events: []
+    }
+  };
+}
+
+async function loadRouteSyncForResponse(db, routeId, options) {
+  try {
+    return await loadRoutePlanSyncState(db, routeId, options);
+  } catch (error) {
+    if (error?.code === 'EREQUEST' && /route_plan/i.test(String(error.message || ''))) {
+      return null;
+    }
+
+    throw error;
+  }
 }
 
 async function loadRouteSummary(db, routeId) {
@@ -249,7 +312,7 @@ router.get('/', async (req, res) => {
   const { status } = req.query;
 
   if (!isDispatcherRequest(req)) {
-    return res.status(403).json({ message: 'Bạn không có quyền truy cập danh sách lộ trình tổng hợp' });
+    return sendError(res, 403, 'Bạn không có quyền truy cập danh sách lộ trình tổng hợp', 'FORBIDDEN');
   }
 
   try {
@@ -260,10 +323,10 @@ router.get('/', async (req, res) => {
       rows = rows.filter((row) => row.TrangThaiLoTrinh === status);
     }
 
-    res.json(rows);
+    return sendSuccess(res, rows, 'Lấy danh sách lộ trình thành công');
   } catch (err) {
     console.error('Get routes error:', err);
-    res.status(500).json({ message: 'Lỗi lấy danh sách lộ trình', detail: err.message });
+    return sendError(res, 500, 'Lỗi lấy danh sách lộ trình', 'SERVER_ERROR', { detail: err.message });
   }
 });
 
@@ -273,11 +336,11 @@ router.get('/by-driver/:driverId', async (req, res) => {
   const { status } = req.query;
 
   if (!Number.isInteger(driverId)) {
-    return res.status(400).json({ message: 'Mã tài xế không hợp lệ' });
+    return sendError(res, 400, 'Mã tài xế không hợp lệ', 'VALIDATION_ERROR');
   }
 
   if (!canAccessDriverResource(req, driverId)) {
-    return res.status(403).json({ message: 'Bạn không có quyền xem chuyến của tài xế này' });
+    return sendError(res, 403, 'Bạn không có quyền xem chuyến của tài xế này', 'FORBIDDEN');
   }
 
   try {
@@ -329,10 +392,12 @@ router.get('/by-driver/:driverId', async (req, res) => {
     `;
 
     const result = await request.query(query);
-    res.json(result.recordset);
+    return sendSuccess(res, result.recordset, 'Lấy danh sách chuyến cho tài xế thành công');
   } catch (err) {
     console.error('Get routes by driver error:', err);
-    res.status(500).json({ message: 'Lỗi lấy danh sách chuyến cho tài xế', detail: err.message });
+    return sendError(res, 500, 'Lỗi lấy danh sách chuyến cho tài xế', 'SERVER_ERROR', {
+      detail: err.message
+    });
   }
 });
 
@@ -341,7 +406,7 @@ router.get('/:id', async (req, res) => {
   const routeId = Number(req.params.id);
 
   if (!Number.isInteger(routeId)) {
-    return res.status(400).json({ message: 'Mã lộ trình không hợp lệ' });
+    return sendError(res, 400, 'Mã lộ trình không hợp lệ', 'VALIDATION_ERROR');
   }
 
   try {
@@ -349,36 +414,39 @@ router.get('/:id', async (req, res) => {
     const route = await loadRouteSummary(pool, routeId);
 
     if (!route) {
-      return res.status(404).json({ message: 'Không tìm thấy lộ trình' });
+      return sendError(res, 404, 'Không tìm thấy lộ trình', 'NOT_FOUND');
     }
 
     if (!canAccessRoute(req, route)) {
-      return res.status(403).json({ message: 'Bạn không có quyền xem lộ trình này' });
+      return sendError(res, 403, 'Bạn không có quyền xem lộ trình này', 'FORBIDDEN');
     }
 
     const stops = await loadRouteStops(pool, routeId);
+    const syncState = await loadRouteSyncForResponse(pool, routeId);
 
-    res.json({
-      route,
-      stops
-    });
+    return sendSuccess(
+      res,
+      {
+        route,
+        stops,
+        sync: buildRouteSyncPayload(routeId, syncState)
+      },
+      'Lấy thông tin lộ trình thành công'
+    );
   } catch (err) {
     console.error('Get route detail error:', err);
-    res.status(500).json({ message: 'Lỗi lấy thông tin lộ trình', detail: err.message });
+    return sendError(res, 500, 'Lỗi lấy thông tin lộ trình', 'SERVER_ERROR', { detail: err.message });
   }
 });
 
 // POST /routes/:id/incident - báo cáo sự cố chuyến
-router.post('/:id/incident', async (req, res) => {
+router.get('/:id/sync-events', async (req, res) => {
   const routeId = Number(req.params.id);
-  const { description, location } = req.body || {};
+  const sinceId = req.query.sinceId;
+  const limit = req.query.limit;
 
   if (!Number.isInteger(routeId)) {
-    return res.status(400).json({ message: 'Mã lộ trình không hợp lệ' });
-  }
-
-  if (!description || String(description).trim().length < 3) {
-    return res.status(400).json({ message: 'Vui lòng nhập nội dung sự cố.' });
+    return sendError(res, 400, 'MÃ£ lá»™ trÃ¬nh khÃ´ng há»£p lá»‡', 'VALIDATION_ERROR');
   }
 
   try {
@@ -386,11 +454,53 @@ router.post('/:id/incident', async (req, res) => {
     const route = await loadRouteSummary(pool, routeId);
 
     if (!route) {
-      return res.status(404).json({ message: 'Không tìm thấy lộ trình' });
+      return sendError(res, 404, 'KhÃ´ng tÃ¬m tháº¥y lá»™ trÃ¬nh', 'NOT_FOUND');
     }
 
     if (!canAccessRoute(req, route)) {
-      return res.status(403).json({ message: 'Bạn không có quyền báo cáo sự cố cho lộ trình này' });
+      return sendError(res, 403, 'Báº¡n khÃ´ng cÃ³ quyá»n xem cáº­p nháº­t lá»™ trÃ¬nh nÃ y', 'FORBIDDEN');
+    }
+
+    const syncState = await loadRouteSyncForResponse(pool, routeId, { sinceId, limit });
+    return sendSuccess(
+      res,
+      {
+        routeId,
+        sync: buildRouteSyncPayload(routeId, syncState)
+      },
+      'Láº¥y sá»± kiá»‡n Ä‘á»“ng bá»™ lá»™ trÃ¬nh thÃ nh cÃ´ng'
+    );
+  } catch (err) {
+    console.error('Get route sync events error:', err);
+    return sendError(res, 500, 'Lá»—i láº¥y sá»± kiá»‡n Ä‘á»“ng bá»™ lá»™ trÃ¬nh', 'SERVER_ERROR', {
+      detail: err.message
+    });
+  }
+});
+
+router.post('/:id/incident', async (req, res) => {
+  const routeId = Number(req.params.id);
+  const { description, location } = req.body || {};
+  const createdBy = String(req.auth?.TenDangNhap || req.auth?.HoTen || '').trim() || null;
+
+  if (!Number.isInteger(routeId)) {
+    return sendError(res, 400, 'Mã lộ trình không hợp lệ', 'VALIDATION_ERROR');
+  }
+
+  if (!description || String(description).trim().length < 3) {
+    return sendError(res, 400, 'Vui lòng nhập nội dung sự cố.', 'VALIDATION_ERROR');
+  }
+
+  try {
+    const pool = await getPool();
+    const route = await loadRouteSummary(pool, routeId);
+
+    if (!route) {
+      return sendError(res, 404, 'Không tìm thấy lộ trình', 'NOT_FOUND');
+    }
+
+    if (!canAccessRoute(req, route)) {
+      return sendError(res, 403, 'Bạn không có quyền báo cáo sự cố cho lộ trình này', 'FORBIDDEN');
     }
 
     await pool
@@ -404,6 +514,12 @@ router.post('/:id/incident', async (req, res) => {
       `);
 
     await syncResources(pool, route, 'Đang gặp sự cố');
+    await syncRoutePlanProjection(pool, routeId, {
+      eventType: 'INCIDENT_REPORTED',
+      message: String(description).trim(),
+      payload: { location: location ? String(location).trim() : null },
+      createdBy
+    });
 
     await pool
       .request()
@@ -421,13 +537,16 @@ router.post('/:id/incident', async (req, res) => {
 
     const updatedRoute = await loadRouteSummary(pool, routeId);
 
-    return res.json({
-      message: 'Đã ghi nhận sự cố.',
-      route: updatedRoute
-    });
+    return sendSuccess(
+      res,
+      {
+        route: updatedRoute
+      },
+      'Đã ghi nhận sự cố.'
+    );
   } catch (err) {
     console.error('Report incident error:', err);
-    return res.status(500).json({ message: 'Lỗi báo cáo sự cố', detail: err.message });
+    return sendError(res, 500, 'Lỗi báo cáo sự cố', 'SERVER_ERROR', { detail: err.message });
   }
 });
 
@@ -436,15 +555,19 @@ router.patch('/:routeId/stops/:stopId/status', async (req, res) => {
   const routeId = Number(req.params.routeId);
   const stopId = Number(req.params.stopId);
   const { status } = req.body || {};
+  const createdBy = String(req.auth?.TenDangNhap || req.auth?.HoTen || '').trim() || null;
 
   if (!Number.isInteger(routeId) || !Number.isInteger(stopId)) {
-    return res.status(400).json({ message: 'Mã lộ trình hoặc mã điểm đón không hợp lệ' });
+    return sendError(res, 400, 'Mã lộ trình hoặc mã điểm đón không hợp lệ', 'VALIDATION_ERROR');
   }
 
   if (!ALLOWED_STOP_STATUSES.includes(status)) {
-    return res.status(400).json({
-      message: `Trạng thái khách không hợp lệ. Cho phép: ${ALLOWED_STOP_STATUSES.join(' / ')}`
-    });
+    return sendError(
+      res,
+      400,
+      `Trạng thái khách không hợp lệ. Cho phép: ${ALLOWED_STOP_STATUSES.join(' / ')}`,
+      'VALIDATION_ERROR'
+    );
   }
 
   try {
@@ -452,18 +575,20 @@ router.patch('/:routeId/stops/:stopId/status', async (req, res) => {
     const route = await loadRouteSummary(pool, routeId);
 
     if (!route) {
-      return res.status(404).json({ message: 'Không tìm thấy lộ trình' });
+      return sendError(res, 404, 'Không tìm thấy lộ trình', 'NOT_FOUND');
     }
 
     if (!canAccessRoute(req, route)) {
-      return res.status(403).json({ message: 'Bạn không có quyền cập nhật khách cho lộ trình này' });
+      return sendError(res, 403, 'Bạn không có quyền cập nhật khách cho lộ trình này', 'FORBIDDEN');
     }
 
     if (!['Đang thực hiện', 'Đang gặp sự cố'].includes(route.TrangThaiLoTrinh)) {
-      return res.status(422).json({
-        message:
-          'Chỉ được cập nhật trạng thái khách khi chuyến đang ở trạng thái "Đang thực hiện" hoặc "Đang gặp sự cố".'
-      });
+      return sendError(
+        res,
+        422,
+        'Chỉ được cập nhật trạng thái khách khi chuyến đang ở trạng thái "Đang thực hiện" hoặc "Đang gặp sự cố".',
+        'INVALID_ROUTE_STATUS'
+      );
     }
 
     const stopResult = await pool
@@ -477,7 +602,7 @@ router.patch('/:routeId/stops/:stopId/status', async (req, res) => {
       `);
 
     if (stopResult.recordset.length === 0) {
-      return res.status(404).json({ message: 'Không tìm thấy điểm đón/trả' });
+      return sendError(res, 404, 'Không tìm thấy điểm đón/trả', 'NOT_FOUND');
     }
 
     const stop = stopResult.recordset[0];
@@ -530,14 +655,30 @@ router.patch('/:routeId/stops/:stopId/status', async (req, res) => {
       await syncResources(pool, route, 'Hoàn thành');
     }
 
-    return res.json({
-      message: allDone ? 'Đã cập nhật trạng thái khách. Chuyến đã hoàn thành.' : 'Đã cập nhật trạng thái khách.',
-      stop: { ...stop, TrangThaiKhach: status },
-      routeAutoCompleted: allDone
+    await syncRoutePlanProjection(pool, routeId, {
+      eventType: 'STOP_STATUS_UPDATED',
+      message: `Cập nhật điểm đón/trả ${stopId}`,
+      payload: {
+        stopId,
+        status,
+        routeAutoCompleted: allDone
+      },
+      createdBy
     });
+
+    return sendSuccess(
+      res,
+      {
+        stop: { ...stop, TrangThaiKhach: status },
+        routeAutoCompleted: allDone
+      },
+      allDone ? 'Đã cập nhật trạng thái khách. Chuyến đã hoàn thành.' : 'Đã cập nhật trạng thái khách.'
+    );
   } catch (err) {
     console.error('Update stop status error:', err);
-    return res.status(500).json({ message: 'Lỗi cập nhật trạng thái khách', detail: err.message });
+    return sendError(res, 500, 'Lỗi cập nhật trạng thái khách', 'SERVER_ERROR', {
+      detail: err.message
+    });
   }
 });
 
@@ -557,17 +698,27 @@ router.post('/', async (req, res) => {
   const routeEnd = parseDateTime(ThoiGianKetThuc);
   const selectedTicketIds = toUniqueIntList(ticketIds);
   const dispatcherId = Number(req.auth?.MaNhanVien);
+  const createdBy = String(req.auth?.TenDangNhap || req.auth?.HoTen || '').trim() || null;
 
   if (!isDispatcherRequest(req)) {
-    return res.status(403).json({ message: 'Chỉ điều phối viên mới được tạo lộ trình' });
+    return sendError(res, 403, 'Chỉ điều phối viên mới được tạo lộ trình', 'FORBIDDEN');
   }
 
   if (!Number.isInteger(Number(MaXe)) || !Number.isInteger(Number(MaTaiXe)) || !Number.isInteger(dispatcherId) || !routeStart || selectedTicketIds.length === 0) {
-    return res.status(400).json({ message: 'Thiếu thông tin bắt buộc để lập lộ trình' });
+    return sendError(res, 400, 'Thiếu thông tin bắt buộc để lập lộ trình', 'VALIDATION_ERROR');
+  }
+
+  if (routeStart.getTime() < Date.now()) {
+    return sendError(res, 400, 'Thời gian bắt đầu không được ở quá khứ', 'VALIDATION_ERROR');
   }
 
   if (routeEnd && routeEnd < routeStart) {
-    return res.status(400).json({ message: 'Thời gian kết thúc phải lớn hơn hoặc bằng thời gian bắt đầu' });
+    return sendError(
+      res,
+      400,
+      'Thời gian kết thúc phải lớn hơn hoặc bằng thời gian bắt đầu',
+      'VALIDATION_ERROR'
+    );
   }
 
   try {
@@ -718,25 +869,41 @@ router.post('/', async (req, res) => {
         TrangThaiTaiXe: driver.TrangThaiTaiXe
       };
       await syncResources(transaction, routeForSync, 'Chưa thực hiện');
+      await syncRoutePlanProjection(transaction, routeId, {
+        eventType: 'ROUTE_CREATED',
+        message: 'Tạo lộ trình từ API /routes',
+        payload: { ticketIds: selectedTicketIds },
+        createdBy
+      });
 
       await transaction.commit();
 
       const route = await loadRouteSummary(pool, routeId);
       const stops = await loadRouteStops(pool, routeId);
 
-      res.status(201).json({
-        message: 'Tạo lộ trình thành công',
-        route,
-        stops,
-        ticketIds: selectedTicketIds
-      });
+      return sendSuccess(
+        res,
+        {
+          route,
+          stops,
+          ticketIds: selectedTicketIds
+        },
+        'Tạo lộ trình thành công',
+        201
+      );
     } catch (innerError) {
       await transaction.rollback();
       throw innerError;
     }
   } catch (err) {
     console.error('Create route error:', err);
-    res.status(err.status || 500).json({ message: err.message || 'Lỗi tạo lộ trình', detail: err.detail || err.message });
+    return sendError(
+      res,
+      err.status || 500,
+      err.message || 'Lỗi tạo lộ trình',
+      err.code || 'SERVER_ERROR',
+      err.detail ? { detail: err.detail } : null
+    );
   }
 });
 
@@ -744,24 +911,40 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   const routeId = Number(req.params.id);
   const { ThoiGianBatDau, ThoiGianKetThuc, LoTrinhDuKien, TrangThaiLoTrinh, GhiChu } = req.body || {};
+  const createdBy = String(req.auth?.TenDangNhap || req.auth?.HoTen || '').trim() || null;
+  const requestedStatus = TrangThaiLoTrinh != null ? String(TrangThaiLoTrinh).trim() : undefined;
 
   if (!Number.isInteger(routeId)) {
-    return res.status(400).json({ message: 'Mã lộ trình không hợp lệ' });
+    return sendError(res, 400, 'Mã lộ trình không hợp lệ', 'VALIDATION_ERROR');
   }
 
   const startTime = ThoiGianBatDau != null ? parseDateTime(ThoiGianBatDau) : undefined;
   const endTime = ThoiGianKetThuc != null ? parseDateTime(ThoiGianKetThuc) : undefined;
 
   if (ThoiGianBatDau != null && !startTime) {
-    return res.status(400).json({ message: 'Thời gian bắt đầu không hợp lệ' });
+    return sendError(res, 400, 'Thời gian bắt đầu không hợp lệ', 'VALIDATION_ERROR');
   }
 
   if (ThoiGianKetThuc != null && !endTime) {
-    return res.status(400).json({ message: 'Thời gian kết thúc không hợp lệ' });
+    return sendError(res, 400, 'Thời gian kết thúc không hợp lệ', 'VALIDATION_ERROR');
   }
 
   if (startTime && endTime && endTime < startTime) {
-    return res.status(400).json({ message: 'Thời gian kết thúc phải lớn hơn hoặc bằng thời gian bắt đầu' });
+    return sendError(
+      res,
+      400,
+      'Thời gian kết thúc phải lớn hơn hoặc bằng thời gian bắt đầu',
+      'VALIDATION_ERROR'
+    );
+  }
+
+  if (requestedStatus && !VALID_ROUTE_STATUSES.has(requestedStatus)) {
+    return sendError(
+      res,
+      400,
+      `Trạng thái lộ trình không hợp lệ. Cho phép: ${[...VALID_ROUTE_STATUSES].join(' / ')}`,
+      'VALIDATION_ERROR'
+    );
   }
 
   try {
@@ -769,20 +952,32 @@ router.put('/:id', async (req, res) => {
     const current = await loadRouteSummary(pool, routeId);
 
     if (!current) {
-      return res.status(404).json({ message: 'Không tìm thấy lộ trình' });
+      return sendError(res, 404, 'Không tìm thấy lộ trình', 'NOT_FOUND');
     }
 
     if (!canAccessRoute(req, current)) {
-      return res.status(403).json({ message: 'Bạn không có quyền cập nhật lộ trình này' });
+      return sendError(res, 403, 'Bạn không có quyền cập nhật lộ trình này', 'FORBIDDEN');
     }
 
-    if (TrangThaiLoTrinh === 'Hoàn thành') {
+    const dispatcherChangedStartTime =
+      isDispatcherRequest(req) &&
+      startTime &&
+      hasDateTimeChanged(startTime, current.ThoiGianBatDau);
+
+    if (dispatcherChangedStartTime && startTime.getTime() < Date.now()) {
+      return sendError(res, 400, 'Thời gian không hợp lệ', 'VALIDATION_ERROR');
+    }
+
+    if (requestedStatus === 'Hoàn thành') {
       const stops = await loadRouteStops(pool, routeId);
       const allDone = stops.length > 0 && stops.every((row) => DONE_STOP_STATUSES.has(String(row.TrangThaiKhach || '').trim()));
       if (!allDone) {
-        return res.status(422).json({
-          message: 'Chỉ được chuyển sang "Hoàn thành" khi toàn bộ khách hàng đã được xử lý.'
-        });
+        return sendError(
+          res,
+          422,
+          'Chỉ được chuyển sang "Hoàn thành" khi toàn bộ khách hàng đã được xử lý.',
+          'INVALID_ROUTE_STATUS'
+        );
       }
     }
 
@@ -793,26 +988,29 @@ router.put('/:id', async (req, res) => {
         LoTrinhDuKien !== undefined;
 
       if (hasRestrictedFields) {
-        return res.status(403).json({
-          message: 'Tài xế chỉ được cập nhật trạng thái chuyến hoặc ghi chú liên quan đến chuyến của mình'
-        });
+        return sendError(
+          res,
+          403,
+          'Tài xế chỉ được cập nhật trạng thái chuyến hoặc ghi chú liên quan đến chuyến của mình',
+          'FORBIDDEN'
+        );
       }
 
-      const driverAllowedStatuses = ['Đang thực hiện', 'Hoàn thành', 'Đã hủy'];
-      if (TrangThaiLoTrinh && !driverAllowedStatuses.includes(TrangThaiLoTrinh)) {
-        return res.status(403).json({
-          message: 'Tài xế không được cập nhật trạng thái này'
-        });
+      if (requestedStatus && !DRIVER_ALLOWED_ROUTE_STATUSES.has(requestedStatus)) {
+        return sendError(res, 403, 'Tài xế không được cập nhật trạng thái này', 'FORBIDDEN');
       }
 
-      if (!TrangThaiLoTrinh && GhiChu !== undefined) {
-        return res.status(403).json({
-          message: 'Tài xế không được chỉnh sửa ghi chú nếu không có thay đổi trạng thái'
-        });
+      if (!requestedStatus && GhiChu !== undefined) {
+        return sendError(
+          res,
+          403,
+          'Tài xế không được chỉnh sửa ghi chú nếu không có thay đổi trạng thái',
+          'FORBIDDEN'
+        );
       }
     }
 
-    const nextStatus = TrangThaiLoTrinh || current.TrangThaiLoTrinh;
+    const nextStatus = requestedStatus || current.TrangThaiLoTrinh;
     const nextStartTime = startTime || current.ThoiGianBatDau;
     const nextEndTime =
       endTime !== undefined
@@ -820,18 +1018,42 @@ router.put('/:id', async (req, res) => {
         : FINAL_ROUTE_STATUSES.includes(nextStatus)
           ? current.ThoiGianKetThuc || new Date()
           : current.ThoiGianKetThuc;
+    const nextRoutePlan =
+      LoTrinhDuKien != null ? String(LoTrinhDuKien).trim() : current.LoTrinhDuKien;
+    const nextNote =
+      GhiChu != null ? String(GhiChu).trim() : current.GhiChu;
+    const changedFields = {};
+
+    if (hasDateTimeChanged(nextStartTime, current.ThoiGianBatDau)) {
+      changedFields.ThoiGianBatDau = nextStartTime;
+    }
+
+    if (hasDateTimeChanged(nextEndTime, current.ThoiGianKetThuc)) {
+      changedFields.ThoiGianKetThuc = nextEndTime;
+    }
+
+    if (hasTrimmedTextChanged(nextRoutePlan, current.LoTrinhDuKien)) {
+      changedFields.LoTrinhDuKien = nextRoutePlan;
+    }
+
+    if (hasTrimmedTextChanged(nextNote, current.GhiChu)) {
+      changedFields.GhiChu = nextNote;
+    }
+
+    if (hasTrimmedTextChanged(nextStatus, current.TrangThaiLoTrinh)) {
+      changedFields.TrangThaiLoTrinh = nextStatus;
+    }
+
+    const isRunningRouteUpdate =
+      current.TrangThaiLoTrinh === 'Đang thực hiện' || nextStatus === 'Đang thực hiện';
 
     await pool
       .request()
       .input('routeId', sql.Int, routeId)
       .input('ThoiGianBatDau', sql.DateTime, nextStartTime)
       .input('ThoiGianKetThuc', sql.DateTime, nextEndTime)
-      .input(
-        'LoTrinhDuKien',
-        sql.NVarChar(sql.MAX),
-        LoTrinhDuKien != null ? String(LoTrinhDuKien).trim() : current.LoTrinhDuKien
-      )
-      .input('GhiChu', sql.NVarChar(sql.MAX), GhiChu != null ? String(GhiChu).trim() : current.GhiChu)
+      .input('LoTrinhDuKien', sql.NVarChar(sql.MAX), nextRoutePlan)
+      .input('GhiChu', sql.NVarChar(sql.MAX), nextNote)
       .input('TrangThaiLoTrinh', sql.NVarChar(50), nextStatus)
       .query(`
         UPDATE LoTrinhTrungChuyen
@@ -867,12 +1089,29 @@ router.put('/:id', async (req, res) => {
     }
 
     await syncResources(pool, current, nextStatus);
+    await syncRoutePlanProjection(pool, routeId, {
+      eventType: 'ROUTE_UPDATED',
+      message: isRunningRouteUpdate
+        ? 'Điều phối viên cập nhật lộ trình đang thực hiện'
+        : `Cập nhật lộ trình sang trạng thái ${nextStatus}`,
+      payload: {
+        TrangThaiLoTrinh: nextStatus,
+        ThoiGianBatDau: nextStartTime,
+        ThoiGianKetThuc: nextEndTime,
+        LoTrinhDuKien: nextRoutePlan,
+        GhiChu: nextNote,
+        changedFields,
+        notifyDriver: isRunningRouteUpdate,
+        driverSync: isRunningRouteUpdate ? buildDriverSyncContract(routeId) : null
+      },
+      createdBy
+    });
 
     const updatedRoute = await loadRouteSummary(pool, routeId);
-    return res.json(updatedRoute);
+    return sendSuccess(res, updatedRoute, 'Cập nhật lộ trình thành công');
   } catch (err) {
     console.error('Update route error:', err);
-    res.status(500).json({ message: 'Lỗi cập nhật lộ trình', detail: err.message });
+    return sendError(res, 500, 'Lỗi cập nhật lộ trình', 'SERVER_ERROR', { detail: err.message });
   }
 });
 

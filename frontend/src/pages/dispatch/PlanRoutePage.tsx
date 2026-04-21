@@ -51,6 +51,11 @@ function getDefaultStartTime() {
   return `${year}-${month}-${day}T${hour}:${minute}`;
 }
 
+function isPastStartTime(value: string) {
+  const selectedDate = new Date(value);
+  return !Number.isNaN(selectedDate.getTime()) && selectedDate.getTime() < Date.now();
+}
+
 function buildRoutePreview(tickets: TicketRow[]) {
   const pickupPoints = [...new Set(tickets.map((ticket) => ticket.DiaChiDon).filter(Boolean))];
   const dropPoints = [...new Set(tickets.map((ticket) => ticket.DiaChiTra).filter(Boolean))];
@@ -185,6 +190,11 @@ export const PlanRoutePage: React.FC = () => {
 
     if (!startTime) {
       setError('Vui lòng chọn thời gian bắt đầu');
+      return;
+    }
+
+    if (isPastStartTime(startTime)) {
+      setError('Thời gian bắt đầu không được ở quá khứ');
       return;
     }
 

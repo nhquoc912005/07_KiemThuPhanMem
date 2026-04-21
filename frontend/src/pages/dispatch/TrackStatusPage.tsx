@@ -171,10 +171,10 @@ export const TrackStatusPage: React.FC = () => {
                   <InfoCard title="Tổng ghế" value={`${detail.route.TongGhe || detail.route.SoKhach || 0}/${detail.route.SoCho || 0}`} />
                 </div>
 
-                <div style={{ fontWeight: 600, marginBottom: 12, color: '#111827', fontSize: 15 }}>Theo dõi vị trí (GPS)</div>
+                <div style={{ fontWeight: 600, marginBottom: 12, color: '#111827', fontSize: 15 }}>Vị trí ước tính theo điểm đón</div>
                 <div style={{ borderRadius: 12, background: '#F1F5F9', height: 350, position: 'relative', overflow: 'hidden', border: '1px solid #E5E7EB' }}>
                   <iframe
-                    title="Theo dõi vị trí"
+                    title="Vị trí ước tính"
                     width="100%"
                     height="100%"
                     style={{ border: 0 }}
@@ -187,6 +187,9 @@ export const TrackStatusPage: React.FC = () => {
                     <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#2563EB' }} />
                     {currentLocation}
                   </div>
+                </div>
+                <div style={{ marginTop: 10, fontSize: 12, color: '#64748B' }}>
+                  Bản đồ hiện hiển thị vị trí ước tính theo điểm đón chưa hoàn tất, không phải GPS trực tuyến từ thiết bị tài xế.
                 </div>
               </>
             )}

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { clearAuthSession, getStoredUser } from '../auth/session';
+import { api } from '../services/api/client';
 
 interface DriverLayoutProps {
   children: React.ReactNode;
@@ -27,9 +28,15 @@ export const DriverLayout: React.FC<DriverLayoutProps> = ({ children }) => {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const userInitials = getDisplayInitials();
 
-  const handleLogout = () => {
-    clearAuthSession();
-    navigate('/login');
+  const handleLogout = async () => {
+    try {
+      await api.post('/auth/logout');
+    } catch {
+      // Ignore logout transport errors because auth is stateless on the backend.
+    } finally {
+      clearAuthSession();
+      navigate('/login');
+    }
   };
 
   const isTabActive = (path: string) => location.pathname.startsWith(path);

@@ -9,6 +9,8 @@ const DISPATCHER_ROLE = 'Nhân viên điều phối';
 const AUTH_ROLES = [DRIVER_ROLE, DISPATCHER_ROLE];
 const PASSWORD_SALT_ROUNDS = 10;
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '12h';
+const PASSWORD_CHANGE_TOKEN_EXPIRES_IN =
+  process.env.PASSWORD_CHANGE_TOKEN_EXPIRES_IN || '15m';
 
 function getJwtSecret() {
   return process.env.JWT_SECRET || 'trung-chuyen-demo-secret';
@@ -46,8 +48,31 @@ function signAccessToken(user) {
   });
 }
 
+function signPasswordChangeToken(user) {
+  return jwt.sign(
+    {
+      sub: String(user.MaTaiKhoan),
+      TenDangNhap: user.TenDangNhap,
+      type: 'FIRST_LOGIN_PASSWORD_CHANGE'
+    },
+    getJwtSecret(),
+    {
+      expiresIn: PASSWORD_CHANGE_TOKEN_EXPIRES_IN
+    }
+  );
+}
+
 function verifyAccessToken(token) {
   return jwt.verify(token, getJwtSecret());
+}
+
+function verifyPasswordChangeToken(token) {
+  const payload = jwt.verify(token, getJwtSecret());
+  if (payload?.type !== 'FIRST_LOGIN_PASSWORD_CHANGE') {
+    throw new Error('INVALID_PASSWORD_CHANGE_TOKEN');
+  }
+
+  return payload;
 }
 
 function generateOtpCode() {
@@ -97,12 +122,15 @@ module.exports = {
   DISPATCHER_ROLE,
   DRIVER_ROLE,
   JWT_EXPIRES_IN,
+  PASSWORD_CHANGE_TOKEN_EXPIRES_IN,
   ensurePasswordHashes,
   generateOtpCode,
   hashOtpCode,
   hashPassword,
   looksLikeBcryptHash,
   signAccessToken,
+  signPasswordChangeToken,
   verifyAccessToken,
-  verifyPassword
+  verifyPassword,
+  verifyPasswordChangeToken
 };

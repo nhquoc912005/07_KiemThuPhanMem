@@ -16,6 +16,9 @@ interface ReportRow {
   LoTrinhDuKien: string | null;
 }
 
+const EMPTY_REPORT_MESSAGE = 'Không có dữ liệu';
+const EMPTY_EXPORT_MESSAGE = 'Không có dữ liệu để xuất file';
+
 const labelStyle: React.CSSProperties = {
   color: '#0C476F',
   fontSize: 15,
@@ -77,6 +80,7 @@ export const ReportsPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notification, setNotification] = useState<string | null>(null);
+  const canExport = !loading && filteredData.length > 0;
 
   const applyFilters = (rows: ReportRow[]) => {
     let nextRows = [...rows];
@@ -164,7 +168,7 @@ export const ReportsPage: React.FC = () => {
 
   const handleExport = () => {
     if (filteredData.length === 0) {
-      setNotification('Không có dữ liệu để xuất file.');
+      setNotification(EMPTY_EXPORT_MESSAGE);
       return;
     }
 
@@ -298,7 +302,22 @@ export const ReportsPage: React.FC = () => {
           <button onClick={handleSearch} style={{ background: '#2563EB', color: '#fff', padding: '10px 20px', fontSize: 14, borderRadius: 8, border: 'none', fontWeight: 600, cursor: 'pointer' }}>
             Xem báo cáo
           </button>
-          <button onClick={handleExport} style={{ background: '#2563EB', color: '#fff', padding: '10px 20px', fontSize: 14, borderRadius: 8, border: 'none', fontWeight: 600, cursor: 'pointer' }}>
+          <button
+            onClick={handleExport}
+            disabled={!canExport}
+            title={canExport ? 'Xuất file CSV' : EMPTY_EXPORT_MESSAGE}
+            style={{
+              background: '#2563EB',
+              color: '#fff',
+              padding: '10px 20px',
+              fontSize: 14,
+              borderRadius: 8,
+              border: 'none',
+              fontWeight: 600,
+              cursor: canExport ? 'pointer' : 'not-allowed',
+              opacity: canExport ? 1 : 0.6
+            }}
+          >
             Xuất file
           </button>
           <button onClick={handleRefresh} style={{ background: '#F1F5F9', color: '#475569', padding: '10px 20px', fontSize: 14, borderRadius: 8, border: 'none', fontWeight: 600, cursor: 'pointer' }}>
@@ -351,7 +370,7 @@ export const ReportsPage: React.FC = () => {
             </div>
           ) : filteredData.length === 0 ? (
             <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 280, color: '#64748b', fontSize: 16 }}>
-              Không có dữ liệu báo cáo phù hợp với bộ lọc hiện tại.
+              {EMPTY_REPORT_MESSAGE}
             </div>
           ) : (
             filteredData.map((row, index) => {

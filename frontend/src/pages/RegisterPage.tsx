@@ -21,13 +21,32 @@ export const RegisterPage: React.FC = () => {
 
   const navigate = useNavigate();
 
+  const isStrongPassword = (value: string) => {
+    return (
+      value.length >= 8 &&
+      /[A-Za-z]/.test(value) &&
+      /\d/.test(value) &&
+      /[^A-Za-z0-9]/.test(value)
+    );
+  };
+
   const validate = () => {
-    if (!fullName || !username || !phoneNumber || !password || !confirmPassword) {
+    const normalizedUsername = username.trim();
+
+    if (!fullName || !normalizedUsername || !phoneNumber || !password || !confirmPassword) {
       setError('Vui lòng nhập đầy đủ thông tin bắt buộc');
+      return false;
+    }
+    if (!/^[A-Za-z0-9._-]{3,50}$/.test(normalizedUsername)) {
+      setError('Tên đăng nhập không đúng định dạng');
       return false;
     }
     if (password !== confirmPassword) {
       setError('Mật khẩu xác nhận không khớp');
+      return false;
+    }
+    if (!isStrongPassword(password)) {
+      setError('Mật khẩu phải có ít nhất 8 ký tự (gồm chữ, số và ký tự đặc biệt)');
       return false;
     }
     if (!/^0\d{9}$/.test(phoneNumber)) {
@@ -37,6 +56,10 @@ export const RegisterPage: React.FC = () => {
     if (role === 'driver') {
       if (!cccd || !/^\d{12}$/.test(cccd)) {
         setError('CCCD không hợp lệ (12 chữ số)');
+        return false;
+      }
+      if (!licenseType.trim()) {
+        setError('Vui lòng chọn loại bằng lái');
         return false;
       }
     }
@@ -53,12 +76,12 @@ export const RegisterPage: React.FC = () => {
       setLoading(true);
       await api.post('/auth/register', {
         role,
-        fullName,
-        username,
+        fullName: fullName.trim(),
+        username: username.trim(),
         phoneNumber,
         password,
-        cccd: role === 'driver' ? cccd : undefined,
-        licenseType: role === 'driver' ? licenseType : undefined
+        cccd: role === 'driver' ? cccd.trim() : undefined,
+        licenseType: role === 'driver' ? licenseType.trim() : undefined
       });
       setSuccess('Đăng ký thành công. Vui lòng đăng nhập.');
       setTimeout(() => {

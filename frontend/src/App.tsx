@@ -1,7 +1,7 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 
 import { ProtectedRoute } from './components/ProtectedRoute'
-import { getDefaultRouteByRole, getStoredSession } from './auth/session'
+import { getDefaultRouteByRole, getPendingPasswordChange, getStoredSession } from './auth/session'
 import { AdjustRoutePage } from './pages/dispatch/AdjustRoutePage'
 import { CustomersPage } from './pages/dispatch/CustomersPage'
 import { DispatcherDriversPage } from './pages/dispatch/DispatcherDriversPage'
@@ -13,6 +13,7 @@ import { VehiclesPage } from './pages/dispatch/VehiclesPage'
 import { DriverTripCustomersPage } from './pages/driver/DriverTripCustomersPage'
 import { DriverTripDetailPage } from './pages/driver/DriverTripDetailPage'
 import { DriverTripsPage } from './pages/driver/DriverTripsPage'
+import { FirstLoginPasswordChangePage } from './pages/FirstLoginPasswordChangePage'
 import { ForgotPasswordPage } from './pages/ForgotPasswordPage'
 import { LoginPage } from './pages/LoginPage'
 import { ProfilePage } from './pages/ProfilePage'
@@ -23,7 +24,12 @@ const DRIVER_ROLE = 'Tài xế'
 const DISPATCHER_ROLE = 'Nhân viên điều phối'
 
 function RootRedirect() {
+  const pendingPasswordChange = getPendingPasswordChange()
   const session = getStoredSession()
+  if (pendingPasswordChange) {
+    return <Navigate to="/change-password-first-login" replace />
+  }
+
   if (!session) {
     return <Navigate to="/login" replace />
   }
@@ -37,6 +43,7 @@ function App() {
       <Routes>
         <Route path="/" element={<RootRedirect />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/change-password-first-login" element={<FirstLoginPasswordChangePage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />

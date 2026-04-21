@@ -40,6 +40,7 @@ api.interceptors.response.use(
     const requestUrl = String(error.config?.url || '');
     const isAuthEndpoint =
       requestUrl.includes('/auth/login') ||
+      requestUrl.includes('/auth/change-password-first-login') ||
       requestUrl.includes('/auth/register') ||
       requestUrl.includes('/auth/forgot-password') ||
       requestUrl.includes('/auth/reset-password');

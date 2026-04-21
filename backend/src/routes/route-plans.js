@@ -1,7 +1,9 @@
 const express = require('express');
 
 const { getPool, sql } = require('../db');
+const { syncRoutePlanProjection, buildRoutePlanNotes } = require('../services/routePlanSyncService');
 const { DISPATCHER_ROLE } = require('../utils/auth');
+const { sendError, sendSuccess } = require('../utils/http');
 
 const router = express.Router();
 
@@ -122,9 +124,10 @@ router.post('/', async (req, res) => {
   const routeEnd = parseDateTime(ThoiGianKetThuc);
   const selectedTicketIds = toUniqueIntList(ticketIds);
   const dispatcherId = Number(req.auth?.MaNhanVien);
+  const createdBy = String(req.auth?.TenDangNhap || req.auth?.HoTen || '').trim() || null;
 
   if (!isDispatcherRequest(req)) {
-    return res.status(403).json({ message: 'Chỉ điều phối viên mới được tạo lộ trình' });
+    return sendError(res, 403, 'Chỉ điều phối viên mới được tạo lộ trình', 'FORBIDDEN');
   }
 
   if (
@@ -134,11 +137,20 @@ router.post('/', async (req, res) => {
     !routeStart ||
     selectedTicketIds.length === 0
   ) {
-    return res.status(400).json({ message: 'Thiếu thông tin bắt buộc để lập lộ trình' });
+    return sendError(res, 400, 'Thiếu thông tin bắt buộc để lập lộ trình', 'VALIDATION_ERROR');
+  }
+
+  if (routeStart.getTime() < Date.now()) {
+    return sendError(res, 400, 'Thời gian bắt đầu không được ở quá khứ', 'VALIDATION_ERROR');
   }
 
   if (routeEnd && routeEnd < routeStart) {
-    return res.status(400).json({ message: 'Thời gian kết thúc phải lớn hơn hoặc bằng thời gian bắt đầu' });
+    return sendError(
+      res,
+      400,
+      'Thời gian kết thúc phải lớn hơn hoặc bằng thời gian bắt đầu',
+      'VALIDATION_ERROR'
+    );
   }
 
   try {
@@ -312,7 +324,7 @@ router.post('/', async (req, res) => {
         .input('plannedEnd', sql.DateTime, routeEnd)
         .input('status', sql.NVarChar(20), 'CONFIRMED')
         .input('notes', sql.NVarChar(500), GhiChu ? String(GhiChu).trim() : null)
-        .input('createdBy', sql.NVarChar(50), String(req.auth?.TenDangNhap || req.auth?.HoTen || '').trim() || null)
+        .input('createdBy', sql.NVarChar(50), createdBy)
         .query(
           `
           INSERT INTO route_plans (plan_code, planned_start_at, planned_end_at, status, notes, created_by)
@@ -489,44 +501,53 @@ router.post('/', async (req, res) => {
       // link plan -> legacy route
       await new sql.Request(transaction)
         .input('routePlanId', sql.BigInt, routePlanId)
-        .input('routeId', sql.Int, routeId)
+        .input('notes', sql.NVarChar(500), buildRoutePlanNotes(GhiChu, routeId))
         .query(
           `
           UPDATE route_plans
           SET updated_at = GETDATE(),
-              notes = CASE
-                WHEN notes IS NULL OR LTRIM(RTRIM(notes)) = '' THEN CONCAT(N'[legacy_route_id=', CAST(@routeId AS NVARCHAR(20)), N']')
-                ELSE CONCAT(notes, N' ', N'[legacy_route_id=', CAST(@routeId AS NVARCHAR(20)), N']')
-              END
+              notes = @notes
           WHERE id = @routePlanId
         `
         );
 
       await syncLegacyResources(transaction, { MaXe: Number(MaXe), MaTaiXe: Number(MaTaiXe) }, 'Chưa thực hiện');
+      await syncRoutePlanProjection(transaction, routeId, {
+        eventType: 'ROUTE_CREATED',
+        message: 'Tạo kế hoạch điều phối',
+        payload: { source: 'route-plans' },
+        createdBy
+      });
 
       await transaction.commit();
 
-      return res.status(201).json({
-        message: 'Tạo lộ trình thành công',
-        route: {
-          MaLoTrinh: routeId,
-          BienSo: legacyVehicle.BienSo,
-          TenTaiXe: legacyDriver.HoTen
+      return sendSuccess(
+        res,
+        {
+          route: {
+            MaLoTrinh: routeId,
+            BienSo: legacyVehicle.BienSo,
+            TenTaiXe: legacyDriver.HoTen
+          },
+          routePlan: { id: routePlanId, planCode }
         },
-        routePlan: { id: routePlanId, planCode }
-      });
+        'Tạo lộ trình thành công',
+        201
+      );
     } catch (innerError) {
       await transaction.rollback();
       throw innerError;
     }
   } catch (err) {
     console.error('Create route plan error:', err);
-    return res.status(err.status || 500).json({
-      message: err.message || 'Lỗi tạo lộ trình',
-      detail: err.detail || err.message
-    });
+    return sendError(
+      res,
+      err.status || 500,
+      err.message || 'Lỗi tạo lộ trình',
+      err.code || 'SERVER_ERROR',
+      err.detail ? { detail: err.detail } : null
+    );
   }
 });
 
 module.exports = router;
-

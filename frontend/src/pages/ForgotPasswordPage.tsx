@@ -2,6 +2,22 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api/client';
 
+function normalizePhoneNumber(value: string) {
+  const compactValue = String(value || '')
+    .trim()
+    .replace(/[\s.-]/g, '');
+
+  if (/^\+84\d{9}$/.test(compactValue)) {
+    return `0${compactValue.slice(3)}`;
+  }
+
+  if (/^84\d{9}$/.test(compactValue)) {
+    return `0${compactValue.slice(2)}`;
+  }
+
+  return compactValue;
+}
+
 export const ForgotPasswordPage: React.FC = () => {
   const [phone, setPhone] = useState('');
   const [message, setMessage] = useState<string | null>(null);
@@ -22,19 +38,20 @@ export const ForgotPasswordPage: React.FC = () => {
     e.preventDefault();
     setError(null);
     setMessage(null);
+    const normalizedPhone = normalizePhoneNumber(phone);
 
-    if (!/^0\d{9}$/.test(phone)) {
+    if (!/^0\d{9}$/.test(normalizedPhone)) {
       setError('Số điện thoại không hợp lệ (10 chữ số, bắt đầu bằng 0)');
       return;
     }
 
     setLoading(true);
     try {
-      const res = await api.post('/auth/forgot-password', { phoneNumber: phone });
+      const res = await api.post('/auth/forgot-password', { phoneNumber: normalizedPhone });
       setMessage(res.data?.message || 'Đã gửi mã xác thực, vui lòng kiểm tra backend demo');
 
       setSuccessData({
-        phoneNumber: phone,
+        phoneNumber: normalizedPhone,
         expiresInSeconds: res.data?.expiresInSeconds ?? 60
       });
     } catch (error: unknown) { const err = error as { response?: { data?: { message?: string } }, message?: string };

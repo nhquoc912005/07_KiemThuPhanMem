@@ -17,11 +17,11 @@ async function seed() {
         // Cập nhật tên tài xế thành Nguyễn Văn A để đồng bộ UI
         await pool.request().input('maTX', sql.Int, maTX).query("UPDATE TaiXe SET HoTen = N'Nguyễn Văn A' WHERE MaTaiXe = @maTX");
 
-        // 2. Lấy/tạo 1 xe cố định (VD: 43B-123.45)
+        // 2. Lấy/tạo 1 xe cố định (VD: 43B-12345)
         let maXe;
-        const rXe = await pool.request().query("SELECT MaXe FROM XeTrungChuyen WHERE BienSo = '43B-123.45'");
+        const rXe = await pool.request().query("SELECT MaXe FROM XeTrungChuyen WHERE BienSo = '43B-12345'");
         if (rXe.recordset.length === 0) {
-            const rx2 = await pool.request().query("INSERT INTO XeTrungChuyen (BienSo, LoaiXe, SoCho, TrangThaiXe) OUTPUT INSERTED.MaXe VALUES ('43B-123.45', N'Xe 16 chỗ', 16, N'Rảnh')");
+            const rx2 = await pool.request().query("INSERT INTO XeTrungChuyen (BienSo, LoaiXe, SoCho, TrangThaiXe) OUTPUT INSERTED.MaXe VALUES ('43B-12345', N'Xe 16 chỗ', 16, N'Rảnh')");
             maXe = rx2.recordset[0].MaXe;
         } else {
             maXe = rXe.recordset[0].MaXe;
@@ -94,7 +94,7 @@ async function seed() {
                 .input('maLT', sql.Int, maLT).input('mVe', sql.Int, mVe).input('tra', sql.NVarChar, diemTra)
                 .query(`
                     INSERT INTO ChiTietLoTrinh (ThuTuDonTra, DiemDon, DiemTra, TrangThaiKhach, MaLoTrinh, MaVe) 
-                    VALUES (1, N'Bến xe Trung tâm Đà Nẵng', @tra, N'Đang chờ khách tới', @maLT, @mVe)
+                    VALUES (1, N'Bến xe Trung tâm Đà Nẵng', @tra, NULL, @maLT, @mVe)
                 `);
 
             console.log(`✅ [${cxCode}] Đã phân công chuyến "Chưa thực hiện": ${rString}`);

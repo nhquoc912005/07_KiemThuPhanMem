@@ -1,17 +1,19 @@
 # Hệ thống quản lý và điều phối lộ trình xe trung chuyển
 
-Project sinh viên gồm:
+Project demo gồm:
 
 - Backend: `Node.js + Express + SQL Server`
 - Frontend: `React + TypeScript + Vite`
 
-Project dùng để demo các luồng chính:
+Các luồng chính đang có:
 
-- đăng nhập nhân viên điều phối / tài xế
-- lập lộ trình trung chuyển từ vé cần xe
-- điều chỉnh và theo dõi lộ trình
-- cập nhật trạng thái đón / trả khách
-- báo cáo tổng hợp theo ngày
+- đăng nhập điều phối / tài xế
+- đăng ký tài khoản điều phối / tài xế
+- lập kế hoạch điều phối từ vé cần trung chuyển
+- điều chỉnh, theo dõi và xử lý sự cố lộ trình
+- tài xế cập nhật trạng thái đón / trả khách
+- xem báo cáo tổng hợp
+- xem hồ sơ người dùng từ database qua `GET /auth/me`
 
 ## Cấu trúc thư mục
 
@@ -22,6 +24,7 @@ Project dùng để demo các luồng chính:
 │  │  ├─ constants/
 │  │  ├─ middleware/
 │  │  ├─ routes/
+│  │  ├─ services/
 │  │  ├─ utils/
 │  │  ├─ app.js
 │  │  ├─ db.js
@@ -37,19 +40,13 @@ Project dùng để demo các luồng chính:
 │  └─ smoke/
 ├─ frontend/
 │  ├─ src/
-│  │  ├─ app/
-│  │  ├─ assets/
 │  │  ├─ auth/
 │  │  ├─ components/
 │  │  ├─ constants/
-│  │  ├─ features/
-│  │  ├─ hooks/
-│  │  ├─ layouts/
 │  │  ├─ pages/
 │  │  ├─ services/
 │  │  │  └─ api/
-│  │  ├─ types/
-│  │  └─ utils/
+│  │  └─ ...
 │  ├─ tests/
 │  ├─ .env.example
 │  └─ package.json
@@ -59,14 +56,14 @@ Project dùng để demo các luồng chính:
 ## Yêu cầu môi trường
 
 - Node.js `18+`
-- SQL Server chạy local hoặc cùng mạng
+- SQL Server local hoặc cùng mạng
 - tài khoản SQL Server có quyền tạo database / bảng
 
 ## Cấu hình môi trường
 
 ### Backend
 
-Tạo file `backend/.env` từ `backend/.env.example`:
+Tạo `backend/.env` từ `backend/.env.example`:
 
 ```env
 APP_PORT=5000
@@ -83,13 +80,17 @@ JWT_EXPIRES_IN=12h
 
 ### Frontend
 
-Tạo file `frontend/.env` từ `frontend/.env.example`:
+Tạo `frontend/.env` từ `frontend/.env.example`:
 
 ```env
 VITE_API_BASE_URL=http://localhost:5000/api/v1
 ```
 
-Nếu không cấu hình `VITE_API_BASE_URL`, frontend sẽ mặc định gọi `http://<hostname>:5000/api/v1`.
+Nếu không cấu hình `VITE_API_BASE_URL`, frontend mặc định gọi:
+
+```text
+http://<hostname>:5000/api/v1
+```
 
 ## Tạo hoặc reset database
 
@@ -100,8 +101,8 @@ Script này sẽ:
 
 - tạo database `TrungChuyenDB` nếu chưa có
 - drop và tạo lại toàn bộ bảng
-- thêm constraint/index cơ bản cho demo local
-- seed dữ liệu mẫu và tài khoản đăng nhập
+- tạo dữ liệu demo cho cả lớp legacy và external/dispatch
+- seed tài khoản đăng nhập mẫu
 
 ## Tài khoản demo
 
@@ -112,7 +113,43 @@ Script này sẽ:
   - username: `taixe1`
   - password: `123456`
 
-Mật khẩu trong script seed đã được hash bcrypt.
+Mật khẩu trong seed được hash bằng bcrypt.
+
+## Chuẩn dữ liệu đang dùng
+
+### Biển số xe
+
+Chuẩn thống nhất trên hệ thống là:
+
+```text
+51A-12345
+```
+
+Backend sẽ normalize một số biến thể nhập tay về chuẩn này trước khi validate/lưu.
+
+### Số điện thoại
+
+Số điện thoại khách hàng và tài khoản được lưu thống nhất theo chuẩn:
+
+```text
+0xxxxxxxxx
+```
+
+Các input kiểu `84xxxxxxxxx` hoặc `+84xxxxxxxxx` sẽ được normalize về chuẩn trên.
+
+### Stop status
+
+Enum trạng thái khách trên lộ trình:
+
+- `Đã đến điểm đón`
+- `Đã đón khách`
+- `Đã trả khách`
+- `Khách hủy`
+
+Điều kiện hoàn thành chuyến:
+
+- tất cả stop phải là `Đã trả khách`
+- hoặc `Khách hủy`
 
 ## Cài dependency
 
@@ -145,7 +182,7 @@ Backend chạy ở `http://localhost:5000`.
 
 Health check:
 
-```bash
+```text
 http://localhost:5000/health
 ```
 
@@ -156,7 +193,7 @@ cd frontend
 npm run dev
 ```
 
-Frontend thường chạy ở `http://localhost:3000` hoặc `http://localhost:5173` tùy Vite.
+Frontend thường chạy ở `http://localhost:3000` hoặc `http://localhost:5173`.
 
 ## Build frontend
 
@@ -174,13 +211,13 @@ cd backend
 npm run smoke
 ```
 
-Script smoke sẽ kiểm tra tối thiểu:
+Script smoke kiểm tra tối thiểu:
 
 - login điều phối
 - login tài xế
-- báo cáo tổng hợp
+- lấy báo cáo
 - tạo lộ trình
-- cleanup bằng cách hủy route test vừa tạo
+- cleanup route test
 
 Có thể đổi endpoint hoặc tài khoản bằng biến môi trường:
 
@@ -194,56 +231,103 @@ SMOKE_DRIVER_PASSWORD=123456
 
 ## Seed bổ sung
 
-Các script seed bổ sung nằm trong `scripts/seed/` và đã được gắn npm scripts:
+Các script seed trong `scripts/seed/`:
 
 ```bash
 cd backend
 npm run seed:customers
 npm run seed:dashboard
+npm run seed:driver-accounts
 npm run seed:driver-demo
 ```
 
-Lưu ý: các script này thêm dữ liệu demo phục vụ màn hình hoặc luồng test, không phải migration chính thức.
+`seed:driver-accounts` sẽ tạo tài khoản cho các bản ghi `TaiXe` chưa có `MaTaiKhoan`, với username theo dạng `taixe2`, `taixe3`... và mật khẩu demo `123456`.
 
-## Auth hiện tại
+Các script seed/demo hiện đã dùng cùng chuẩn dữ liệu mới:
 
-Auth đang ở mức phù hợp đồ án / demo local:
+- biển số xe: `51A-12345`
+- stop status: `Đã đến điểm đón`, `Đã đón khách`, `Đã trả khách`, `Khách hủy`
 
-- login dùng bcrypt để verify password
-- backend cấp JWT access token tối thiểu
-- API nội bộ có `requireAuth` và `requireRole`
-- frontend có `ProtectedRoute`
-- forgot/reset password vẫn là luồng demo, OTP không trả về client mà chỉ in ra log backend
+## Kiến trúc dữ liệu hiện tại
 
-## API chính cho demo
+Hệ thống đang có 2 lớp dữ liệu:
+
+1. Legacy vận hành:
+   - `TaiXe`
+   - `XeTrungChuyen`
+   - `KhachHang`
+   - `VeTrungChuyen`
+   - `LoTrinhTrungChuyen`
+   - `ChiTietLoTrinh`
+2. External / dispatch projection:
+   - `external_*`
+   - `route_plans*`
+
+Giải pháp vá hiện tại để ít phá hệ thống:
+
+- `LoTrinhTrungChuyen` + `ChiTietLoTrinh` là source of truth vận hành
+- `route_plans*` được sync như projection khi:
+  - tạo route
+  - cập nhật route/status
+  - cập nhật stop status
+  - báo sự cố
+
+## API chính
+
+### Auth
 
 - `POST /api/v1/auth/login`
+- `GET /api/v1/auth/me`
+- `POST /api/v1/auth/logout`
+- `POST /api/v1/auth/register`
 - `POST /api/v1/auth/forgot-password`
 - `POST /api/v1/auth/reset-password`
+
+### Dispatcher
+
 - `GET /api/v1/tickets`
 - `GET /api/v1/vehicles`
+- `GET /api/v1/vehicles/:id`
+- `POST /api/v1/vehicles`
+- `PUT /api/v1/vehicles/:id`
+- `DELETE /api/v1/vehicles/:id`
 - `GET /api/v1/drivers`
+- `GET /api/v1/drivers/:id`
+- `POST /api/v1/drivers`
+- `PUT /api/v1/drivers/:id`
+- `DELETE /api/v1/drivers/:id`
 - `GET /api/v1/customers`
+- `GET /api/v1/customers/:id`
+- `POST /api/v1/customers`
+- `PUT /api/v1/customers/:id`
+- `DELETE /api/v1/customers/:id`
+- `GET /api/v1/reports/summary`
+
+### Route operations
+
+- `POST /api/v1/route-plans`
 - `GET /api/v1/routes`
 - `GET /api/v1/routes/:id`
+- `GET /api/v1/routes/by-driver/:driverId`
 - `POST /api/v1/routes`
 - `PUT /api/v1/routes/:id`
 - `PATCH /api/v1/routes/:routeId/stops/:stopId/status`
 - `POST /api/v1/routes/:id/incident`
-- `GET /api/v1/reports/summary`
 
 ## Luồng demo gợi ý
 
-1. Đăng nhập bằng `dieuphoi1 / 123456`
-2. Vào `Lập kế hoạch lộ trình` để chọn vé, xe, tài xế
-3. Vào `Điều chỉnh lộ trình` hoặc `Theo dõi trạng thái`
+1. Đăng nhập `dieuphoi1 / 123456`
+2. Vào `Lập kế hoạch lộ trình` để phân công xe và tài xế
+3. Theo dõi `Điều chỉnh lộ trình` hoặc `Theo dõi trạng thái trung chuyển`
 4. Xem `Báo cáo`
 5. Đăng xuất
-6. Đăng nhập bằng `taixe1 / 123456`
-7. Vào danh sách chuyến để cập nhật trạng thái đón / trả khách
+6. Đăng nhập `taixe1 / 123456`
+7. Vào danh sách chuyến để cập nhật trạng thái `Đã đến`, `Đã đón`, `Đã trả khách`
+8. Mở `Danh sách khách hàng` hoặc `Hồ sơ`
 
 ## Ghi chú
 
-- Repo được tổ chức theo hướng `backend/`, `frontend/`, `database/`, `docs/`, `scripts/`.
-- `node_modules`, build output, cache và log đã được ignore trong `.gitignore`.
-- Nếu muốn reset dữ liệu sạch hoàn toàn, cách nhanh nhất là chạy lại `database/database.sql`.
+- Frontend gọi API qua `frontend/src/services/api/client.ts`
+- Frontend tự unwrap response theo format `{ success, message, data, errorCode }`
+- `ProfilePage` lấy dữ liệu thật từ `GET /auth/me`, không dùng session local làm nguồn profile chính
+- `TrackStatusPage` hiện hiển thị vị trí ước tính theo điểm đón, không phải GPS live từ thiết bị tài xế

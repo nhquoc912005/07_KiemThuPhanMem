@@ -1,10 +1,10 @@
--- Script tạo database và các bảng cho
--- Hệ thống quản lý và điều phối lộ trình xe trung chuyển
--- Phiên bản đã vá lỗi seed + FK + dữ liệu trùng
+﻿-- Script táº¡o database vÃ  cÃ¡c báº£ng cho
+-- Há»‡ thá»‘ng quáº£n lÃ½ vÃ  Ä‘iá»u phá»‘i lá»™ trÃ¬nh xe trung chuyá»ƒn
+-- PhiÃªn báº£n Ä‘Ã£ vÃ¡ lá»—i seed + FK + dá»¯ liá»‡u trÃ¹ng
 -- SQL Server / SSMS
 
 ------------------------------------------------------------
--- 1. Tạo database (nếu chưa tồn tại)
+-- 1. Táº¡o database (náº¿u chÆ°a tá»“n táº¡i)
 ------------------------------------------------------------
 IF DB_ID(N'TrungChuyenDB') IS NULL
 BEGIN
@@ -16,7 +16,7 @@ USE TrungChuyenDB;
 GO
 
 ------------------------------------------------------------
--- 2. Xóa bảng nếu tồn tại (theo thứ tự FK an toàn)
+-- 2. XÃ³a báº£ng náº¿u tá»“n táº¡i (theo thá»© tá»± FK an toÃ n)
 ------------------------------------------------------------
 IF OBJECT_ID('dbo.route_plan_logs', 'U') IS NOT NULL DROP TABLE dbo.route_plan_logs;
 IF OBJECT_ID('dbo.route_plan_driver_assignments', 'U') IS NOT NULL DROP TABLE dbo.route_plan_driver_assignments;
@@ -41,7 +41,7 @@ IF OBJECT_ID('dbo.TaiKhoanNguoiDung', 'U') IS NOT NULL DROP TABLE dbo.TaiKhoanNg
 GO
 
 ------------------------------------------------------------
--- 3. Tạo bảng chính
+-- 3. Táº¡o báº£ng chÃ­nh
 ------------------------------------------------------------
 CREATE TABLE TaiKhoanNguoiDung (
     MaTaiKhoan        INT IDENTITY(1,1) PRIMARY KEY,
@@ -50,8 +50,34 @@ CREATE TABLE TaiKhoanNguoiDung (
     SoDienThoai       VARCHAR(15) NULL,
     VaiTro            NVARCHAR(30) NULL,
     TrangThaiTaiKhoan BIT NOT NULL DEFAULT 1,
+    YeuCauDoiMatKhau  BIT NOT NULL DEFAULT 0,
+    SoLanDangNhapSai  INT NOT NULL DEFAULT 0,
+    KhoaTamThoiDenLuc DATETIME NULL,
     NgayTao           DATETIME NOT NULL DEFAULT GETDATE()
 );
+GO
+
+IF COL_LENGTH('dbo.TaiKhoanNguoiDung', 'YeuCauDoiMatKhau') IS NULL
+BEGIN
+    ALTER TABLE dbo.TaiKhoanNguoiDung
+    ADD YeuCauDoiMatKhau BIT NOT NULL
+        CONSTRAINT DF_TaiKhoanNguoiDung_YeuCauDoiMatKhau DEFAULT 0 WITH VALUES;
+END;
+GO
+
+IF COL_LENGTH('dbo.TaiKhoanNguoiDung', 'SoLanDangNhapSai') IS NULL
+BEGIN
+    ALTER TABLE dbo.TaiKhoanNguoiDung
+    ADD SoLanDangNhapSai INT NOT NULL
+        CONSTRAINT DF_TaiKhoanNguoiDung_SoLanDangNhapSai DEFAULT 0 WITH VALUES;
+END;
+GO
+
+IF COL_LENGTH('dbo.TaiKhoanNguoiDung', 'KhoaTamThoiDenLuc') IS NULL
+BEGIN
+    ALTER TABLE dbo.TaiKhoanNguoiDung
+    ADD KhoaTamThoiDenLuc DATETIME NULL;
+END;
 GO
 
 CREATE TABLE NhanVienDieuPhoi (
@@ -67,6 +93,7 @@ GO
 
 CREATE TABLE TaiXe (
     MaTaiXe         INT IDENTITY(1,1) PRIMARY KEY,
+    MaNhanVienTaiXe VARCHAR(20) NULL,
     HoTen           NVARCHAR(100) NOT NULL,
     SoDienThoai     VARCHAR(15) NOT NULL UNIQUE,
     CCCD            VARCHAR(20) NOT NULL UNIQUE,
@@ -76,6 +103,13 @@ CREATE TABLE TaiXe (
     CONSTRAINT FK_TaiXe_TaiKhoanNguoiDung
         FOREIGN KEY (MaTaiKhoan) REFERENCES TaiKhoanNguoiDung(MaTaiKhoan)
 );
+GO
+
+IF COL_LENGTH('dbo.TaiXe', 'MaNhanVienTaiXe') IS NULL
+BEGIN
+    ALTER TABLE dbo.TaiXe
+    ADD MaNhanVienTaiXe VARCHAR(20) NULL;
+END;
 GO
 
 CREATE TABLE XeTrungChuyen (
@@ -155,7 +189,7 @@ CREATE TABLE TheoDoiTrangThai (
 GO
 
 ------------------------------------------------------------
--- 3.1. Constraint / index cơ bản
+-- 3.1. Constraint / index cÆ¡ báº£n
 ------------------------------------------------------------
 ALTER TABLE XeTrungChuyen
 ADD CONSTRAINT CK_XeTrungChuyen_SoCho
@@ -177,6 +211,11 @@ ON TaiKhoanNguoiDung(SoDienThoai)
 WHERE SoDienThoai IS NOT NULL;
 GO
 
+CREATE UNIQUE INDEX UX_TaiXe_MaNhanVienTaiXe
+ON TaiXe(MaNhanVienTaiXe)
+WHERE MaNhanVienTaiXe IS NOT NULL;
+GO
+
 CREATE INDEX IX_LoTrinhTrungChuyen_MaTaiXe_TrangThai_ThoiGianBatDau
 ON LoTrinhTrungChuyen(MaTaiXe, TrangThaiLoTrinh, ThoiGianBatDau);
 GO
@@ -194,70 +233,70 @@ ON ChiTietLoTrinh(MaLoTrinh, ThuTuDonTra);
 GO
 
 ------------------------------------------------------------
--- 4. Seed dữ liệu chính
+-- 4. Seed dá»¯ liá»‡u chÃ­nh
 ------------------------------------------------------------
--- Tài khoản mẫu: nhân viên điều phối
+-- TÃ i khoáº£n máº«u: nhÃ¢n viÃªn Ä‘iá»u phá»‘i
 INSERT INTO TaiKhoanNguoiDung (TenDangNhap, MatKhauMaHoa, SoDienThoai, VaiTro, TrangThaiTaiKhoan)
-VALUES ('dieuphoi1', '$2b$10$j5ckBh1OXxBcB3YYYUk/WuOr8xCTBGcmLMhInnW1uoGUs5kOaMxIi', '0812345678', N'Nhân viên điều phối', 1);
+VALUES ('dieuphoi1', '$2b$10$EHsLxVEd.xxShRMhCJ8jouTDAlnLzyecGZrHbVk262hVk6YvPd.RS', '0812345678', N'NhÃ¢n viÃªn Ä‘iá»u phá»‘i', 1);
 
 DECLARE @MaTK_NVDP INT = SCOPE_IDENTITY();
 
 INSERT INTO NhanVienDieuPhoi (HoTen, SoDienThoai, TrangThai, MaTaiKhoan)
-VALUES (N'Nhân viên điều phối 1', '0812345678', N'Hoạt động', @MaTK_NVDP);
+VALUES (N'NhÃ¢n viÃªn Ä‘iá»u phá»‘i 1', '0812345678', N'Hoáº¡t Ä‘á»™ng', @MaTK_NVDP);
 
--- Tài khoản mẫu: tài xế chính
+-- TÃ i khoáº£n máº«u: tÃ i xáº¿ chÃ­nh
 INSERT INTO TaiKhoanNguoiDung (TenDangNhap, MatKhauMaHoa, SoDienThoai, VaiTro, TrangThaiTaiKhoan)
-VALUES ('taixe1', '$2b$10$j5ckBh1OXxBcB3YYYUk/WuOr8xCTBGcmLMhInnW1uoGUs5kOaMxIi', '0912345678', N'Tài xế', 1);
+VALUES ('taixe1', '$2b$10$EHsLxVEd.xxShRMhCJ8jouTDAlnLzyecGZrHbVk262hVk6YvPd.RS', '0912345678', N'TÃ i xáº¿', 1);
 
 DECLARE @MaTK_TaiXe INT = SCOPE_IDENTITY();
 
-INSERT INTO TaiXe (HoTen, SoDienThoai, CCCD, LoaiBangLai, TrangThaiTaiXe, MaTaiKhoan)
-VALUES (N'Nguyễn Minh Tuấn', '0912345678', '012345678901', N'B2', N'Rảnh', @MaTK_TaiXe);
+INSERT INTO TaiXe (MaNhanVienTaiXe, HoTen, SoDienThoai, CCCD, LoaiBangLai, TrangThaiTaiXe, MaTaiKhoan)
+VALUES ('NVTX001', N'Nguyá»…n Minh Tuáº¥n', '0912345678', '012345678901', N'B2', N'Ráº£nh', @MaTK_TaiXe);
 
--- Thêm tài xế demo
-INSERT INTO TaiXe (HoTen, SoDienThoai, CCCD, LoaiBangLai, TrangThaiTaiXe, MaTaiKhoan)
+-- ThÃªm tÃ i xáº¿ demo
+INSERT INTO TaiXe (MaNhanVienTaiXe, HoTen, SoDienThoai, CCCD, LoaiBangLai, TrangThaiTaiXe, MaTaiKhoan)
 VALUES
-    (N'Trần Văn Hùng',  '0912345671', '012345678902', N'B2', N'Rảnh', NULL),
-    (N'Lê Thanh Nam',   '0912345672', '012345678903', N'C',  N'Đang thực hiện chuyến', NULL),
-    (N'Phạm Văn Long',  '0912345673', '012345678904', N'B2', N'Rảnh', NULL),
-    (N'Hoàng Minh Đức', '0912345674', '012345678905', N'C',  N'Đã phân công', NULL);
+    ('NVTX002', N'Tráº§n VÄƒn HÃ¹ng',  '0912345671', '012345678902', N'B2', N'Ráº£nh', NULL),
+    ('NVTX003', N'LÃª Thanh Nam',   '0912345672', '012345678903', N'C',  N'Äang thá»±c hiá»‡n chuyáº¿n', NULL),
+    ('NVTX004', N'Pháº¡m VÄƒn Long',  '0912345673', '012345678904', N'B2', N'Ráº£nh', NULL),
+    ('NVTX005', N'HoÃ ng Minh Äá»©c', '0912345674', '012345678905', N'C',  N'ÄÃ£ phÃ¢n cÃ´ng', NULL);
 
 -- Xe demo
 INSERT INTO XeTrungChuyen (BienSo, LoaiXe, SoCho, TrangThaiXe)
 VALUES
-    ('51A-12345', N'Xe 7 chỗ', 7, N'Rảnh'),
-    ('51B-67890', N'Xe 4 chỗ', 4, N'Rảnh'),
-    ('51C-11111', N'Xe 16 chỗ', 16, N'Rảnh'),
-    ('51D-22222', N'Xe 7 chỗ', 7, N'Rảnh'),
-    ('51E-33333', N'Xe 4 chỗ', 4, N'Rảnh');
+    ('51A-12345', N'Xe 7 chá»—', 7, N'Ráº£nh'),
+    ('51B-67890', N'Xe 4 chá»—', 4, N'Ráº£nh'),
+    ('51C-11111', N'Xe 16 chá»—', 16, N'Ráº£nh'),
+    ('51D-22222', N'Xe 7 chá»—', 7, N'Ráº£nh'),
+    ('51E-33333', N'Xe 4 chá»—', 4, N'Ráº£nh');
 
--- Khách hàng demo
+-- KhÃ¡ch hÃ ng demo
 INSERT INTO KhachHang (TenKhachHang, SoDienThoai, DiaChiDon, DiaChiTra, TrangThai)
 VALUES
-    (N'Hà Văn Nam',         '0389123456', N'56 Chu Mạnh Trinh',        N'Bến xe Đà Nẵng', N'Hoạt động'),
-    (N'Nguyễn Thị Thuận',   '0389123452', N'36 Tú Quỳ',                N'Bến xe Đà Nẵng', N'Hoạt động'),
-    (N'Lê Minh Đại',        '0981234567', N'12 Nguyễn Văn Linh',       N'Bến xe Đà Nẵng', N'Hoạt động'),
-    (N'Phạm Thị Dung',      '0912345670', N'34 Lê Duẩn',               N'Bến xe Đà Nẵng', N'Hoạt động'),
-    (N'Trần Hoàng Bách',    '0901234567', N'56 Trần Phú',              N'Bến xe Đà Nẵng', N'Hoạt động'),
-    (N'Nguyễn Văn Phương',  '0922333444', N'78 Hùng Vương',            N'Bến xe Đà Nẵng', N'Hoạt động'),
-    (N'Lý Thị Giang',       '0933444555', N'90 Điện Biên Phủ',         N'Bến xe Đà Nẵng', N'Hoạt động'),
-    (N'Võ Thành Hòa',       '0944555666', N'123 Nguyễn Tất Thành',     N'Bến xe Đà Nẵng', N'Hoạt động'),
-    (N'Đỗ Minh Hiếu',       '0955666777', N'45 Bạch Đằng',             N'Bến xe Đà Nẵng', N'Hoạt động'),
-    (N'Bùi Văn Hoàng',      '0966777888', N'67 Trần Hưng Đạo',         N'Bến xe Đà Nẵng', N'Hoạt động'),
-    (N'Ngô Tuấn Anh',       '0977888999', N'89 Lê Lợi',                N'Bến xe Đà Nẵng', N'Hoạt động'),
-    (N'Phan Thị Lan',       '0988999000', N'101 Nguyễn Hoàng',         N'Bến xe Đà Nẵng', N'Hoạt động'),
-    (N'Đặng Hữu Minh',      '0999000111', N'202 Tôn Đức Thắng',        N'Bến xe Đà Nẵng', N'Hoạt động'),
-    (N'Hồ Ngọc Nhi',        '0911222333', N'303 Nguyễn Lương Bằng',    N'Bến xe Đà Nẵng', N'Hoạt động'),
-    (N'Dương Quốc Đạt',     '0922333445', N'404 Phạm Hùng',            N'Bến xe Đà Nẵng', N'Hoạt động'),
-    (N'Mai Anh Phương',     '0933444556', N'505 Lê Trọng Tấn',         N'Bến xe Đà Nẵng', N'Hoạt động'),
-    (N'Trịnh Cẩm Quang',    '0944555667', N'606 Trường Chinh',         N'Bến xe Đà Nẵng', N'Hoạt động'),
-    (N'Đinh Trọng Thành',   '0955666778', N'707 Điện Biên Phủ',        N'Bến xe Đà Nẵng', N'Hoạt động'),
-    (N'Lâm Bảo Sơn',        '0966777889', N'808 Hải Phòng',            N'Bến xe Đà Nẵng', N'Hoạt động'),
-    (N'Thái Huy Thông',     '0977888900', N'909 Núi Thành',            N'Bến xe Đà Nẵng', N'Hoạt động'),
-    (N'Châu Gia Uy',        '0988999011', N'1010 Tiểu La',             N'Bến xe Đà Nẵng', N'Hoạt động'),
-    (N'Trương Hữu Vũ',      '0999000122', N'1111 Phan Đăng Lưu',       N'Bến xe Đà Nẵng', N'Hoạt động');
+    (N'HÃ  VÄƒn Nam',         '0389123456', N'56 Chu Máº¡nh Trinh',        N'Báº¿n xe ÄÃ  Náºµng', N'Hoáº¡t Ä‘á»™ng'),
+    (N'Nguyá»…n Thá»‹ Thuáº­n',   '0389123452', N'36 TÃº Quá»³',                N'Báº¿n xe ÄÃ  Náºµng', N'Hoáº¡t Ä‘á»™ng'),
+    (N'LÃª Minh Äáº¡i',        '0981234567', N'12 Nguyá»…n VÄƒn Linh',       N'Báº¿n xe ÄÃ  Náºµng', N'Hoáº¡t Ä‘á»™ng'),
+    (N'Pháº¡m Thá»‹ Dung',      '0912345670', N'34 LÃª Duáº©n',               N'Báº¿n xe ÄÃ  Náºµng', N'Hoáº¡t Ä‘á»™ng'),
+    (N'Tráº§n HoÃ ng BÃ¡ch',    '0901234567', N'56 Tráº§n PhÃº',              N'Báº¿n xe ÄÃ  Náºµng', N'Hoáº¡t Ä‘á»™ng'),
+    (N'Nguyá»…n VÄƒn PhÆ°Æ¡ng',  '0922333444', N'78 HÃ¹ng VÆ°Æ¡ng',            N'Báº¿n xe ÄÃ  Náºµng', N'Hoáº¡t Ä‘á»™ng'),
+    (N'LÃ½ Thá»‹ Giang',       '0933444555', N'90 Äiá»‡n BiÃªn Phá»§',         N'Báº¿n xe ÄÃ  Náºµng', N'Hoáº¡t Ä‘á»™ng'),
+    (N'VÃµ ThÃ nh HÃ²a',       '0944555666', N'123 Nguyá»…n Táº¥t ThÃ nh',     N'Báº¿n xe ÄÃ  Náºµng', N'Hoáº¡t Ä‘á»™ng'),
+    (N'Äá»— Minh Hiáº¿u',       '0955666777', N'45 Báº¡ch Äáº±ng',             N'Báº¿n xe ÄÃ  Náºµng', N'Hoáº¡t Ä‘á»™ng'),
+    (N'BÃ¹i VÄƒn HoÃ ng',      '0966777888', N'67 Tráº§n HÆ°ng Äáº¡o',         N'Báº¿n xe ÄÃ  Náºµng', N'Hoáº¡t Ä‘á»™ng'),
+    (N'NgÃ´ Tuáº¥n Anh',       '0977888999', N'89 LÃª Lá»£i',                N'Báº¿n xe ÄÃ  Náºµng', N'Hoáº¡t Ä‘á»™ng'),
+    (N'Phan Thá»‹ Lan',       '0988999000', N'101 Nguyá»…n HoÃ ng',         N'Báº¿n xe ÄÃ  Náºµng', N'Hoáº¡t Ä‘á»™ng'),
+    (N'Äáº·ng Há»¯u Minh',      '0999000111', N'202 TÃ´n Äá»©c Tháº¯ng',        N'Báº¿n xe ÄÃ  Náºµng', N'Hoáº¡t Ä‘á»™ng'),
+    (N'Há»“ Ngá»c Nhi',        '0911222333', N'303 Nguyá»…n LÆ°Æ¡ng Báº±ng',    N'Báº¿n xe ÄÃ  Náºµng', N'Hoáº¡t Ä‘á»™ng'),
+    (N'DÆ°Æ¡ng Quá»‘c Äáº¡t',     '0922333445', N'404 Pháº¡m HÃ¹ng',            N'Báº¿n xe ÄÃ  Náºµng', N'Hoáº¡t Ä‘á»™ng'),
+    (N'Mai Anh PhÆ°Æ¡ng',     '0933444556', N'505 LÃª Trá»ng Táº¥n',         N'Báº¿n xe ÄÃ  Náºµng', N'Hoáº¡t Ä‘á»™ng'),
+    (N'Trá»‹nh Cáº©m Quang',    '0944555667', N'606 TrÆ°á»ng Chinh',         N'Báº¿n xe ÄÃ  Náºµng', N'Hoáº¡t Ä‘á»™ng'),
+    (N'Äinh Trá»ng ThÃ nh',   '0955666778', N'707 Äiá»‡n BiÃªn Phá»§',        N'Báº¿n xe ÄÃ  Náºµng', N'Hoáº¡t Ä‘á»™ng'),
+    (N'LÃ¢m Báº£o SÆ¡n',        '0966777889', N'808 Háº£i PhÃ²ng',            N'Báº¿n xe ÄÃ  Náºµng', N'Hoáº¡t Ä‘á»™ng'),
+    (N'ThÃ¡i Huy ThÃ´ng',     '0977888900', N'909 NÃºi ThÃ nh',            N'Báº¿n xe ÄÃ  Náºµng', N'Hoáº¡t Ä‘á»™ng'),
+    (N'ChÃ¢u Gia Uy',        '0988999011', N'1010 Tiá»ƒu La',             N'Báº¿n xe ÄÃ  Náºµng', N'Hoáº¡t Ä‘á»™ng'),
+    (N'TrÆ°Æ¡ng Há»¯u VÅ©',      '0999000122', N'1111 Phan ÄÄƒng LÆ°u',       N'Báº¿n xe ÄÃ  Náºµng', N'Hoáº¡t Ä‘á»™ng');
 
--- Vé trung chuyển: map theo số điện thoại để tránh lệ thuộc ID cứng
+-- VÃ© trung chuyá»ƒn: map theo sá»‘ Ä‘iá»‡n thoáº¡i Ä‘á»ƒ trÃ¡nh lá»‡ thuá»™c ID cá»©ng
 INSERT INTO VeTrungChuyen (KhungGioTrungChuyen, SoLuongGhe, TrangThaiVe, MaKhachHang)
 SELECT
     v.KhungGioTrungChuyen,
@@ -267,38 +306,38 @@ SELECT
 FROM
 (
     VALUES
-        ('0389123456', N'7:00 - 9:00',   1, N'Cần trung chuyển'),
-        ('0389123452', N'7:00 - 9:00',   2, N'Cần trung chuyển'),
-        ('0981234567', N'7:00 - 9:00',   1, N'Cần trung chuyển'),
-        ('0912345670', N'7:00 - 9:00',   1, N'Cần trung chuyển'),
-        ('0901234567', N'7:00 - 9:00',   2, N'Cần trung chuyển'),
-        ('0922333444', N'7:00 - 9:00',   1, N'Cần trung chuyển'),
+        ('0389123456', N'7:00 - 9:00',   1, N'Cáº§n trung chuyá»ƒn'),
+        ('0389123452', N'7:00 - 9:00',   2, N'Cáº§n trung chuyá»ƒn'),
+        ('0981234567', N'7:00 - 9:00',   1, N'Cáº§n trung chuyá»ƒn'),
+        ('0912345670', N'7:00 - 9:00',   1, N'Cáº§n trung chuyá»ƒn'),
+        ('0901234567', N'7:00 - 9:00',   2, N'Cáº§n trung chuyá»ƒn'),
+        ('0922333444', N'7:00 - 9:00',   1, N'Cáº§n trung chuyá»ƒn'),
 
-        ('0933444555', N'9:00 - 11:00',  1, N'Cần trung chuyển'),
-        ('0944555666', N'9:00 - 11:00',  2, N'Cần trung chuyển'),
-        ('0955666777', N'9:00 - 11:00',  1, N'Cần trung chuyển'),
-        ('0966777888', N'9:00 - 11:00',  1, N'Cần trung chuyển'),
-        ('0977888999', N'9:00 - 11:00',  2, N'Cần trung chuyển'),
-        ('0988999000', N'9:00 - 11:00',  1, N'Cần trung chuyển'),
+        ('0933444555', N'9:00 - 11:00',  1, N'Cáº§n trung chuyá»ƒn'),
+        ('0944555666', N'9:00 - 11:00',  2, N'Cáº§n trung chuyá»ƒn'),
+        ('0955666777', N'9:00 - 11:00',  1, N'Cáº§n trung chuyá»ƒn'),
+        ('0966777888', N'9:00 - 11:00',  1, N'Cáº§n trung chuyá»ƒn'),
+        ('0977888999', N'9:00 - 11:00',  2, N'Cáº§n trung chuyá»ƒn'),
+        ('0988999000', N'9:00 - 11:00',  1, N'Cáº§n trung chuyá»ƒn'),
 
-        ('0999000111', N'11:00 - 13:00', 1, N'Cần trung chuyển'),
-        ('0911222333', N'11:00 - 13:00', 2, N'Cần trung chuyển'),
-        ('0922333445', N'11:00 - 13:00', 1, N'Cần trung chuyển'),
-        ('0933444556', N'11:00 - 13:00', 1, N'Cần trung chuyển'),
-        ('0944555667', N'11:00 - 13:00', 2, N'Cần trung chuyển'),
-        ('0955666778', N'11:00 - 13:00', 1, N'Cần trung chuyển'),
+        ('0999000111', N'11:00 - 13:00', 1, N'Cáº§n trung chuyá»ƒn'),
+        ('0911222333', N'11:00 - 13:00', 2, N'Cáº§n trung chuyá»ƒn'),
+        ('0922333445', N'11:00 - 13:00', 1, N'Cáº§n trung chuyá»ƒn'),
+        ('0933444556', N'11:00 - 13:00', 1, N'Cáº§n trung chuyá»ƒn'),
+        ('0944555667', N'11:00 - 13:00', 2, N'Cáº§n trung chuyá»ƒn'),
+        ('0955666778', N'11:00 - 13:00', 1, N'Cáº§n trung chuyá»ƒn'),
 
-        ('0966777889', N'13:00 - 15:00', 1, N'Cần trung chuyển'),
-        ('0977888900', N'13:00 - 15:00', 2, N'Cần trung chuyển'),
-        ('0988999011', N'15:00 - 17:00', 1, N'Cần trung chuyển'),
-        ('0999000122', N'15:00 - 17:00', 1, N'Cần trung chuyển')
+        ('0966777889', N'13:00 - 15:00', 1, N'Cáº§n trung chuyá»ƒn'),
+        ('0977888900', N'13:00 - 15:00', 2, N'Cáº§n trung chuyá»ƒn'),
+        ('0988999011', N'15:00 - 17:00', 1, N'Cáº§n trung chuyá»ƒn'),
+        ('0999000122', N'15:00 - 17:00', 1, N'Cáº§n trung chuyá»ƒn')
 ) AS v(SoDienThoai, KhungGioTrungChuyen, SoLuongGhe, TrangThaiVe)
 INNER JOIN KhachHang kh
     ON kh.SoDienThoai = v.SoDienThoai;
 GO
 
 ------------------------------------------------------------
--- 5. Tạo một lộ trình mẫu + chi tiết + theo dõi trạng thái
+-- 5. Táº¡o má»™t lá»™ trÃ¬nh máº«u + chi tiáº¿t + theo dÃµi tráº¡ng thÃ¡i
 ------------------------------------------------------------
 DECLARE @MaXe1 INT = (SELECT TOP 1 MaXe FROM XeTrungChuyen WHERE BienSo = '51A-12345');
 DECLARE @MaTaiXe1 INT = (SELECT TOP 1 MaTaiXe FROM TaiXe WHERE SoDienThoai = '0912345678');
@@ -307,7 +346,7 @@ DECLARE @MaNhanVien1 INT = (SELECT TOP 1 MaNhanVien FROM NhanVienDieuPhoi ORDER 
 INSERT INTO LoTrinhTrungChuyen
     (ThoiGianBatDau, ThoiGianKetThuc, LoTrinhDuKien, GhiChu, TrangThaiLoTrinh, MaXe, MaTaiXe, MaNhanVien)
 VALUES
-    (DATEADD(HOUR, 1, GETDATE()), NULL, N'Hải Châu → Thanh Khê → Bến xe Đà Nẵng', N'Lộ trình demo', N'Đang thực hiện', @MaXe1, @MaTaiXe1, @MaNhanVien1);
+    (DATEADD(HOUR, 1, GETDATE()), NULL, N'Háº£i ChÃ¢u â†’ Thanh KhÃª â†’ Báº¿n xe ÄÃ  Náºµng', N'Lá»™ trÃ¬nh demo', N'Äang thá»±c hiá»‡n', @MaXe1, @MaTaiXe1, @MaNhanVien1);
 
 DECLARE @MaLoTrinh1 INT = SCOPE_IDENTITY();
 
@@ -323,24 +362,24 @@ DECLARE @MaVe1 INT =
 INSERT INTO ChiTietLoTrinh
     (ThuTuDonTra, DiemDon, DiemTra, ThoiGianDonDuKien, TrangThaiKhach, MaLoTrinh, MaVe)
 VALUES
-    (1, N'56 Chu Mạnh Trinh', N'Bến xe Đà Nẵng', DATEADD(HOUR, 1, GETDATE()), N'Đã đến điểm đón', @MaLoTrinh1, @MaVe1);
+    (1, N'56 Chu Máº¡nh Trinh', N'Báº¿n xe ÄÃ  Náºµng', DATEADD(HOUR, 1, GETDATE()), N'ÄÃ£ Ä‘áº¿n Ä‘iá»ƒm Ä‘Ã³n', @MaLoTrinh1, @MaVe1);
 
 INSERT INTO TheoDoiTrangThai (ViTriHienTai, TrangThai, MaLoTrinh)
-VALUES (N'Đang tại khu vực Hải Châu', N'Đang thực hiện', @MaLoTrinh1);
+VALUES (N'Äang táº¡i khu vá»±c Háº£i ChÃ¢u', N'Äang thá»±c hiá»‡n', @MaLoTrinh1);
 GO
 
 ------------------------------------------------------------
--- 6. Gợi ý đăng nhập
+-- 6. Gá»£i Ã½ Ä‘Äƒng nháº­p
 ------------------------------------------------------------
--- Tên đăng nhập: dieuphoi1
--- Mật khẩu:      123456
+-- TÃªn Ä‘Äƒng nháº­p: dieuphoi1
+-- Mật khẩu:      12345678
 --
--- Hoặc tài xế:
--- Tên đăng nhập: taixe1
--- Mật khẩu:      123456
+-- Hoáº·c tÃ i xáº¿:
+-- TÃªn Ä‘Äƒng nháº­p: taixe1
+-- Mật khẩu:      12345678
 
 ------------------------------------------------------------
--- 7. OPTION 1 - External master data (giả lập) + Dispatch schema
+-- 7. OPTION 1 - External master data (giáº£ láº­p) + Dispatch schema
 ------------------------------------------------------------
 CREATE TABLE dbo.external_customers (
     id INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
@@ -368,6 +407,7 @@ CREATE TABLE dbo.external_drivers (
     id INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
     legacy_ma_tai_xe INT NOT NULL,
     driver_code NVARCHAR(20) NOT NULL,
+    employee_code NVARCHAR(20) NULL,
     full_name NVARCHAR(100) NOT NULL,
     phone VARCHAR(15) NOT NULL,
     national_id VARCHAR(20) NOT NULL,
@@ -387,7 +427,19 @@ CREATE TABLE dbo.external_drivers (
 );
 GO
 
+IF COL_LENGTH('dbo.external_drivers', 'employee_code') IS NULL
+BEGIN
+    ALTER TABLE dbo.external_drivers
+    ADD employee_code NVARCHAR(20) NULL;
+END;
+GO
+
 CREATE INDEX IX_external_drivers_availability_status ON dbo.external_drivers(availability_status);
+GO
+
+CREATE UNIQUE INDEX UX_external_drivers_employee_code
+ON dbo.external_drivers(employee_code)
+WHERE employee_code IS NOT NULL;
 GO
 
 CREATE TABLE dbo.external_vehicles (
@@ -560,10 +612,10 @@ CREATE INDEX IX_route_plan_logs_plan_time ON dbo.route_plan_logs(route_plan_id, 
 GO
 
 ------------------------------------------------------------
--- 10. Seed external_* từ schema hiện tại
+-- 10. Seed external_* tá»« schema hiá»‡n táº¡i
 ------------------------------------------------------------
 INSERT INTO dbo.source_metadata (source_system, source_name, description, last_import_at)
-VALUES (N'SIMULATED', N'Dữ liệu ngoài (giả lập)', N'Master data mô phỏng cho đồ án', GETDATE());
+VALUES (N'SIMULATED', N'Dá»¯ liá»‡u ngoÃ i (giáº£ láº­p)', N'Master data mÃ´ phá»ng cho Ä‘á»“ Ã¡n', GETDATE());
 GO
 
 INSERT INTO dbo.external_customers (
@@ -583,14 +635,15 @@ SELECT
     kh.SoDienThoai,
     kh.DiaChiDon,
     kh.DiaChiTra,
-    CASE WHEN kh.TrangThai IS NULL OR kh.TrangThai = N'Hoạt động' THEN N'ACTIVE' ELSE N'INACTIVE' END,
-    CASE WHEN kh.TrangThai IS NULL OR kh.TrangThai = N'Hoạt động' THEN 1 ELSE 0 END
+    CASE WHEN kh.TrangThai IS NULL OR kh.TrangThai = N'Hoáº¡t Ä‘á»™ng' THEN N'ACTIVE' ELSE N'INACTIVE' END,
+    CASE WHEN kh.TrangThai IS NULL OR kh.TrangThai = N'Hoáº¡t Ä‘á»™ng' THEN 1 ELSE 0 END
 FROM dbo.KhachHang kh;
 GO
 
 INSERT INTO dbo.external_drivers (
     legacy_ma_tai_xe,
     driver_code,
+    employee_code,
     full_name,
     phone,
     national_id,
@@ -606,24 +659,25 @@ SELECT
         WHEN tx.MaTaiXe < 1000 THEN CONCAT('TX', RIGHT('000' + CAST(tx.MaTaiXe AS VARCHAR(10)), 3))
         ELSE CONCAT('TX', CAST(tx.MaTaiXe AS VARCHAR(10)))
     END,
+    tx.MaNhanVienTaiXe,
     tx.HoTen,
     tx.SoDienThoai,
     tx.CCCD,
     NULL,
     tx.LoaiBangLai,
     CASE
-        WHEN tx.TrangThaiTaiXe IN (N'Ngừng hoạt động') THEN N'INACTIVE'
+        WHEN tx.TrangThaiTaiXe IN (N'Ngá»«ng hoáº¡t Ä‘á»™ng') THEN N'INACTIVE'
         ELSE N'ACTIVE'
     END,
     CASE
-        WHEN tx.TrangThaiTaiXe IN (N'Rảnh') THEN N'AVAILABLE'
-        WHEN tx.TrangThaiTaiXe IN (N'Đã phân công') THEN N'ASSIGNED'
-        WHEN tx.TrangThaiTaiXe IN (N'Đang thực hiện', N'Đang thực hiện chuyến') THEN N'BUSY'
-        WHEN tx.TrangThaiTaiXe IN (N'Không sẵn sàng', N'Ngừng hoạt động') THEN N'OFF'
+        WHEN tx.TrangThaiTaiXe IN (N'Ráº£nh') THEN N'AVAILABLE'
+        WHEN tx.TrangThaiTaiXe IN (N'ÄÃ£ phÃ¢n cÃ´ng') THEN N'ASSIGNED'
+        WHEN tx.TrangThaiTaiXe IN (N'Äang thá»±c hiá»‡n', N'Äang thá»±c hiá»‡n chuyáº¿n') THEN N'BUSY'
+        WHEN tx.TrangThaiTaiXe IN (N'KhÃ´ng sáºµn sÃ ng', N'Ngá»«ng hoáº¡t Ä‘á»™ng') THEN N'OFF'
         ELSE N'AVAILABLE'
     END,
     CASE
-        WHEN tx.TrangThaiTaiXe IN (N'Ngừng hoạt động') THEN 0
+        WHEN tx.TrangThaiTaiXe IN (N'Ngá»«ng hoáº¡t Ä‘á»™ng') THEN 0
         ELSE 1
     END
 FROM dbo.TaiXe tx;
@@ -651,28 +705,28 @@ SELECT
     xe.SoCho,
     xe.SoCho,
     CASE
-        WHEN xe.TrangThaiXe IN (N'Ngừng hoạt động') THEN N'INACTIVE'
+        WHEN xe.TrangThaiXe IN (N'Ngá»«ng hoáº¡t Ä‘á»™ng') THEN N'INACTIVE'
         ELSE N'ACTIVE'
     END,
     CASE
-        WHEN xe.TrangThaiXe IN (N'Rảnh') THEN N'AVAILABLE'
-        WHEN xe.TrangThaiXe IN (N'Đã phân công') THEN N'ASSIGNED'
-        WHEN xe.TrangThaiXe IN (N'Đang chạy', N'Đang thực hiện') THEN N'ON_TRIP'
-        WHEN xe.TrangThaiXe IN (N'Bảo trì') THEN N'MAINTENANCE'
+        WHEN xe.TrangThaiXe IN (N'Ráº£nh') THEN N'AVAILABLE'
+        WHEN xe.TrangThaiXe IN (N'ÄÃ£ phÃ¢n cÃ´ng') THEN N'ASSIGNED'
+        WHEN xe.TrangThaiXe IN (N'Äang cháº¡y', N'Äang thá»±c hiá»‡n') THEN N'ON_TRIP'
+        WHEN xe.TrangThaiXe IN (N'Báº£o trÃ¬') THEN N'MAINTENANCE'
         ELSE N'AVAILABLE'
     END,
     CASE
-        WHEN xe.TrangThaiXe IN (N'Ngừng hoạt động') THEN 0
+        WHEN xe.TrangThaiXe IN (N'Ngá»«ng hoáº¡t Ä‘á»™ng') THEN 0
         ELSE 1
     END
 FROM dbo.XeTrungChuyen xe;
 GO
 
 ------------------------------------------------------------
--- 11. Dữ liệu mẫu cho route_plans (Option 1)
+-- 11. Dá»¯ liá»‡u máº«u cho route_plans (Option 1)
 ------------------------------------------------------------
 INSERT INTO dbo.route_plans (plan_code, planned_start_at, planned_end_at, status, notes, created_by)
-VALUES (N'RP0001', DATEADD(HOUR, 2, GETDATE()), DATEADD(HOUR, 4, GETDATE()), N'CONFIRMED', N'Kế hoạch điều phối demo', N'dieuphoi1');
+VALUES (N'RP0001', DATEADD(HOUR, 2, GETDATE()), DATEADD(HOUR, 4, GETDATE()), N'CONFIRMED', N'Káº¿ hoáº¡ch Ä‘iá»u phá»‘i demo', N'dieuphoi1');
 GO
 
 DECLARE @RoutePlanId BIGINT = (SELECT TOP 1 id FROM dbo.route_plans WHERE plan_code = N'RP0001');
@@ -705,8 +759,8 @@ SELECT
 FROM dbo.external_customers ec
 INNER JOIN (
     VALUES
-        ('0389123456', 1, N'Khách ưu tiên đón trước'),
-        ('0389123452', 2, N'Khách đi cùng chuyến')
+        ('0389123456', 1, N'KhÃ¡ch Æ°u tiÃªn Ä‘Ã³n trÆ°á»›c'),
+        ('0389123452', 2, N'KhÃ¡ch Ä‘i cÃ¹ng chuyáº¿n')
 ) s(phone, sequence_no, note)
     ON ec.phone = s.phone;
 
@@ -767,13 +821,13 @@ WHERE ed.id = @ExternalDriver1;
 
 INSERT INTO dbo.route_plan_logs (route_plan_id, event_type, message, payload, created_by)
 VALUES
-    (@RoutePlanId, N'CREATE_PLAN', N'Tạo kế hoạch điều phối demo', NULL, N'dieuphoi1'),
-    (@RoutePlanId, N'ASSIGN_VEHICLE', N'Gán xe cho kế hoạch demo', NULL, N'dieuphoi1'),
-    (@RoutePlanId, N'ASSIGN_DRIVER', N'Gán tài xế cho kế hoạch demo', NULL, N'dieuphoi1');
+    (@RoutePlanId, N'CREATE_PLAN', N'Táº¡o káº¿ hoáº¡ch Ä‘iá»u phá»‘i demo', NULL, N'dieuphoi1'),
+    (@RoutePlanId, N'ASSIGN_VEHICLE', N'GÃ¡n xe cho káº¿ hoáº¡ch demo', NULL, N'dieuphoi1'),
+    (@RoutePlanId, N'ASSIGN_DRIVER', N'GÃ¡n tÃ i xáº¿ cho káº¿ hoáº¡ch demo', NULL, N'dieuphoi1');
 GO
 
 ------------------------------------------------------------
--- 12. Kiểm tra nhanh sau khi chạy
+-- 12. Kiá»ƒm tra nhanh sau khi cháº¡y
 ------------------------------------------------------------
 SELECT COUNT(*) AS SoTaiKhoan FROM dbo.TaiKhoanNguoiDung;
 SELECT COUNT(*) AS SoNhanVienDieuPhoi FROM dbo.NhanVienDieuPhoi;
@@ -788,3 +842,4 @@ SELECT COUNT(*) AS SoExternalDrivers FROM dbo.external_drivers;
 SELECT COUNT(*) AS SoExternalVehicles FROM dbo.external_vehicles;
 SELECT COUNT(*) AS SoRoutePlans FROM dbo.route_plans;
 GO
+

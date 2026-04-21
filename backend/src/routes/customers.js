@@ -3,7 +3,11 @@ const express = require('express');
 const { getPool, sql } = require('../db');
 const { CUSTOMER_STATUSES } = require('../constants/status');
 const { sendError, sendSuccess } = require('../utils/http');
-const { isValidPhoneNumber, toPositiveInteger } = require('../utils/validation');
+const {
+  isValidPhoneNumber,
+  normalizeVietnamPhoneNumber,
+  toPositiveInteger
+} = require('../utils/validation');
 
 const router = express.Router();
 
@@ -32,6 +36,10 @@ const CUSTOMER_OUTPUT_COLUMNS = `
 `;
 
 const ALLOWED_CUSTOMER_STATUSES = new Set(Object.values(CUSTOMER_STATUSES));
+const REQUIRED_FIELD_MESSAGE = 'Thông tin bắt buộc không được để trống';
+const INVALID_PHONE_MESSAGE = 'Số điện thoại không hợp lệ';
+const DUPLICATE_PHONE_MESSAGE = 'Số điện thoại đã tồn tại';
+const DELETE_BLOCKED_MESSAGE = 'Không thể xóa khách hàng';
 
 function buildCustomerCode(legacyId) {
   return `KH${String(legacyId).padStart(8, '0')}`;
@@ -48,27 +56,70 @@ function toExternalIsActive(customerStatus) {
 function getCustomerPayload(body = {}) {
   return {
     TenKhachHang: String(body.TenKhachHang || '').trim(),
-    SoDienThoai: String(body.SoDienThoai || '').trim(),
+    SoDienThoai: normalizeVietnamPhoneNumber(body.SoDienThoai),
     DiaChiDon: String(body.DiaChiDon || '').trim(),
     DiaChiTra: String(body.DiaChiTra || '').trim(),
     TrangThai: body.TrangThai ? String(body.TrangThai).trim() : CUSTOMER_STATUSES.ACTIVE
   };
 }
 
-function validateCustomerPayload(customer) {
-  if (!customer.TenKhachHang || !customer.SoDienThoai || !customer.DiaChiDon || !customer.DiaChiTra) {
-    return 'Tên, số điện thoại và địa chỉ đón/trả là bắt buộc';
+function buildCustomerFieldErrors(customer) {
+  const fieldErrors = {};
+
+  if (!customer.TenKhachHang) {
+    fieldErrors.TenKhachHang = REQUIRED_FIELD_MESSAGE;
   }
 
-  if (!isValidPhoneNumber(customer.SoDienThoai)) {
-    return 'Số điện thoại không hợp lệ (10 chữ số, bắt đầu bằng 0)';
+  if (!customer.SoDienThoai) {
+    fieldErrors.SoDienThoai = REQUIRED_FIELD_MESSAGE;
+  } else if (!isValidPhoneNumber(customer.SoDienThoai)) {
+    fieldErrors.SoDienThoai = INVALID_PHONE_MESSAGE;
+  }
+
+  if (!customer.DiaChiDon) {
+    fieldErrors.DiaChiDon = REQUIRED_FIELD_MESSAGE;
+  }
+
+  if (!customer.DiaChiTra) {
+    fieldErrors.DiaChiTra = REQUIRED_FIELD_MESSAGE;
+  }
+
+  return fieldErrors;
+}
+
+function getFirstFieldErrorMessage(fieldErrors) {
+  return (
+    fieldErrors.TenKhachHang ||
+    fieldErrors.SoDienThoai ||
+    fieldErrors.DiaChiDon ||
+    fieldErrors.DiaChiTra ||
+    'Dữ liệu khách hàng không hợp lệ'
+  );
+}
+
+function validateCustomerPayload(customer) {
+  const fieldErrors = buildCustomerFieldErrors(customer);
+  if (Object.keys(fieldErrors).length > 0) {
+    return {
+      message: getFirstFieldErrorMessage(fieldErrors),
+      fieldErrors
+    };
   }
 
   if (!ALLOWED_CUSTOMER_STATUSES.has(customer.TrangThai)) {
-    return 'Trạng thái khách hàng không hợp lệ';
+    return {
+      message: 'Trạng thái khách hàng không hợp lệ',
+      fieldErrors: {
+        TrangThai: 'Trạng thái khách hàng không hợp lệ'
+      }
+    };
   }
 
   return null;
+}
+
+function sendCustomerValidationError(res, status, message, fieldErrors, errorCode = 'VALIDATION_ERROR') {
+  return sendError(res, status, message, errorCode, { fieldErrors });
 }
 
 router.get('/', async (req, res) => {
@@ -133,9 +184,14 @@ router.get('/:id', async (req, res) => {
 
 router.post('/', async (req, res) => {
   const customer = getCustomerPayload(req.body);
-  const validationMessage = validateCustomerPayload(customer);
-  if (validationMessage) {
-    return sendError(res, 400, validationMessage, 'VALIDATION_ERROR');
+  const validation = validateCustomerPayload(customer);
+  if (validation) {
+    return sendCustomerValidationError(
+      res,
+      400,
+      validation.message,
+      validation.fieldErrors
+    );
   }
 
   try {
@@ -155,7 +211,13 @@ router.post('/', async (req, res) => {
 
       if (existing.recordset.length > 0) {
         await transaction.rollback();
-        return sendError(res, 409, 'Số điện thoại đã tồn tại', 'CONFLICT');
+        return sendCustomerValidationError(
+          res,
+          409,
+          DUPLICATE_PHONE_MESSAGE,
+          { SoDienThoai: DUPLICATE_PHONE_MESSAGE },
+          'CONFLICT'
+        );
       }
 
       const legacyInsert = await new sql.Request(transaction)
@@ -216,9 +278,14 @@ router.put('/:id', async (req, res) => {
   }
 
   const customer = getCustomerPayload(req.body);
-  const validationMessage = validateCustomerPayload(customer);
-  if (validationMessage) {
-    return sendError(res, 400, validationMessage, 'VALIDATION_ERROR');
+  const validation = validateCustomerPayload(customer);
+  if (validation) {
+    return sendCustomerValidationError(
+      res,
+      400,
+      validation.message,
+      validation.fieldErrors
+    );
   }
 
   try {
@@ -252,7 +319,13 @@ router.put('/:id', async (req, res) => {
 
       if (existingPhone.recordset.length > 0) {
         await transaction.rollback();
-        return sendError(res, 409, 'Số điện thoại đã tồn tại cho khách hàng khác', 'CONFLICT');
+        return sendCustomerValidationError(
+          res,
+          409,
+          DUPLICATE_PHONE_MESSAGE,
+          { SoDienThoai: DUPLICATE_PHONE_MESSAGE },
+          'CONFLICT'
+        );
       }
 
       await new sql.Request(transaction)
@@ -325,7 +398,7 @@ router.delete('/:id', async (req, res) => {
 
       if (relatedTickets.recordset.length > 0) {
         await transaction.rollback();
-        return sendError(res, 409, 'Không thể ngưng hoạt động khách hàng đang có vé', 'CONFLICT');
+        return sendError(res, 409, DELETE_BLOCKED_MESSAGE, 'CONFLICT');
       }
 
       const existingCustomer = await new sql.Request(transaction)

@@ -3,6 +3,7 @@ export interface AuthUser {
   TenDangNhap: string
   VaiTro: string
   TrangThaiTaiKhoan?: boolean
+  YeuCauDoiMatKhau?: boolean
   SoDienThoai?: string
   HoTen?: string
   MaTaiXe?: number | null
@@ -17,6 +18,14 @@ export interface AuthSession {
 
 const USER_KEY = 'user'
 const ACCESS_TOKEN_KEY = 'accessToken'
+const PENDING_PASSWORD_CHANGE_KEY = 'pendingPasswordChange'
+
+export interface PendingPasswordChangeSession {
+  user: AuthUser
+  passwordChangeToken: string
+  remember: boolean
+  redirectPath?: string | null
+}
 
 function readSessionFrom(storage: Storage): AuthSession | null {
   const rawUser = storage.getItem(USER_KEY)
@@ -65,6 +74,7 @@ export function saveAuthSession(user: AuthUser, accessToken: string, remember: b
   primaryStorage.setItem(ACCESS_TOKEN_KEY, accessToken)
   secondaryStorage.removeItem(USER_KEY)
   secondaryStorage.removeItem(ACCESS_TOKEN_KEY)
+  sessionStorage.removeItem(PENDING_PASSWORD_CHANGE_KEY)
 }
 
 export function clearAuthSession() {
@@ -76,6 +86,47 @@ export function clearAuthSession() {
   localStorage.removeItem(ACCESS_TOKEN_KEY)
   sessionStorage.removeItem(USER_KEY)
   sessionStorage.removeItem(ACCESS_TOKEN_KEY)
+  sessionStorage.removeItem(PENDING_PASSWORD_CHANGE_KEY)
+}
+
+export function savePendingPasswordChange(session: PendingPasswordChangeSession) {
+  if (typeof window === 'undefined') {
+    return
+  }
+
+  sessionStorage.setItem(PENDING_PASSWORD_CHANGE_KEY, JSON.stringify(session))
+}
+
+export function getPendingPasswordChange(): PendingPasswordChangeSession | null {
+  if (typeof window === 'undefined') {
+    return null
+  }
+
+  const rawValue = sessionStorage.getItem(PENDING_PASSWORD_CHANGE_KEY)
+  if (!rawValue) {
+    return null
+  }
+
+  try {
+    const parsed = JSON.parse(rawValue) as PendingPasswordChangeSession
+    if (!parsed?.passwordChangeToken || !parsed?.user?.TenDangNhap) {
+      sessionStorage.removeItem(PENDING_PASSWORD_CHANGE_KEY)
+      return null
+    }
+
+    return parsed
+  } catch {
+    sessionStorage.removeItem(PENDING_PASSWORD_CHANGE_KEY)
+    return null
+  }
+}
+
+export function clearPendingPasswordChange() {
+  if (typeof window === 'undefined') {
+    return
+  }
+
+  sessionStorage.removeItem(PENDING_PASSWORD_CHANGE_KEY)
 }
 
 export function isDriverRole(role?: string | null) {

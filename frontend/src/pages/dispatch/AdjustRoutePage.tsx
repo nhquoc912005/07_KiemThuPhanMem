@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { api } from '../../services/api/client';
+
 import { DispatcherLayout } from '../../components/DispatcherLayout';
+import { api } from '../../services/api/client';
 
 interface RouteSummary {
   MaLoTrinh: number;
@@ -34,15 +35,40 @@ interface RouteDetailResponse {
   stops: RouteStop[];
 }
 
+interface RouteFormValues {
+  startTime: string;
+  plannedRoute: string;
+  note: string;
+}
+
 function toDateTimeLocal(value?: string | null) {
   if (!value) return '';
+
   const date = new Date(value);
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
   const hour = String(date.getHours()).padStart(2, '0');
   const minute = String(date.getMinutes()).padStart(2, '0');
+
   return `${year}-${month}-${day}T${hour}:${minute}`;
+}
+
+function buildRouteFormValues(route: RouteSummary): RouteFormValues {
+  return {
+    startTime: toDateTimeLocal(route.ThoiGianBatDau),
+    plannedRoute: route.LoTrinhDuKien || '',
+    note: route.GhiChu || ''
+  };
+}
+
+function hasPastStartTimeChange(current: string, original: string) {
+  if (!current || current === original) {
+    return false;
+  }
+
+  const nextDate = new Date(current);
+  return !Number.isNaN(nextDate.getTime()) && nextDate.getTime() < Date.now();
 }
 
 export const AdjustRoutePage: React.FC = () => {
@@ -57,6 +83,7 @@ export const AdjustRoutePage: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
 
   const loadRoutes = async () => {
     setLoadingList(true);
@@ -80,13 +107,17 @@ export const AdjustRoutePage: React.FC = () => {
   const loadRouteDetail = async (routeId: number) => {
     setLoadingDetail(true);
     setError(null);
+    setMessage(null);
+    setShowConfirmModal(false);
 
     try {
       const res = await api.get<RouteDetailResponse>(`/routes/${routeId}`);
+      const nextFormValues = buildRouteFormValues(res.data.route);
+
       setDetail(res.data);
-      setPlannedRoute(res.data.route.LoTrinhDuKien || '');
-      setNote(res.data.route.GhiChu || '');
-      setStartTime(toDateTimeLocal(res.data.route.ThoiGianBatDau));
+      setPlannedRoute(nextFormValues.plannedRoute);
+      setNote(nextFormValues.note);
+      setStartTime(nextFormValues.startTime);
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
       setDetail(null);
@@ -110,7 +141,34 @@ export const AdjustRoutePage: React.FC = () => {
     [detail?.route, routes, selectedId]
   );
 
-  const handleSave = async () => {
+  const originalFormValues = useMemo(
+    () => (detail ? buildRouteFormValues(detail.route) : null),
+    [detail]
+  );
+
+  const hasFormChanges = Boolean(
+    originalFormValues &&
+      (startTime !== originalFormValues.startTime ||
+        plannedRoute.trim() !== originalFormValues.plannedRoute.trim() ||
+        note.trim() !== originalFormValues.note.trim())
+  );
+
+  const requiresRunningRouteConfirmation =
+    detail?.route.TrangThaiLoTrinh === 'Đang thực hiện' && hasFormChanges;
+
+  const resetEditingForm = () => {
+    if (!detail) return;
+
+    const nextFormValues = buildRouteFormValues(detail.route);
+    setPlannedRoute(nextFormValues.plannedRoute);
+    setNote(nextFormValues.note);
+    setStartTime(nextFormValues.startTime);
+    setMessage(null);
+    setError(null);
+    setShowConfirmModal(false);
+  };
+
+  const submitRouteUpdate = async () => {
     if (!currentRoute) return;
 
     setSaving(true);
@@ -136,6 +194,30 @@ export const AdjustRoutePage: React.FC = () => {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleSave = async () => {
+    if (!currentRoute || !originalFormValues) return;
+
+    setError(null);
+    setMessage(null);
+
+    if (!hasFormChanges) {
+      setMessage('Không có thay đổi để cập nhật');
+      return;
+    }
+
+    if (hasPastStartTimeChange(startTime, originalFormValues.startTime)) {
+      setError('Thời gian không hợp lệ');
+      return;
+    }
+
+    if (requiresRunningRouteConfirmation) {
+      setShowConfirmModal(true);
+      return;
+    }
+
+    await submitRouteUpdate();
   };
 
   return (
@@ -229,7 +311,16 @@ export const AdjustRoutePage: React.FC = () => {
             <div>Hãy chọn một lộ trình bên trái để điều chỉnh.</div>
           ) : (
             <>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, paddingBottom: 16, borderBottom: '1px solid #E5E7EB' }}>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginBottom: 20,
+                  paddingBottom: 16,
+                  borderBottom: '1px solid #E5E7EB'
+                }}
+              >
                 <h3 style={{ fontSize: 16, fontWeight: 700, color: '#111827', margin: 0 }}>
                   Chi tiết lộ trình: LT{String(detail.route.MaLoTrinh).padStart(3, '0')}
                 </h3>
@@ -252,7 +343,18 @@ export const AdjustRoutePage: React.FC = () => {
                 <input
                   value={`${detail.route.BienSo} (${detail.route.LoaiXe}, ${detail.route.SoCho} chỗ)`}
                   readOnly
-                  style={{ width: '100%', height: 42, borderRadius: 8, border: '1px solid #CBD5E1', padding: '0 12px', fontSize: 14, color: '#111827', outline: 'none', background: '#F8FAFC', boxSizing: 'border-box' }}
+                  style={{
+                    width: '100%',
+                    height: 42,
+                    borderRadius: 8,
+                    border: '1px solid #CBD5E1',
+                    padding: '0 12px',
+                    fontSize: 14,
+                    color: '#111827',
+                    outline: 'none',
+                    background: '#F8FAFC',
+                    boxSizing: 'border-box'
+                  }}
                 />
               </div>
 
@@ -261,7 +363,18 @@ export const AdjustRoutePage: React.FC = () => {
                 <input
                   value={`${detail.route.TenTaiXe} - ${detail.route.SoDienThoaiTaiXe || 'Chưa có số'} (${detail.route.TrangThaiLoTrinh})`}
                   readOnly
-                  style={{ width: '100%', height: 42, borderRadius: 8, border: '1px solid #CBD5E1', padding: '0 12px', fontSize: 14, color: '#111827', outline: 'none', background: '#F8FAFC', boxSizing: 'border-box' }}
+                  style={{
+                    width: '100%',
+                    height: 42,
+                    borderRadius: 8,
+                    border: '1px solid #CBD5E1',
+                    padding: '0 12px',
+                    fontSize: 14,
+                    color: '#111827',
+                    outline: 'none',
+                    background: '#F8FAFC',
+                    boxSizing: 'border-box'
+                  }}
                 />
               </div>
 
@@ -271,7 +384,17 @@ export const AdjustRoutePage: React.FC = () => {
                   type="datetime-local"
                   value={startTime}
                   onChange={(e) => setStartTime(e.target.value)}
-                  style={{ width: '100%', height: 42, padding: '0 12px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 14, color: '#111827', outline: 'none', boxSizing: 'border-box' }}
+                  style={{
+                    width: '100%',
+                    height: 42,
+                    padding: '0 12px',
+                    borderRadius: 8,
+                    border: '1px solid #CBD5E1',
+                    fontSize: 14,
+                    color: '#111827',
+                    outline: 'none',
+                    boxSizing: 'border-box'
+                  }}
                 />
               </div>
 
@@ -280,7 +403,17 @@ export const AdjustRoutePage: React.FC = () => {
                 <input
                   value={plannedRoute}
                   onChange={(e) => setPlannedRoute(e.target.value)}
-                  style={{ width: '100%', height: 42, borderRadius: 8, border: '1px solid #CBD5E1', padding: '0 12px', fontSize: 14, color: '#111827', outline: 'none', boxSizing: 'border-box' }}
+                  style={{
+                    width: '100%',
+                    height: 42,
+                    borderRadius: 8,
+                    border: '1px solid #CBD5E1',
+                    padding: '0 12px',
+                    fontSize: 14,
+                    color: '#111827',
+                    outline: 'none',
+                    boxSizing: 'border-box'
+                  }}
                 />
               </div>
 
@@ -290,7 +423,17 @@ export const AdjustRoutePage: React.FC = () => {
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
                   rows={3}
-                  style={{ width: '100%', borderRadius: 8, border: '1px solid #CBD5E1', padding: '10px 12px', fontSize: 14, color: '#111827', outline: 'none', resize: 'vertical', boxSizing: 'border-box' }}
+                  style={{
+                    width: '100%',
+                    borderRadius: 8,
+                    border: '1px solid #CBD5E1',
+                    padding: '10px 12px',
+                    fontSize: 14,
+                    color: '#111827',
+                    outline: 'none',
+                    resize: 'vertical',
+                    boxSizing: 'border-box'
+                  }}
                 />
               </div>
 
@@ -303,7 +446,18 @@ export const AdjustRoutePage: React.FC = () => {
                     <div style={{ padding: 16, color: '#64748b' }}>Chưa có hành khách nào trong lộ trình này.</div>
                   ) : (
                     detail.stops.map((stop) => (
-                      <div key={stop.MaChiTiet} style={{ padding: '12px 14px', borderTop: '1px solid #E5E7EB', display: 'grid', gridTemplateColumns: '140px 1fr 1fr 90px 130px', gap: 12, alignItems: 'center', fontSize: 13 }}>
+                      <div
+                        key={stop.MaChiTiet}
+                        style={{
+                          padding: '12px 14px',
+                          borderTop: '1px solid #E5E7EB',
+                          display: 'grid',
+                          gridTemplateColumns: '140px 1fr 1fr 90px 130px',
+                          gap: 12,
+                          alignItems: 'center',
+                          fontSize: 13
+                        }}
+                      >
                         <div style={{ fontWeight: 600, color: '#111827' }}>VE{String(stop.MaVe).padStart(3, '0')}</div>
                         <div>
                           <div style={{ fontWeight: 600, color: '#111827' }}>{stop.TenKhachHang}</div>
@@ -322,20 +476,38 @@ export const AdjustRoutePage: React.FC = () => {
               </div>
 
               {error && (
-                <div style={{ background: '#FEE2E2', borderRadius: 8, padding: '10px 14px', color: '#B91C1C', marginBottom: 16, fontSize: 14 }}>
+                <div
+                  style={{
+                    background: '#FEE2E2',
+                    borderRadius: 8,
+                    padding: '10px 14px',
+                    color: '#B91C1C',
+                    marginBottom: 16,
+                    fontSize: 14
+                  }}
+                >
                   {error}
                 </div>
               )}
 
               {message && (
-                <div style={{ background: '#D1FAE5', borderRadius: 8, padding: '10px 14px', color: '#047857', marginBottom: 16, fontSize: 14 }}>
+                <div
+                  style={{
+                    background: '#D1FAE5',
+                    borderRadius: 8,
+                    padding: '10px 14px',
+                    color: '#047857',
+                    marginBottom: 16,
+                    fontSize: 14
+                  }}
+                >
                   {message}
                 </div>
               )}
 
               <div style={{ display: 'flex', gap: 12 }}>
                 <button
-                  onClick={handleSave}
+                  onClick={() => void handleSave()}
                   disabled={saving}
                   style={{
                     flex: 1,
@@ -353,13 +525,8 @@ export const AdjustRoutePage: React.FC = () => {
                   {saving ? 'Đang cập nhật...' : 'Cập nhật lộ trình'}
                 </button>
                 <button
-                  onClick={() => {
-                    setPlannedRoute(detail.route.LoTrinhDuKien || '');
-                    setNote(detail.route.GhiChu || '');
-                    setStartTime(toDateTimeLocal(detail.route.ThoiGianBatDau));
-                    setMessage(null);
-                    setError(null);
-                  }}
+                  onClick={resetEditingForm}
+                  disabled={saving}
                   style={{
                     padding: '12px 24px',
                     borderRadius: 8,
@@ -368,16 +535,87 @@ export const AdjustRoutePage: React.FC = () => {
                     color: '#475569',
                     fontSize: 15,
                     fontWeight: 600,
-                    cursor: 'pointer'
+                    cursor: 'pointer',
+                    opacity: saving ? 0.7 : 1
                   }}
                 >
-                  Khôi phục
+                  Hủy
                 </button>
               </div>
             </>
           )}
         </div>
       </div>
+
+      {showConfirmModal && (
+        <div style={confirmModalOverlayStyle}>
+          <div style={confirmModalCardStyle}>
+            <h3 style={{ fontSize: 20, fontWeight: 700, color: '#111827', margin: '0 0 12px 0' }}>
+              Xác nhận cập nhật lộ trình
+            </h3>
+            <p style={{ margin: '0 0 24px 0', color: '#475569', lineHeight: 1.6 }}>
+              Lộ trình đang ở trạng thái "Đang thực hiện". Nếu tiếp tục cập nhật, hệ thống sẽ lưu thay đổi
+              và gửi thông tin mới cho tài xế.
+            </p>
+            <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
+              <button type="button" onClick={() => setShowConfirmModal(false)} style={confirmSecondaryButtonStyle}>
+                Hủy
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowConfirmModal(false);
+                  void submitRouteUpdate();
+                }}
+                style={confirmPrimaryButtonStyle}
+              >
+                Xác nhận
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </DispatcherLayout>
   );
+};
+
+const confirmModalOverlayStyle: React.CSSProperties = {
+  position: 'fixed',
+  inset: 0,
+  background: 'rgba(15, 23, 42, 0.45)',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  zIndex: 1000
+};
+
+const confirmModalCardStyle: React.CSSProperties = {
+  width: 480,
+  maxWidth: 'calc(100vw - 32px)',
+  background: '#FFFFFF',
+  borderRadius: 16,
+  padding: 24,
+  boxShadow: '0 20px 40px rgba(15, 23, 42, 0.2)'
+};
+
+const confirmPrimaryButtonStyle: React.CSSProperties = {
+  padding: '10px 18px',
+  borderRadius: 8,
+  border: 'none',
+  background: '#2563EB',
+  color: '#FFFFFF',
+  fontSize: 15,
+  fontWeight: 600,
+  cursor: 'pointer'
+};
+
+const confirmSecondaryButtonStyle: React.CSSProperties = {
+  padding: '10px 18px',
+  borderRadius: 8,
+  border: '1px solid #CBD5E1',
+  background: '#FFFFFF',
+  color: '#334155',
+  fontSize: 15,
+  fontWeight: 600,
+  cursor: 'pointer'
 };

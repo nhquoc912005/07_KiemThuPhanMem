@@ -23,7 +23,7 @@ async function seed() {
         // 1. Tạo 20 Xe sẵn sàng ("Rảnh") và 20 Tài xế "Rảnh"
         // ==========================================
         for(let i=1; i<=20; i++) {
-            const bienSo = i % 2 === 0 ? `43B-200.${String(i).padStart(2, '0')}` : `43E-200.${String(i).padStart(2, '0')}`;
+            const bienSo = i % 2 === 0 ? `43B-200${String(i).padStart(2, '0')}` : `43E-200${String(i).padStart(2, '0')}`;
             await pool.request().input('bienSo', sql.VarChar, bienSo).query(`
                 IF NOT EXISTS (SELECT 1 FROM XeTrungChuyen WHERE BienSo = @bienSo)
                     INSERT INTO XeTrungChuyen (BienSo, LoaiXe, SoCho, TrangThaiXe) VALUES (@bienSo, N'Xe 16 chỗ', 16, N'Rảnh')
@@ -70,10 +70,10 @@ async function seed() {
         // 3. Tạo 4 "Lộ trình đang diễn ra" 
         // ==========================================
         const inProgressRoutes = [
-            { xe: '43B-333.31', txPhone: '0993333001', txName: 'Đoàn Bận Đi', route: 'Bến xe Trung tâm -> Đường Nguyễn Văn Linh -> Cầu Rồng' },
-            { xe: '43E-333.32', txPhone: '0993333002', txName: 'Võ Đang Chạy', route: 'Bến xe Trung tâm -> Ngũ Hành Sơn' },
-            { xe: '43B-333.33', txPhone: '0993333003', txName: 'Trịnh Đang Chở', route: 'Bến xe Trung tâm -> Phạm Văn Đồng -> Bãi biển Mỹ Khê' },
-            { xe: '43E-333.34', txPhone: '0993333004', txName: 'Đỗ Lên Xe', route: 'Bến xe Trung tâm -> Bệnh viện Đà Nẵng' }
+            { xe: '43B-33331', txPhone: '0993333001', txName: 'Đoàn Bận Đi', route: 'Bến xe Trung tâm -> Đường Nguyễn Văn Linh -> Cầu Rồng' },
+            { xe: '43E-33332', txPhone: '0993333002', txName: 'Võ Đang Chạy', route: 'Bến xe Trung tâm -> Ngũ Hành Sơn' },
+            { xe: '43B-33333', txPhone: '0993333003', txName: 'Trịnh Đang Chở', route: 'Bến xe Trung tâm -> Phạm Văn Đồng -> Bãi biển Mỹ Khê' },
+            { xe: '43E-33334', txPhone: '0993333004', txName: 'Đỗ Lên Xe', route: 'Bến xe Trung tâm -> Bệnh viện Đà Nẵng' }
         ];
 
         for(let j=0; j<4; j++) {
@@ -130,7 +130,7 @@ async function seed() {
                 const veId = veRs.recordset[0].MaVe;
 
                 await pool.request().input('maLT', sql.Int, maLoTrinh).input('maVe', sql.Int, veId).input('time', sql.DateTime, timeOffset)
-                    .query(`INSERT INTO ChiTietLoTrinh (ThuTuDonTra, DiemDon, DiemTra, ThoiGianDonDuKien, TrangThaiKhach, MaLoTrinh, MaVe) VALUES (${k}, N'Bến xe Trung tâm Đà Nẵng', N'Dọc đường đi', @time, N'Đã đón', @maLT, @maVe)`);
+                    .query(`INSERT INTO ChiTietLoTrinh (ThuTuDonTra, DiemDon, DiemTra, ThoiGianDonDuKien, TrangThaiKhach, MaLoTrinh, MaVe) VALUES (${k}, N'Bến xe Trung tâm Đà Nẵng', N'Dọc đường đi', @time, N'Đã đón khách', @maLT, @maVe)`);
             }
         }
         console.log('✅ Đã tạo 4 Lộ trình mang trạng thái "Đang thực hiện" kèm Tài xế bận, Xe chạy và Hành khách có trên xe.');

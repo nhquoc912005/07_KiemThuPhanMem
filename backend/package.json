@@ -9,6 +9,7 @@
     "smoke": "node ../scripts/smoke/smoke.js",
     "seed:customers": "node ../scripts/seed/seed_customers.js",
     "seed:dashboard": "node ../scripts/seed/seed_dashboard.js",
+    "seed:driver-accounts": "node ../scripts/seed/seed_driver_accounts.js",
     "seed:driver-demo": "node ../scripts/seed/seed_taixe.js"
   },
   "keywords": [],

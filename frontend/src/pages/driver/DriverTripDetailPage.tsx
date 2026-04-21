@@ -1,440 +1,389 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { DriverLayout } from '../../components/DriverLayout';
-import { api } from '../../services/api/client';
+import React, { useEffect, useMemo, useState } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
+import { DriverLayout } from '../../components/DriverLayout'
+import { ROUTE_STATUS, STOP_STATUS } from '../../constants/status'
+import { api } from '../../services/api/client'
 
 interface DriverRoute {
-  MaLoTrinh: number;
-  MaXe: number;
-  BienSo: string;
-  ThoiGianBatDau: string;
-  ThoiGianKetThuc: string | null;
-  LoTrinhDuKien: string | null;
-  TrangThaiLoTrinh: string;
-  LoaiXe?: string;
-  SoCho?: number;
+  MaLoTrinh: number
+  BienSo: string
+  ThoiGianBatDau: string
+  ThoiGianKetThuc: string | null
+  LoTrinhDuKien: string | null
+  TrangThaiLoTrinh: string
+  SoCho?: number
 }
 
 interface DriverStop {
-  MaChiTiet: number;
-  ThuTuDonTra: number;
-  DiemDon: string;
-  DiemTra: string;
-  ThoiGianDonDuKien: string | null;
-  TrangThaiKhach: string | null;
-  MaLoTrinh: number;
-  MaVe: number;
-  SoLuongGhe: number;
-  KhungGioTrungChuyen: string | null;
-  TrangThaiVe: string;
-  TenKhachHang: string;
-  SoDienThoai: string;
+  MaChiTiet: number
+  ThuTuDonTra: number
+  DiemDon: string
+  DiemTra: string
+  ThoiGianDonDuKien: string | null
+  TrangThaiKhach: string | null
+  MaVe: number
+  SoLuongGhe: number
+  TenKhachHang: string
 }
 
 interface RouteDetail {
-  route: DriverRoute;
-  stops: DriverStop[];
+  route: DriverRoute
+  stops: DriverStop[]
+  sync?: RouteSyncPayload
+}
+
+interface RouteSyncEvent {
+  id: number
+  eventType: string
+  message?: string | null
+  payload?: {
+    notifyDriver?: boolean
+    driverSync?: unknown
+    changedFields?: Record<string, unknown>
+  } | null
+}
+
+interface RouteSyncPayload {
+  available: boolean
+  state: {
+    latestEventId?: number | null
+    events: RouteSyncEvent[]
+  }
+}
+
+interface RouteSyncResponse {
+  routeId: number
+  sync: RouteSyncPayload
+}
+
+const STOP_OPTIONS = [
+  { value: STOP_STATUS.ARRIVED_PICKUP, label: 'Đã đến' },
+  { value: STOP_STATUS.PICKED_UP, label: 'Đã đón' },
+  { value: STOP_STATUS.DROPPED_OFF, label: 'Đã trả khách' },
+  { value: STOP_STATUS.CUSTOMER_CANCELLED, label: 'Hủy chuyến' }
+]
+
+function isDoneStatus(status?: string | null) {
+  return ([STOP_STATUS.DROPPED_OFF, STOP_STATUS.CUSTOMER_CANCELLED] as string[]).includes(String(status || ''))
+}
+
+function getStopBadge(status?: string | null) {
+  switch (status) {
+    case STOP_STATUS.ARRIVED_PICKUP:
+      return { label: 'Đã đến điểm đón', bg: '#DBEAFE', color: '#1D4ED8' }
+    case STOP_STATUS.PICKED_UP:
+      return { label: 'Đã đón khách', bg: '#EDE9FE', color: '#6D28D9' }
+    case STOP_STATUS.DROPPED_OFF:
+      return { label: 'Đã trả khách', bg: '#DCFCE7', color: '#166534' }
+    case STOP_STATUS.CUSTOMER_CANCELLED:
+      return { label: 'Khách hủy', bg: '#FEE2E2', color: '#B91C1C' }
+    default:
+      return { label: 'Đang chờ', bg: '#F3F4F6', color: '#4B5563' }
+  }
+}
+
+function getRouteBadge(status: string) {
+  if (status === ROUTE_STATUS.PENDING) return { label: 'Chưa bắt đầu', bg: '#FEF9C3', color: '#A16207' }
+  if (status === ROUTE_STATUS.IN_PROGRESS) return { label: status, bg: '#DBEAFE', color: '#1D4ED8' }
+  if (status === ROUTE_STATUS.INCIDENT) return { label: status, bg: '#FEE2E2', color: '#B91C1C' }
+  if (status === ROUTE_STATUS.COMPLETED) return { label: status, bg: '#DCFCE7', color: '#166534' }
+  if (status === ROUTE_STATUS.CANCELLED) return { label: status, bg: '#E5E7EB', color: '#374151' }
+  return { label: status || 'Không xác định', bg: '#F3F4F6', color: '#374151' }
 }
 
 export const DriverTripDetailPage: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
-  const [detail, setDetail] = useState<RouteDetail | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
-
-  const [showIncidentModal, setShowIncidentModal] = useState(false);
-  const [incidentDesc, setIncidentDesc] = useState('');
-  const [incidentLoc, setIncidentLoc] = useState('');
-  const [incidentSaving, setIncidentSaving] = useState(false);
-  const [incidentError, setIncidentError] = useState<string | null>(null);
-  const navigate = useNavigate();
-
-  const routeId = Number(id);
+  const { id } = useParams<{ id: string }>()
+  const navigate = useNavigate()
+  const routeId = Number(id)
+  const [detail, setDetail] = useState<RouteDetail | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [message, setMessage] = useState<string | null>(null)
+  const [showIncidentModal, setShowIncidentModal] = useState(false)
+  const [incidentDesc, setIncidentDesc] = useState('')
+  const [incidentLoc, setIncidentLoc] = useState('')
+  const [incidentSaving, setIncidentSaving] = useState(false)
+  const [incidentError, setIncidentError] = useState<string | null>(null)
+  const [lastSyncEventId, setLastSyncEventId] = useState<number | null>(null)
+  const [syncNotice, setSyncNotice] = useState<string | null>(null)
 
   useEffect(() => {
     const fetchDetail = async () => {
-      if (!routeId) return;
-      setLoading(true);
-      setError(null);
+      if (!routeId) return
+      setLoading(true)
+      setError(null)
       try {
-        const res = await api.get<RouteDetail>(`/routes/${routeId}`);
-        setDetail(res.data);
+        const res = await api.get<RouteDetail>(`/routes/${routeId}`)
+        setDetail(res.data)
+        setLastSyncEventId(res.data.sync?.state.latestEventId ?? null)
       } catch (e) {
-        const err = e as { response?: { data?: { message?: string } } };
-        setError(
-          err?.response?.data?.message ??
-          'Lỗi tải thông tin, xin vui lòng thử lại sau.'
-        );
+        const err = e as { response?: { data?: { message?: string } } }
+        setError(err?.response?.data?.message ?? 'Lỗi tải thông tin, vui lòng thử lại sau.')
       } finally {
-        setLoading(false);
+        setLoading(false)
       }
-    };
-    fetchDetail();
-  }, [routeId]);
+    }
+    void fetchDetail()
+  }, [routeId])
+
+  useEffect(() => {
+    if (!routeId) return
+
+    let cancelled = false
+    const pollSyncEvents = async () => {
+      try {
+        const res = await api.get<RouteSyncResponse>(`/routes/${routeId}/sync-events`, {
+          params: lastSyncEventId ? { sinceId: lastSyncEventId } : undefined
+        })
+        if (cancelled) return
+
+        const syncState = res.data.sync?.state
+        const events = syncState?.events || []
+        const latestEvent = events[events.length - 1]
+
+        if (syncState?.latestEventId) {
+          setLastSyncEventId(syncState.latestEventId)
+        }
+
+        if (
+          latestEvent &&
+          (latestEvent.eventType === 'ROUTE_UPDATED' ||
+            latestEvent.payload?.notifyDriver ||
+            latestEvent.payload?.driverSync)
+        ) {
+          const detailRes = await api.get<RouteDetail>(`/routes/${routeId}`)
+          if (cancelled) return
+
+          setDetail(detailRes.data)
+          setSyncNotice(latestEvent.message || 'Lộ trình vừa được điều phối cập nhật')
+        }
+      } catch {
+        // Polling is best-effort; the main detail load still handles visible errors.
+      }
+    }
+
+    const interval = window.setInterval(pollSyncEvents, 15000)
+    return () => {
+      cancelled = true
+      window.clearInterval(interval)
+    }
+  }, [lastSyncEventId, routeId])
+
+  const currentStatus = detail?.route.TrangThaiLoTrinh || ROUTE_STATUS.PENDING
+  const routeBadge = getRouteBadge(currentStatus)
+  const canUpdateStops = ([ROUTE_STATUS.IN_PROGRESS, ROUTE_STATUS.INCIDENT] as string[]).includes(currentStatus)
+  const allStopsResolved = useMemo(() => {
+    const stops = detail?.stops || []
+    return stops.length > 0 && stops.every((stop) => isDoneStatus(stop.TrangThaiKhach))
+  }, [detail?.stops])
+
+  const stats = useMemo(() => {
+    const source = detail?.stops || []
+    return {
+      waiting: source.filter((stop) => !stop.TrangThaiKhach).length,
+      arrived: source.filter((stop) => stop.TrangThaiKhach === STOP_STATUS.ARRIVED_PICKUP).length,
+      picked: source.filter((stop) => stop.TrangThaiKhach === STOP_STATUS.PICKED_UP).length,
+      dropped: source.filter((stop) => stop.TrangThaiKhach === STOP_STATUS.DROPPED_OFF).length,
+      cancelled: source.filter((stop) => stop.TrangThaiKhach === STOP_STATUS.CUSTOMER_CANCELLED).length
+    }
+  }, [detail?.stops])
+
+  const currentMapLocation = useMemo(() => {
+    if (!detail?.stops?.length) return detail?.route.LoTrinhDuKien || 'Việt Nam'
+    const activeStop = detail.stops.find((stop) => !isDoneStatus(stop.TrangThaiKhach))
+    return activeStop?.DiemDon || detail.stops[0].DiemDon || detail.route.LoTrinhDuKien || 'Việt Nam'
+  }, [detail])
+
+  const routeSummaryLabel = useMemo(() => {
+    if (!detail) return '--'
+    return detail.route.LoTrinhDuKien || `${detail.stops[0]?.DiemDon || '--'} -> ${detail.stops[detail.stops.length - 1]?.DiemTra || '--'}`
+  }, [detail])
 
   const updateTripStatus = async (newStatus: string) => {
-    if (!detail) return;
-    setSaving(true);
-    setError(null);
-    setMessage(null);
+    setSaving(true)
+    setError(null)
+    setMessage(null)
     try {
-      const res = await api.put(`/routes/${routeId}`, { TrangThaiLoTrinh: newStatus });
-      setDetail((prev) => (prev ? { ...prev, route: res.data } : prev));
-      setMessage('Đã cập nhật trạng thái chuyến.');
+      const res = await api.put(`/routes/${routeId}`, { TrangThaiLoTrinh: newStatus })
+      setDetail((prev) => (prev ? { ...prev, route: res.data } : prev))
+      setMessage('Đã cập nhật trạng thái chuyến.')
     } catch (e) {
-      const err = e as { response?: { data?: { message?: string } } };
-      setError(err?.response?.data?.message ?? 'Không thể cập nhật trạng thái chuyến.');
+      const err = e as { response?: { data?: { message?: string } } }
+      setError(err?.response?.data?.message ?? 'Không thể cập nhật trạng thái chuyến.')
     } finally {
-      setSaving(false);
+      setSaving(false)
     }
-  };
+  }
 
-  const updateStopStatus = async (stopId: number, newStatus: string) => {
-    if (!detail) return;
-    setSaving(true);
-    setError(null);
-    setMessage(null);
+  const updateStopStatus = async (stopId: number, status: string) => {
+    if (!status) return
+    setSaving(true)
+    setError(null)
+    setMessage(null)
     try {
-      const res = await api.patch(`/routes/${routeId}/stops/${stopId}/status`, { status: newStatus });
+      const res = await api.patch(`/routes/${routeId}/stops/${stopId}/status`, { status })
       setDetail((prev) =>
         prev
           ? {
-            ...prev,
-            stops: prev.stops.map((s) =>
-              s.MaChiTiet === stopId ? { ...s, TrangThaiKhach: newStatus } : s
-            ),
-            route: res.data?.routeAutoCompleted ? { ...prev.route, TrangThaiLoTrinh: 'Hoàn thành' } : prev.route
-          }
+              ...prev,
+              route: res.data?.routeAutoCompleted
+                ? { ...prev.route, TrangThaiLoTrinh: ROUTE_STATUS.COMPLETED }
+                : prev.route,
+              stops: prev.stops.map((stop) =>
+                stop.MaChiTiet === stopId ? { ...stop, TrangThaiKhach: status } : stop
+              )
+            }
           : prev
-      );
-      setMessage(res.data?.routeAutoCompleted ? 'Đã cập nhật. Chuyến đã hoàn thành.' : 'Đã cập nhật trạng thái khách.');
+      )
+      setMessage(res.data?.routeAutoCompleted ? 'Đã cập nhật khách. Chuyến đã hoàn thành.' : 'Đã cập nhật trạng thái khách.')
     } catch (e) {
-      const err = e as { response?: { data?: { message?: string } } };
-      setError(err?.response?.data?.message ?? 'Cập nhật trạng thái không thành công, vui lòng thử lại');
+      const err = e as { response?: { data?: { message?: string } } }
+      setError(err?.response?.data?.message ?? 'Cập nhật trạng thái không thành công.')
     } finally {
-      setSaving(false);
+      setSaving(false)
     }
-  };
-
-  const currentStatusRaw: string = detail?.route?.TrangThaiLoTrinh || 'Chưa thực hiện';
-  const currentStatus: string = useMemo(() => {
-    if (currentStatusRaw === 'Chưa thực hiện') return 'Chưa bắt đầu';
-    return currentStatusRaw;
-  }, [currentStatusRaw]);
-
-  const canUpdateStops = useMemo(() => {
-    return ['Đang thực hiện', 'Đang gặp sự cố'].includes(currentStatusRaw);
-  }, [currentStatusRaw]);
-
-  const totalSeatsBooked = useMemo(() => {
-    return (detail?.stops || []).reduce((sum, stop) => sum + Number(stop.SoLuongGhe || 0), 0);
-  }, [detail?.stops]);
-
-  const currentMapLocation = useMemo(() => {
-    if (!detail?.stops?.length) {
-      return detail?.route.LoTrinhDuKien || 'Việt Nam';
-    }
-
-    const activeStop = detail.stops.find((stop) => !['Đã trả khách', 'Khách hủy'].includes(stop.TrangThaiKhach || ''));
-    return activeStop?.DiemDon || detail.stops[0].DiemDon || detail.route.LoTrinhDuKien || 'Việt Nam';
-  }, [detail]);
-
-  const startPointLabel = useMemo(() => {
-    if (!detail) return '--';
-    return detail.route.LoTrinhDuKien?.split(' -> ')[0] || detail.stops[0]?.DiemDon || '--';
-  }, [detail]);
-
-  const routeSummaryLabel = useMemo(() => {
-    if (!detail) return '--';
-    return detail.route.LoTrinhDuKien || `${startPointLabel} -> ${detail.stops[detail.stops.length - 1]?.DiemTra || '--'}`;
-  }, [detail, startPointLabel]);
+  }
 
   const reportIncident = async () => {
-    if (!detail) return;
     if (incidentDesc.trim().length < 3) {
-      setIncidentError('Vui lòng nhập nội dung sự cố.');
-      return;
+      setIncidentError('Vui lòng nhập nội dung sự cố.')
+      return
     }
-    setIncidentSaving(true);
-    setIncidentError(null);
-    setMessage(null);
+    setIncidentSaving(true)
+    setIncidentError(null)
     try {
       await api.post(`/routes/${routeId}/incident`, {
         description: incidentDesc.trim(),
-        location: incidentLoc.trim() ? incidentLoc.trim() : undefined
-      });
-      setShowIncidentModal(false);
-      setIncidentDesc('');
-      setIncidentLoc('');
-      // reload detail
-      const res = await api.get<RouteDetail>(`/routes/${routeId}`);
-      setDetail(res.data);
-      setMessage('Đã báo cáo sự cố.');
+        location: incidentLoc.trim() || undefined
+      })
+      const res = await api.get<RouteDetail>(`/routes/${routeId}`)
+      setDetail(res.data)
+      setShowIncidentModal(false)
+      setIncidentDesc('')
+      setIncidentLoc('')
+      setMessage('Đã báo cáo sự cố.')
     } catch (e) {
-      const err = e as { response?: { data?: { message?: string } } };
-      setIncidentError(err?.response?.data?.message ?? 'Không thể báo cáo sự cố, vui lòng thử lại.');
+      const err = e as { response?: { data?: { message?: string } } }
+      setIncidentError(err?.response?.data?.message ?? 'Không thể báo cáo sự cố.')
     } finally {
-      setIncidentSaving(false);
+      setIncidentSaving(false)
     }
-  };
+  }
 
   return (
     <DriverLayout>
-      {loading ? (
-        <div>Đang tải chi tiết...</div>
-      ) : error ? (
-        <div style={{ color: '#B91C1C' }}>{error}</div>
-      ) : !detail ? (
-        <div>Không tìm thấy lộ trình.</div>
-      ) : (
+      {loading ? <div>Đang tải chi tiết...</div> : error ? <div style={{ color: '#B91C1C' }}>{error}</div> : !detail ? <div>Không tìm thấy lộ trình.</div> : (
         <>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap', marginBottom: 16 }}>
             <div>
-              <h2 style={{ fontSize: 24, fontWeight: 700, color: '#1E3A8A', marginBottom: 12 }}>
-                Xem lộ trình trung chuyển {routeId ? `CX${routeId.toString().padStart(8, '0')}` : ''}
-              </h2>
-              <div style={{ display: 'flex', gap: 16, alignItems: 'center', fontSize: 14, color: '#4B5563' }}>
-                <span style={{
-                  padding: '6px 16px', borderRadius: 999, fontWeight: 600,
-                  background: currentStatus === 'Chưa bắt đầu' ? '#FEF9C3' : currentStatus === 'Đang thực hiện' ? '#DBEAFE' : '#DCFCE7',
-                  color: currentStatus === 'Chưa bắt đầu' ? '#CA8A04' : currentStatus === 'Đang thực hiện' ? '#1D4ED8' : '#166534'
-                }}>
-                  {currentStatus}
-                </span>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg>
-                  <span>{detail.route.ThoiGianBatDau ? new Date(detail.route.ThoiGianBatDau).toLocaleDateString('vi-VN') : '--'}</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
-                  <span>
-                    {detail.route.ThoiGianBatDau ? new Date(detail.route.ThoiGianBatDau).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : '00:00'}
-                    {' - '}
-                    {detail.route.ThoiGianKetThuc ? new Date(detail.route.ThoiGianKetThuc).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : '--:--'}
-                  </span>
-                </div>
+              <h2 style={{ fontSize: 24, fontWeight: 700, color: '#1E3A8A', marginBottom: 12 }}>Xem lộ trình trung chuyển {`CX${routeId.toString().padStart(8, '0')}`}</h2>
+              <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center', color: '#4B5563' }}>
+                <span style={{ padding: '6px 14px', borderRadius: 999, background: routeBadge.bg, color: routeBadge.color, fontWeight: 700 }}>{routeBadge.label}</span>
+                <span>{new Date(detail.route.ThoiGianBatDau).toLocaleString('vi-VN')}</span>
+                <span>{detail.route.BienSo}</span>
               </div>
             </div>
-
-            <div style={{ display: 'flex', gap: 12 }}>
-              <button
-                onClick={() => {
-                  setIncidentError(null); setIncidentDesc(''); setIncidentLoc(''); setShowIncidentModal(true);
-                }}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 8, padding: '10px 16px', borderRadius: 8, border: 'none', background: '#E5E7EB', color: '#374151', fontWeight: 600, cursor: 'pointer'
-                }}
-              >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></svg>
-                Báo cáo sự cố
-              </button>
-              <button
-                onClick={() => navigate(`/driver/trips/${routeId}/customers`)}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 8, padding: '10px 16px', borderRadius: 8, border: 'none', background: '#DBEAFE', color: '#1E3A8A', fontWeight: 600, cursor: 'pointer'
-                }}
-              >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
-                Danh sách khách hàng
-              </button>
-              {currentStatusRaw !== 'Hoàn thành' && (
-                <button
-                  disabled={saving}
-                  onClick={() => updateTripStatus(currentStatusRaw === 'Chưa thực hiện' ? 'Đang thực hiện' : 'Hoàn thành')}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: 8, padding: '10px 20px', borderRadius: 8, border: 'none',
-                    background: '#059669', color: '#FFF', fontWeight: 600, cursor: 'pointer', opacity: saving ? 0.7 : 1
-                  }}
-                >
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M5 12l5 5L20 7" /></svg>
-                  {currentStatusRaw === 'Chưa thực hiện' ? 'Bắt đầu chuyến' : 'Hoàn thành'}
-                </button>
+            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+              <button onClick={() => setShowIncidentModal(true)} style={secondaryButtonStyle}>Báo cáo sự cố</button>
+              <button onClick={() => navigate(`/driver/trips/${routeId}/customers`)} style={infoButtonStyle}>Danh sách khách hàng</button>
+              {currentStatus === ROUTE_STATUS.PENDING && <button disabled={saving} onClick={() => updateTripStatus(ROUTE_STATUS.IN_PROGRESS)} style={primaryButtonStyle}>Bắt đầu chuyến</button>}
+              {([ROUTE_STATUS.IN_PROGRESS, ROUTE_STATUS.INCIDENT] as string[]).includes(currentStatus) && (
+                <button disabled={saving || !allStopsResolved} onClick={() => updateTripStatus(ROUTE_STATUS.COMPLETED)} style={{ ...primaryButtonStyle, background: allStopsResolved ? '#059669' : '#9CA3AF', cursor: allStopsResolved ? 'pointer' : 'not-allowed' }}>Hoàn thành</button>
               )}
             </div>
           </div>
 
-          {message && (
-            <div style={{ background: '#DCFCE7', borderRadius: 8, padding: '10px 16px', color: '#166534', marginBottom: 16 }}>
-              {message}
+          {!allStopsResolved && ([ROUTE_STATUS.IN_PROGRESS, ROUTE_STATUS.INCIDENT] as string[]).includes(currentStatus) && (
+            <div style={{ background: '#FEF3C7', color: '#92400E', borderRadius: 8, padding: '10px 16px', marginBottom: 16 }}>
+              Cần cập nhật toàn bộ khách sang “Đã trả khách” hoặc “Khách hủy” trước khi hoàn thành chuyến.
             </div>
           )}
+          {message && <div style={{ background: '#DCFCE7', color: '#166534', borderRadius: 8, padding: '10px 16px', marginBottom: 16 }}>{message}</div>}
+          {syncNotice && <div style={{ background: '#DBEAFE', color: '#1E3A8A', borderRadius: 8, padding: '10px 16px', marginBottom: 16 }}>{syncNotice}</div>}
 
-          {/* Blue vehicle info bar */}
-          <div style={{ background: '#EFF6FF', padding: '12px 32px', display: 'flex', gap: 32, alignItems: 'center', fontSize: 14, color: '#1E3A8A', borderTop: '1px solid #BFDBFE', borderBottom: '1px solid #BFDBFE', margin: '0 -32px 24px -32px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                <span>Xe: <strong>{detail.route.BienSo}</strong></span>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, minmax(0, 1fr))', gap: 12, marginBottom: 16 }}>
+            {[
+              { label: 'Đang chờ', value: stats.waiting, bg: '#F3F4F6', color: '#374151' },
+              { label: 'Đã đến', value: stats.arrived, bg: '#DBEAFE', color: '#1D4ED8' },
+              { label: 'Đã đón', value: stats.picked, bg: '#EDE9FE', color: '#6D28D9' },
+              { label: 'Đã trả', value: stats.dropped, bg: '#DCFCE7', color: '#166534' },
+              { label: 'Hủy', value: stats.cancelled, bg: '#FEE2E2', color: '#B91C1C' }
+            ].map((item) => (
+              <div key={item.label} style={{ background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: 12, padding: 14 }}>
+                <div style={{ fontSize: 12, color: '#6B7280', marginBottom: 6 }}>{item.label}</div>
+                <span style={{ padding: '6px 12px', borderRadius: 999, background: item.bg, color: item.color, fontWeight: 700 }}>{item.value}</span>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                <span>Khách: <strong>{totalSeatsBooked}/{detail.route.SoCho || 0}</strong> chỗ</span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                <span>Lộ trình: <strong>{routeSummaryLabel}</strong></span>
-              </div>
+            ))}
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 2fr) minmax(0, 1fr)', gap: 0, border: '1px solid #E5E7EB', borderRadius: 12, overflow: 'hidden', background: '#FFF', minHeight: 600 }}>
-            {/* Map Placeholder */}
-            <div style={{ position: 'relative', background: '#E2E8F0' }}>
-                 <iframe
-                      title="Map Area"
-                      width="100%"
-                      height="100%"
-                      style={{ border: 0, position: 'absolute', inset: 0 }}
-                      loading="lazy"
-                      allowFullScreen
-                      src={`https://maps.google.com/maps?q=${encodeURIComponent(currentMapLocation)}&t=&z=13&ie=UTF8&iwloc=&output=embed`}
-                 ></iframe>
-                 <div style={{ position: 'absolute', left: 20, right: 20, bottom: 20, background: 'rgba(255,255,255,0.94)', borderRadius: 12, padding: '12px 16px', boxShadow: '0 10px 25px rgba(0,0,0,0.12)' }}>
-                    <div style={{ fontSize: 12, color: '#64748B', marginBottom: 4 }}>Vị trí bản đồ theo địa chỉ hiện tại</div>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: '#0F172A' }}>{currentMapLocation}</div>
-                 </div>
+          <div style={{ background: '#EFF6FF', padding: '12px 20px', borderRadius: 12, marginBottom: 16, color: '#1E3A8A', display: 'flex', gap: 24, flexWrap: 'wrap' }}>
+            <span>Xe: <strong>{detail.route.BienSo}</strong></span>
+            <span>Ghế: <strong>{(detail.stops || []).reduce((sum, stop) => sum + Number(stop.SoLuongGhe || 0), 0)}/{detail.route.SoCho || 0}</strong></span>
+            <span>Lộ trình: <strong>{routeSummaryLabel}</strong></span>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 2fr) minmax(320px, 1fr)', gap: 16 }}>
+            <div style={{ position: 'relative', borderRadius: 12, overflow: 'hidden', minHeight: 520, border: '1px solid #E5E7EB' }}>
+              <iframe title="Bản đồ lộ trình" width="100%" height="100%" style={{ border: 0, minHeight: 520 }} loading="lazy" allowFullScreen src={`https://maps.google.com/maps?q=${encodeURIComponent(currentMapLocation)}&t=&z=13&ie=UTF8&iwloc=&output=embed`} />
+              <div style={{ position: 'absolute', left: 16, right: 16, bottom: 16, background: 'rgba(255,255,255,0.92)', borderRadius: 12, padding: '10px 14px', boxShadow: '0 10px 25px rgba(0,0,0,0.12)' }}>
+                <div style={{ fontSize: 12, color: '#64748B', marginBottom: 4 }}>Vị trí ước tính theo điểm đón hiện tại</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: '#0F172A' }}>{currentMapLocation}</div>
+              </div>
             </div>
 
-            {/* Expected Route */}
-            <div style={{ padding: 24, paddingRight: 32, overflowY: 'auto', maxHeight: 650 }}>
-              <h3 style={{ fontSize: 15, fontWeight: 700, color: '#111827', marginBottom: 24 }}>LỘ TRÌNH DỰ KIẾN</h3>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 20, position: 'relative' }}>
-                <div style={{ position: 'absolute', top: 30, bottom: 30, left: 24, width: 1, borderLeft: '1px dashed #D1D5DB', zIndex: 0 }} />
-                
-                {/* Lộ Trình Bắt Đầu */}
-                <div style={{ display: 'flex', gap: 20, alignItems: 'center', position: 'relative', zIndex: 1 }}>
-                   <div style={{ width: 48, height: 48, borderRadius: 8, background: currentStatusRaw !== 'Chưa thực hiện' ? '#16A34A' : '#E5E7EB', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                     {currentStatusRaw !== 'Chưa thực hiện' ? (
-                       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FFF" strokeWidth="3"><path d="M5 12l5 5L20 7"/></svg>
-                     ) : (
-                       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6B7280" strokeWidth="3"><path d="M5 12l5 5L20 7"/></svg>
-                     )}
-                   </div>
-                   <div style={{ flex: 1, border: currentStatusRaw !== 'Chưa thực hiện' ? '1px solid #16A34A' : '1px solid #E5E7EB', borderRadius: 8, padding: '12px 16px', background: '#FFF', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div>
-                        <div style={{ fontWeight: 700, color: '#111827', fontSize: 15, marginBottom: 4 }}>Điểm bắt đầu</div>
-                        <div style={{ fontSize: 13, color: '#4B5563' }}>{startPointLabel}</div>
-                      </div>
-                      <div>
-                        <div style={{ background: '#F3F4F6', color: '#374151', padding: '6px 12px', border: '1px solid #D1D5DB', borderRadius: 6, fontSize: 13, fontWeight: 500, display: 'flex', alignItems: 'center', gap: 8 }}>
-                          {currentStatusRaw !== 'Chưa thực hiện' ? 'Đã xuất phát' : 'Đang chờ'}
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 9l6 6 6-6"/></svg>
-                        </div>
-                      </div>
-                   </div>
-                </div>
-
-                {/* Các điểm khách hàng (Flat List) */}
-                {detail.stops.map((s, index) => {
-                  const pState = s.TrangThaiKhach || '';
-                  const isFinished = pState === 'Đã đón khách' || pState === 'Đã trả khách' || pState === 'Khách hủy';
-                  const isTripActive = currentStatusRaw === 'Đang thực hiện';
-
-                  // Default styles (Pending / Not Started Trip)
-                  let boxBg = '#FFFFFF';
-                  let boxBorder = '1px solid #E5E7EB';
-                  let numBg = '#E5E7EB';
-                  let numColor = '#374151';
-
-                  if (isTripActive) {
-                    if (isFinished) {
-                      boxBg = '#F0FDF4';
-                      boxBorder = '1px solid #86EFAC';
-                      numBg = '#16A34A';
-                      numColor = '#FFFFFF';
-                    } else if (index === detail.stops.findIndex(st => !['Đã đón khách', 'Đã trả khách', 'Khách hủy'].includes(st.TrangThaiKhach || ''))) {
-                      // Active point
-                      boxBg = '#EFF6FF';
-                      boxBorder = '1px solid #93C5FD';
-                      numBg = '#1E3A8A';
-                      numColor = '#FFFFFF';
-                    } else {
-                      // Upcoming point
-                      boxBg = '#FEFCE8';
-                      boxBorder = '1px solid #FDE047';
-                      numBg = '#F59E0B';
-                      numColor = '#FFFFFF';
-                    }
-                  }
-
+            <div style={{ background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: 12, padding: 20 }}>
+              <h3 style={{ fontSize: 15, fontWeight: 700, color: '#111827', marginBottom: 20 }}>LỘ TRÌNH DỰ KIẾN</h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                {detail.stops.map((stop) => {
+                  const badge = getStopBadge(stop.TrangThaiKhach)
                   return (
-                    <div key={s.MaChiTiet} style={{ display: 'flex', gap: 20, alignItems: 'center', position: 'relative', zIndex: 1 }}>
-                      <div style={{ width: 48, height: 48, borderRadius: 8, background: numBg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: numColor, fontWeight: 600, fontSize: 18 }}>
-                        {index + 1}
-                      </div>
-                      <div style={{ flex: 1, border: boxBorder, borderRadius: 8, padding: '12px 16px', background: boxBg, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div key={stop.MaChiTiet} style={{ border: '1px solid #E5E7EB', borderRadius: 10, padding: 14, background: isDoneStatus(stop.TrangThaiKhach) ? '#F0FDF4' : '#FFFFFF' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'flex-start' }}>
                         <div>
-                          <div style={{ fontWeight: 700, color: '#111827', fontSize: 15, marginBottom: 4 }}>{s.TenKhachHang}</div>
-                          <div style={{ fontSize: 13, color: '#4B5563' }}>
-                            {s.DiemDon}
-                            <div style={{ color: '#9CA3AF', marginTop: 2 }}>{s.SoLuongGhe} ghế đã đặt</div>
-                          </div>
+                          <div style={{ fontWeight: 700, color: '#111827', marginBottom: 4 }}>{stop.TenKhachHang}</div>
+                          <div style={{ fontSize: 13, color: '#4B5563', marginBottom: 4 }}>Đón: {stop.DiemDon}</div>
+                          <div style={{ fontSize: 12, color: '#9CA3AF', marginBottom: 8 }}>{stop.SoLuongGhe} ghế • VE{String(stop.MaVe).padStart(3, '0')}</div>
+                          <span style={{ padding: '5px 10px', borderRadius: 999, background: badge.bg, color: badge.color, fontSize: 12, fontWeight: 700 }}>{badge.label}</span>
                         </div>
-                        <div style={{ position: 'relative' }}>
-                          <select
-                            value={pState}
-                            onChange={(e) => updateStopStatus(s.MaChiTiet, e.target.value || 'Đang chờ')}
-                            disabled={!canUpdateStops || saving}
-                            style={{
-                              appearance: 'none',
-                              background: isFinished ? '#FFFFFF' : '#F3F4F6',
-                              color: '#374151',
-                              padding: '6px 32px 6px 16px',
-                              borderRadius: 6,
-                              border: isFinished ? '1px solid #D1D5DB' : 'none',
-                              fontSize: 13,
-                              fontWeight: 500,
-                              cursor: canUpdateStops && !saving ? 'pointer' : 'not-allowed',
-                              outline: 'none',
-                              boxShadow: isFinished ? '0 1px 2px rgba(0,0,0,0.05)' : 'none'
-                            }}
-                          >
-                            <option value="">Đang chờ</option>
-                            <option value="Đã đến điểm đón">Đã đến</option>
-                            <option value="Đã đón khách">Đã đón</option>
-                            <option value="Khách hủy">Hủy chuyến</option>
+                        <div style={{ minWidth: 170 }}>
+                          <select value={stop.TrangThaiKhach || ''} onChange={(e) => updateStopStatus(stop.MaChiTiet, e.target.value)} disabled={!canUpdateStops || saving || isDoneStatus(stop.TrangThaiKhach)} style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid #D1D5DB', fontWeight: 600, cursor: !canUpdateStops || saving || isDoneStatus(stop.TrangThaiKhach) ? 'not-allowed' : 'pointer' }}>
+                            <option value="" disabled>Đang chờ</option>
+                            {STOP_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
                           </select>
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ position: 'absolute', right: 10, top: 8, pointerEvents: 'none', color: '#6B7280' }}><path d="M6 9l6 6 6-6"/></svg>
                         </div>
                       </div>
                     </div>
-                  );
+                  )
                 })}
               </div>
             </div>
           </div>
 
-          {/* Popup báo cáo sự cố */}
           {showIncidentModal && (
-            <div style={{ position: 'fixed', inset: 0, background: 'rgba(255,255,255,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 60 }}>
-              <div style={{ width: 400, background: '#FFFFFF', borderRadius: 16, padding: 32, boxShadow: '0 20px 40px rgba(0,0,0,0.1)', textAlign: 'center' }}>
-                 <div style={{ width: 64, height: 64, borderRadius: '50%', background: '#DBEAFE', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
-                    <span style={{ fontSize: 32, fontWeight: 700, color: '#1D4ED8' }}>!</span>
-                 </div>
-                 <h3 style={{ fontSize: 20, fontWeight: 700, color: '#111827', marginBottom: 24 }}>Báo cáo sự cố lộ trình</h3>
-                 <textarea
-                    value={incidentDesc}
-                    onChange={e => setIncidentDesc(e.target.value)}
-                    placeholder="Nhập mô tả sự cố"
-                    style={{ width: '100%', minHeight: 120, borderRadius: 8, border: '1px solid #D1D5DB', padding: 16, fontSize: 14, outline: 'none', resize: 'none', marginBottom: 12, boxSizing: 'border-box' }}
-                 />
-                 <input
-                    value={incidentLoc}
-                    onChange={e => setIncidentLoc(e.target.value)}
-                    placeholder="Vị trí sự cố (nếu có)"
-                    style={{ width: '100%', height: 44, borderRadius: 8, border: '1px solid #D1D5DB', padding: '0 14px', fontSize: 14, outline: 'none', marginBottom: 12, boxSizing: 'border-box' }}
-                 />
-                 {incidentError && <div style={{ color: '#B91C1C', marginBottom: 16 }}>{incidentError}</div>}
-                 <div style={{ display: 'flex', gap: 16 }}>
-                   <button disabled={incidentSaving} onClick={() => setShowIncidentModal(false)} style={{ flex: 1, padding: '12px', borderRadius: 8, border: '1px solid #E5E7EB', background: '#FFF', color: '#111827', fontWeight: 600, cursor: 'pointer', opacity: incidentSaving ? 0.7 : 1 }}>Hủy</button>
-                   <button disabled={incidentSaving} onClick={reportIncident} style={{ flex: 1, padding: '12px', borderRadius: 8, border: 'none', background: '#0a3b73', color: '#FFF', fontWeight: 600, cursor: 'pointer', opacity: incidentSaving ? 0.7 : 1 }}>Gửi</button>
-                 </div>
+            <div style={modalOverlayStyle}>
+              <div style={modalStyle}>
+                <h3 style={{ fontSize: 20, fontWeight: 700, color: '#111827', marginBottom: 20 }}>Báo cáo sự cố lộ trình</h3>
+                <textarea value={incidentDesc} onChange={(e) => setIncidentDesc(e.target.value)} placeholder="Nhập mô tả sự cố" style={textareaStyle} />
+                <input value={incidentLoc} onChange={(e) => setIncidentLoc(e.target.value)} placeholder="Vị trí sự cố (nếu có)" style={inputStyle} />
+                {incidentError && <div style={{ color: '#B91C1C', marginBottom: 12 }}>{incidentError}</div>}
+                <div style={{ display: 'flex', gap: 12 }}>
+                  <button disabled={incidentSaving} onClick={() => setShowIncidentModal(false)} style={secondaryButtonStyle}>Hủy</button>
+                  <button disabled={incidentSaving} onClick={reportIncident} style={primaryButtonStyle}>Gửi</button>
+                </div>
               </div>
             </div>
           )}
         </>
       )}
     </DriverLayout>
-  );
-};
+  )
+}
+
+const primaryButtonStyle: React.CSSProperties = { padding: '10px 18px', borderRadius: 8, border: 'none', background: '#0A3B73', color: '#FFFFFF', fontWeight: 700, cursor: 'pointer' }
+const secondaryButtonStyle: React.CSSProperties = { padding: '10px 18px', borderRadius: 8, border: '1px solid #D1D5DB', background: '#FFFFFF', color: '#374151', fontWeight: 700, cursor: 'pointer' }
+const infoButtonStyle: React.CSSProperties = { ...secondaryButtonStyle, background: '#DBEAFE', color: '#1E3A8A', border: 'none' }
+const modalOverlayStyle: React.CSSProperties = { position: 'fixed', inset: 0, background: 'rgba(255,255,255,0.82)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 }
+const modalStyle: React.CSSProperties = { width: 420, background: '#FFFFFF', borderRadius: 16, padding: 28, boxShadow: '0 20px 40px rgba(0,0,0,0.1)' }
+const textareaStyle: React.CSSProperties = { width: '100%', minHeight: 120, borderRadius: 8, border: '1px solid #D1D5DB', padding: 14, fontSize: 14, outline: 'none', resize: 'none', marginBottom: 12, boxSizing: 'border-box' }
+const inputStyle: React.CSSProperties = { width: '100%', height: 44, borderRadius: 8, border: '1px solid #D1D5DB', padding: '0 14px', fontSize: 14, outline: 'none', marginBottom: 12, boxSizing: 'border-box' }

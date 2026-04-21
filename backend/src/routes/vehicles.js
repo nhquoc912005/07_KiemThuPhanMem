@@ -7,6 +7,7 @@ const {
   isValidSeatCount,
   isValidVehiclePlate,
   normalizeVehiclePlate,
+  normalizeVehiclePlateLookupKey,
   toPositiveInteger
 } = require('../utils/validation');
 
@@ -27,6 +28,7 @@ const VEHICLE_SELECT_COLUMNS = `
 `;
 
 const ALLOWED_VEHICLE_STATUSES = new Set(Object.values(VEHICLE_STATUSES));
+const NORMALIZED_PLATE_LOOKUP_SQL = "UPPER(REPLACE(REPLACE(REPLACE(LTRIM(RTRIM(plate_number)), ' ', ''), '-', ''), '.', ''))";
 
 function buildVehicleCode(legacyId) {
   if (legacyId < 1000) {
@@ -57,6 +59,17 @@ function toExternalIsActive(vehicleStatus) {
   return vehicleStatus === VEHICLE_STATUSES.INACTIVE ? 0 : 1;
 }
 
+function toVehicleResponse(record) {
+  if (!record) {
+    return null;
+  }
+
+  return {
+    ...record,
+    BienSo: normalizeVehiclePlate(record.BienSo)
+  };
+}
+
 async function loadVehicleByLegacyId(db, legacyId) {
   const result = await db
     .request()
@@ -67,7 +80,7 @@ async function loadVehicleByLegacyId(db, legacyId) {
       WHERE e.legacy_ma_xe = @id
     `);
 
-  return result.recordset[0] || null;
+  return toVehicleResponse(result.recordset[0]);
 }
 
 function getVehiclePayload(body = {}) {
@@ -80,16 +93,20 @@ function getVehiclePayload(body = {}) {
 }
 
 function validateVehicleInput(vehicle) {
-  if (!vehicle.BienSo || !vehicle.LoaiXe || vehicle.SoCho == null) {
-    return 'Biển số, loại xe và số chỗ là bắt buộc';
+  if (!vehicle.BienSo) {
+    return 'Vui lòng nhập biển số xe';
   }
 
   if (!isValidVehiclePlate(vehicle.BienSo)) {
-    return 'Biển số không hợp lệ. Ví dụ: 43B-123.45';
+    return 'Biển số không hợp lệ. Ví dụ: 51A-12345';
   }
 
-  if (!isValidSeatCount(vehicle.SoCho)) {
-    return 'Số chỗ phải là số nguyên từ 4 đến 45';
+  if (!vehicle.LoaiXe) {
+    return 'Vui lòng chọn loại xe';
+  }
+
+  if (vehicle.SoCho == null || !isValidSeatCount(vehicle.SoCho)) {
+    return 'Số chỗ không hợp lệ';
   }
 
   if (!ALLOWED_VEHICLE_STATUSES.has(vehicle.TrangThaiXe)) {
@@ -108,7 +125,8 @@ router.get('/', async (_req, res) => {
       ORDER BY e.legacy_ma_xe DESC
     `);
 
-    return sendSuccess(res, result.recordset, 'Lấy danh sách xe thành công');
+    const vehicles = result.recordset.map(toVehicleResponse);
+    return sendSuccess(res, vehicles, 'Lấy danh sách xe thành công');
   } catch (err) {
     console.error('Get vehicles error:', err);
     return sendError(res, 500, 'Lỗi lấy danh sách xe', 'SERVER_ERROR');
@@ -151,8 +169,12 @@ router.post('/', async (req, res) => {
 
     try {
       const existing = await new sql.Request(transaction)
-        .input('plate', sql.VarChar(20), vehicle.BienSo)
-        .query('SELECT TOP 1 1 FROM external_vehicles WHERE plate_number = @plate');
+        .input('plateLookup', sql.VarChar(20), normalizeVehiclePlateLookupKey(vehicle.BienSo))
+        .query(`
+          SELECT TOP 1 1
+          FROM external_vehicles
+          WHERE ${NORMALIZED_PLATE_LOOKUP_SQL} = @plateLookup
+        `);
 
       if (existing.recordset.length > 0) {
         await transaction.rollback();
@@ -240,8 +262,13 @@ router.put('/:id', async (req, res) => {
 
       const existingPlate = await new sql.Request(transaction)
         .input('id', sql.Int, id)
-        .input('plate', sql.VarChar(20), vehicle.BienSo)
-        .query('SELECT TOP 1 1 FROM external_vehicles WHERE plate_number = @plate AND legacy_ma_xe <> @id');
+        .input('plateLookup', sql.VarChar(20), normalizeVehiclePlateLookupKey(vehicle.BienSo))
+        .query(`
+          SELECT TOP 1 1
+          FROM external_vehicles
+          WHERE ${NORMALIZED_PLATE_LOOKUP_SQL} = @plateLookup
+            AND legacy_ma_xe <> @id
+        `);
 
       if (existingPlate.recordset.length > 0) {
         await transaction.rollback();

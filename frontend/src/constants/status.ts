@@ -3,7 +3,15 @@ export const ROUTE_STATUS = {
   IN_PROGRESS: 'Đang thực hiện',
   INCIDENT: 'Đang gặp sự cố',
   COMPLETED: 'Hoàn thành',
-  CANCELLED: 'Đã hủy',
+  CANCELLED: 'Đã hủy'
+} as const
+
+export const STOP_STATUS = {
+  WAITING: '',
+  ARRIVED_PICKUP: 'Đã đến điểm đón',
+  PICKED_UP: 'Đã đón khách',
+  DROPPED_OFF: 'Đã trả khách',
+  CUSTOMER_CANCELLED: 'Khách hủy'
 } as const
 
 export const DRIVER_STATUS = {

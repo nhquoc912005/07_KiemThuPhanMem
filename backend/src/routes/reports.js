@@ -5,9 +5,38 @@ const { sendError, sendSuccess } = require('../utils/http');
 
 const router = express.Router();
 
+function parseDateParam(value) {
+  if (!value) {
+    return null;
+  }
+
+  const normalized = String(value).trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(normalized)) {
+    return null;
+  }
+
+  const date = new Date(`${normalized}T00:00:00`);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
 router.get('/summary', async (req, res) => {
   const fromDate = String(req.query.fromDate || '').trim();
   const toDate = String(req.query.toDate || '').trim();
+  const parsedFromDate = fromDate ? parseDateParam(fromDate) : null;
+  const parsedToDate = toDate ? parseDateParam(toDate) : null;
+
+  if ((fromDate && !parsedFromDate) || (toDate && !parsedToDate)) {
+    return sendError(res, 400, 'Ngày lọc báo cáo không hợp lệ', 'VALIDATION_ERROR');
+  }
+
+  if (parsedFromDate && parsedToDate && parsedFromDate > parsedToDate) {
+    return sendError(
+      res,
+      400,
+      'Khoảng ngày không hợp lệ: "Từ ngày" phải nhỏ hơn hoặc bằng "Đến ngày".',
+      'VALIDATION_ERROR'
+    );
+  }
 
   try {
     const pool = await getPool();
@@ -38,12 +67,12 @@ router.get('/summary', async (req, res) => {
     `;
 
     if (fromDate) {
-      request.input('fromDate', sql.DateTime, fromDate);
+      request.input('fromDate', sql.DateTime, parsedFromDate);
       query += ' AND lt.ThoiGianBatDau >= @fromDate';
     }
 
     if (toDate) {
-      request.input('toDate', sql.DateTime, toDate);
+      request.input('toDate', sql.DateTime, parsedToDate);
       query += ' AND lt.ThoiGianBatDau < DATEADD(DAY, 1, @toDate)';
     }
 

@@ -1,20 +1,23 @@
 import React, { useEffect, useState } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 
 import {
+  clearPendingPasswordChange,
   getDefaultRouteByRole,
   getPendingPasswordChange,
   getStoredSession,
   isDriverRole,
   saveAuthSession,
-  savePendingPasswordChange,
 } from '../auth/session'
 import { api } from '../services/api/client'
 
 interface FieldErrors {
-  username?: string
-  password?: string
+  newPassword?: string
+  confirmPassword?: string
 }
+
+const STRONG_PASSWORD_MESSAGE =
+  'Mật khẩu phải có ít nhất 8 ký tự (gồm chữ, số và ký tự đặc biệt)'
 
 function getRedirectPath(requestedPath: string | null | undefined, role?: string | null) {
   const fallbackPath = getDefaultRouteByRole(role)
@@ -27,68 +30,126 @@ function getRedirectPath(requestedPath: string | null | undefined, role?: string
   return canUseRequestedPath ? requestedPath : fallbackPath
 }
 
-export const LoginPage: React.FC = () => {
-  const [username, setUsername] = useState('')
-  const [password, setPassword] = useState('')
-  const [remember, setRemember] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const [formError, setFormError] = useState<string | null>(null)
-  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({})
-  const [showPassword, setShowPassword] = useState(false)
+function isStrongPassword(value: string) {
+  return (
+    typeof value === 'string' &&
+    value.length >= 8 &&
+    /[A-Za-z]/.test(value) &&
+    /\d/.test(value) &&
+    /[^A-Za-z0-9]/.test(value)
+  )
+}
 
+export const FirstLoginPasswordChangePage: React.FC = () => {
   const navigate = useNavigate()
-  const location = useLocation()
+  const pendingSession = getPendingPasswordChange()
+
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [showNewPassword, setShowNewPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({})
+  const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    const pendingPasswordChange = getPendingPasswordChange()
-    if (pendingPasswordChange) {
-      navigate('/change-password-first-login', { replace: true })
-      return
-    }
-
     const session = getStoredSession()
     if (session?.user && session.accessToken) {
       navigate(getDefaultRouteByRole(session.user.VaiTro), { replace: true })
+      return
     }
-  }, [navigate])
 
-  const handleUsernameChange = (value: string) => {
-    setUsername(value)
-    setFieldErrors((prev) => ({ ...prev, username: undefined }))
-    if (formError) {
-      setFormError(null)
+    if (!pendingSession) {
+      navigate('/login', { replace: true })
+    }
+  }, [navigate, pendingSession])
+
+  const clearFormError = () => {
+    if (error) {
+      setError(null)
     }
   }
 
-  const handlePasswordChange = (value: string) => {
-    setPassword(value)
-    setFieldErrors((prev) => ({ ...prev, password: undefined }))
-    if (formError) {
-      setFormError(null)
-    }
+  const handleNewPasswordChange = (value: string) => {
+    setNewPassword(value)
+    setFieldErrors((prev) => ({ ...prev, newPassword: undefined }))
+    clearFormError()
+  }
+
+  const handleConfirmPasswordChange = (value: string) => {
+    setConfirmPassword(value)
+    setFieldErrors((prev) => ({ ...prev, confirmPassword: undefined }))
+    clearFormError()
   }
 
   const validate = () => {
     const nextErrors: FieldErrors = {}
-    const normalizedUsername = username.trim()
 
-    if (!normalizedUsername) {
-      nextErrors.username = 'Vui lòng nhập tên đăng nhập'
-    } else if (!/^[A-Za-z0-9._-]{3,50}$/.test(normalizedUsername)) {
-      nextErrors.username = 'Tên đăng nhập không đúng định dạng'
+    if (!newPassword) {
+      nextErrors.newPassword = 'Vui lòng nhập mật khẩu mới'
+    } else if (!isStrongPassword(newPassword)) {
+      nextErrors.newPassword = STRONG_PASSWORD_MESSAGE
     }
 
-    if (!password) {
-      nextErrors.password = 'Vui lòng nhập mật khẩu'
+    if (!confirmPassword) {
+      nextErrors.confirmPassword = 'Vui lòng nhập lại mật khẩu'
+    } else if (newPassword !== confirmPassword) {
+      nextErrors.confirmPassword = 'Mật khẩu nhập lại không khớp'
     }
 
     setFieldErrors(nextErrors)
     return Object.keys(nextErrors).length === 0
   }
 
+  const renderEyeIcon = (visible: boolean) => (
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      {visible ? (
+        <>
+          <path
+            d="M12 5C7 5 3.27 8.11 2 12C3.27 15.89 7 19 12 19C17 19 20.73 15.89 22 12C20.73 8.11 17 5 12 5Z"
+            stroke="#1E5FA8"
+            strokeWidth="1.8"
+          />
+          <path
+            d="M12 9C9.79 9 8 10.79 8 13C8 15.21 9.79 17 12 17C14.21 17 16 15.21 16 13C16 10.79 14.21 9 12 9Z"
+            stroke="#1E5FA8"
+            strokeWidth="1.8"
+          />
+        </>
+      ) : (
+        <>
+          <path d="M3 4L21 20" stroke="#1E5FA8" strokeWidth="1.8" strokeLinecap="round" />
+          <path
+            d="M10.58 5.08C11.04 5.02 11.51 5 12 5C17 5 20.73 8.11 22 12C21.64 13.15 21.01 14.23 20.18 15.18"
+            stroke="#1E5FA8"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+          />
+          <path
+            d="M6.2 6.2C4.47 7.37 3.18 9.04 2.5 11C3.77 14.89 7.5 18 12.5 18C13.78 18 15 17.78 16.12 17.38"
+            stroke="#1E5FA8"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+          />
+        </>
+      )}
+    </svg>
+  )
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setFormError(null)
+    setError(null)
+
+    if (!pendingSession) {
+      navigate('/login', { replace: true })
+      return
+    }
 
     if (!validate()) {
       return
@@ -96,23 +157,17 @@ export const LoginPage: React.FC = () => {
 
     setLoading(true)
     try {
-      const normalizedUsername = username.trim()
-      const res = await api.post('/auth/login', { username: normalizedUsername, password })
-      const fromPath = (location.state as { from?: string } | null)?.from || null
+      const res = await api.post('/auth/change-password-first-login', {
+        token: pendingSession.passwordChangeToken,
+        newPassword,
+        confirmPassword,
+      })
 
-      if (res.data.requirePasswordChange) {
-        savePendingPasswordChange({
-          user: res.data.user,
-          passwordChangeToken: res.data.passwordChangeToken,
-          remember,
-          redirectPath: fromPath,
-        })
-        navigate('/change-password-first-login', { replace: true })
-        return
-      }
-
-      saveAuthSession(res.data.user, res.data.accessToken, remember)
-      navigate(getRedirectPath(fromPath, res.data.user?.VaiTro), { replace: true })
+      clearPendingPasswordChange()
+      saveAuthSession(res.data.user, res.data.accessToken, pendingSession.remember)
+      navigate(getRedirectPath(pendingSession.redirectPath, res.data.user?.VaiTro), {
+        replace: true,
+      })
     } catch (error: unknown) {
       const err = error as {
         response?: {
@@ -130,10 +185,14 @@ export const LoginPage: React.FC = () => {
         setFieldErrors((prev) => ({ ...prev, ...backendFieldErrors }))
       }
 
-      setFormError(err.response?.data?.message ?? 'Đăng nhập thất bại')
+      setError(err.response?.data?.message ?? 'Không thể đổi mật khẩu lần đầu')
     } finally {
       setLoading(false)
     }
+  }
+
+  if (!pendingSession) {
+    return null
   }
 
   return (
@@ -239,70 +298,31 @@ export const LoginPage: React.FC = () => {
           <h1
             style={{
               textAlign: 'center',
-              fontSize: 35,
+              fontSize: 32,
               fontWeight: 700,
               marginBottom: 8,
             }}
           >
-            ĐĂNG NHẬP
+            ĐỔI MẬT KHẨU LẦN ĐẦU
           </h1>
           <p
             style={{
               textAlign: 'center',
-              opacity: 0.8,
+              opacity: 0.85,
               marginBottom: 32,
             }}
           >
-            Vui lòng nhập thông tin để tiếp tục
+            Tài khoản <strong>{pendingSession.user.TenDangNhap}</strong> cần đổi mật khẩu trước khi
+            tiếp tục
           </p>
 
           <form onSubmit={handleSubmit} style={{ maxWidth: 416, margin: '0 auto' }}>
-            <label style={{ display: 'block', marginBottom: 8, fontSize: 18 }}>Tên đăng nhập</label>
+            <label style={{ display: 'block', marginBottom: 8, fontSize: 18 }}>Mật khẩu mới</label>
             <div
               style={{
                 background: '#fff',
                 borderRadius: 8,
-                outline: fieldErrors.username
-                  ? '2px solid rgba(248,113,113,0.9)'
-                  : '2px solid rgba(255,255,255,0.3)',
-                marginBottom: 8,
-                position: 'relative',
-                display: 'flex',
-                alignItems: 'center',
-              }}
-            >
-              <input
-                style={{
-                  width: '100%',
-                  border: 'none',
-                  outline: 'none',
-                  padding: '12px 16px',
-                  fontSize: 16,
-                  borderRadius: 8,
-                }}
-                type="text"
-                placeholder="Nhập tên đăng nhập"
-                value={username}
-                onChange={(e) => handleUsernameChange(e.target.value)}
-              />
-            </div>
-            <div
-              style={{
-                minHeight: 20,
-                marginBottom: 12,
-                color: '#FEE2E2',
-                fontSize: 14,
-              }}
-            >
-              {fieldErrors.username || ''}
-            </div>
-
-            <label style={{ display: 'block', marginBottom: 8, fontSize: 18 }}>Mật khẩu</label>
-            <div
-              style={{
-                background: '#fff',
-                borderRadius: 8,
-                outline: fieldErrors.password
+                outline: fieldErrors.newPassword
                   ? '2px solid rgba(248,113,113,0.9)'
                   : '2px solid rgba(255,255,255,0.3)',
                 marginBottom: 8,
@@ -320,14 +340,14 @@ export const LoginPage: React.FC = () => {
                   fontSize: 16,
                   borderRadius: 8,
                 }}
-                type={showPassword ? 'text' : 'password'}
-                placeholder="Nhập mật khẩu"
-                value={password}
-                onChange={(e) => handlePasswordChange(e.target.value)}
+                type={showNewPassword ? 'text' : 'password'}
+                placeholder="Nhập mật khẩu mới"
+                value={newPassword}
+                onChange={(e) => handleNewPasswordChange(e.target.value)}
               />
               <button
                 type="button"
-                onClick={() => setShowPassword((prev) => !prev)}
+                onClick={() => setShowNewPassword((prev) => !prev)}
                 style={{
                   position: 'absolute',
                   right: 8,
@@ -342,38 +362,7 @@ export const LoginPage: React.FC = () => {
                   justifyContent: 'center',
                 }}
               >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                  {showPassword ? (
-                    <>
-                      <path
-                        d="M12 5C7 5 3.27 8.11 2 12C3.27 15.89 7 19 12 19C17 19 20.73 15.89 22 12C20.73 8.11 17 5 12 5Z"
-                        stroke="#1E5FA8"
-                        strokeWidth="1.8"
-                      />
-                      <path
-                        d="M12 9C9.79 9 8 10.79 8 13C8 15.21 9.79 17 12 17C14.21 17 16 15.21 16 13C16 10.79 14.21 9 12 9Z"
-                        stroke="#1E5FA8"
-                        strokeWidth="1.8"
-                      />
-                    </>
-                  ) : (
-                    <>
-                      <path d="M3 4L21 20" stroke="#1E5FA8" strokeWidth="1.8" strokeLinecap="round" />
-                      <path
-                        d="M10.58 5.08C11.04 5.02 11.51 5 12 5C17 5 20.73 8.11 22 12C21.64 13.15 21.01 14.23 20.18 15.18"
-                        stroke="#1E5FA8"
-                        strokeWidth="1.8"
-                        strokeLinecap="round"
-                      />
-                      <path
-                        d="M6.2 6.2C4.47 7.37 3.18 9.04 2.5 11C3.77 14.89 7.5 18 12.5 18C13.78 18 15 17.78 16.12 17.38"
-                        stroke="#1E5FA8"
-                        strokeWidth="1.8"
-                        strokeLinecap="round"
-                      />
-                    </>
-                  )}
-                </svg>
+                {renderEyeIcon(showNewPassword)}
               </button>
             </div>
             <div
@@ -384,50 +373,77 @@ export const LoginPage: React.FC = () => {
                 fontSize: 14,
               }}
             >
-              {fieldErrors.password || ''}
+              {fieldErrors.newPassword || ''}
             </div>
 
+            <label style={{ display: 'block', marginBottom: 8, fontSize: 18 }}>
+              Nhập lại mật khẩu mới
+            </label>
             <div
               style={{
+                background: '#fff',
+                borderRadius: 8,
+                outline: fieldErrors.confirmPassword
+                  ? '2px solid rgba(248,113,113,0.9)'
+                  : '2px solid rgba(255,255,255,0.3)',
+                marginBottom: 8,
+                position: 'relative',
                 display: 'flex',
-                justifyContent: 'space-between',
                 alignItems: 'center',
-                marginBottom: 20,
-                fontSize: 16,
               }}
             >
-              <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <input
-                  type="checkbox"
-                  checked={remember}
-                  onChange={(e) => setRemember(e.target.checked)}
-                  style={{ width: 16, height: 16 }}
-                />
-                Ghi nhớ đăng nhập
-              </label>
-
+              <input
+                style={{
+                  width: '100%',
+                  border: 'none',
+                  outline: 'none',
+                  padding: '12px 40px 12px 16px',
+                  fontSize: 16,
+                  borderRadius: 8,
+                }}
+                type={showConfirmPassword ? 'text' : 'password'}
+                placeholder="Nhập lại mật khẩu mới"
+                value={confirmPassword}
+                onChange={(e) => handleConfirmPasswordChange(e.target.value)}
+              />
               <button
                 type="button"
+                onClick={() => setShowConfirmPassword((prev) => !prev)}
                 style={{
-                  background: 'none',
+                  position: 'absolute',
+                  right: 8,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  padding: 0,
                   border: 'none',
-                  color: '#fff',
-                  textDecoration: 'underline',
+                  background: 'transparent',
                   cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
                 }}
-                onClick={() => navigate('/forgot-password')}
               >
-                Quên mật khẩu?
+                {renderEyeIcon(showConfirmPassword)}
               </button>
+            </div>
+            <div
+              style={{
+                minHeight: 20,
+                marginBottom: 12,
+                color: '#FEE2E2',
+                fontSize: 14,
+              }}
+            >
+              {fieldErrors.confirmPassword || ''}
             </div>
 
             <div
               style={{
-                maxHeight: formError ? '100px' : '0',
-                opacity: formError ? 1 : 0,
+                maxHeight: error ? '100px' : '0',
+                opacity: error ? 1 : 0,
                 overflow: 'hidden',
                 transition: 'all 0.3s ease-in-out',
-                marginBottom: formError ? 12 : 0,
+                marginBottom: error ? 12 : 0,
               }}
             >
               <div
@@ -438,7 +454,7 @@ export const LoginPage: React.FC = () => {
                   color: '#FEE2E2',
                 }}
               >
-                {formError}
+                {error}
               </div>
             </div>
 
@@ -458,48 +474,9 @@ export const LoginPage: React.FC = () => {
                 opacity: loading ? 0.7 : 1,
               }}
             >
-              {loading ? 'Đang xử lý...' : 'ĐĂNG NHẬP'}
+              {loading ? 'Đang xử lý...' : 'ĐỔI MẬT KHẨU'}
             </button>
-
-            <div
-              style={{
-                marginTop: 14,
-                textAlign: 'center',
-                fontSize: 14,
-              }}
-            >
-              Chưa có tài khoản?{' '}
-              <button
-                type="button"
-                onClick={() => navigate('/register')}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: '#FBBF24',
-                  textDecoration: 'underline',
-                  cursor: 'pointer',
-                }}
-              >
-                Đăng ký
-              </button>
-            </div>
           </form>
-
-          <div
-            style={{
-              position: 'absolute',
-              bottom: 32,
-              left: 48,
-              right: 48,
-              borderTop: '1px solid rgba(255,255,255,0.2)',
-              paddingTop: 8,
-              textAlign: 'center',
-              fontSize: 12.8,
-              opacity: 0.8,
-            }}
-          >
-            © 2026 Hệ Thống Quản Lý Xe Trung Chuyển
-          </div>
         </div>
       </div>
     </div>

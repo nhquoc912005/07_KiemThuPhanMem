@@ -2,11 +2,28 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { api } from '../services/api/client';
 
+function normalizePhoneNumber(value: string) {
+  const compactValue = String(value || '')
+    .trim()
+    .replace(/[\s.-]/g, '');
+
+  if (/^\+84\d{9}$/.test(compactValue)) {
+    return `0${compactValue.slice(3)}`;
+  }
+
+  if (/^84\d{9}$/.test(compactValue)) {
+    return `0${compactValue.slice(2)}`;
+  }
+
+  return compactValue;
+}
+
 export const ResetPasswordPage: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const phoneFromState = (location.state as { phoneNumber?: string, expiresInSeconds?: number })?.phoneNumber as string | undefined;
   const expiresFromState = (location.state as { phoneNumber?: string, expiresInSeconds?: number })?.expiresInSeconds as number | undefined;
+  const initialCountdown = phoneFromState ? expiresFromState || 60 : 0;
 
   const [phone, setPhone] = useState(phoneFromState || '');
   const [otp, setOtp] = useState('');
@@ -18,13 +35,13 @@ export const ResetPasswordPage: React.FC = () => {
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
-  const [countdown, setCountdown] = useState<number>(expiresFromState || 60);
+  const [countdown, setCountdown] = useState<number>(initialCountdown);
 
   const handleBack = () => navigate('/login');
 
   useEffect(() => {
-    setCountdown(expiresFromState || 60);
-  }, [expiresFromState]);
+    setCountdown(initialCountdown);
+  }, [initialCountdown]);
 
   useEffect(() => {
     if (countdown <= 0) return;
@@ -43,9 +60,12 @@ export const ResetPasswordPage: React.FC = () => {
     const hasSpecial = /[^A-Za-z0-9]/.test(password);
     return password.length >= 8 && hasLetter && hasNumber && hasSpecial;
   }, [password]);
+  const canResendOtp = countdown <= 0 && !resendLoading;
 
   const validate = () => {
-    if (!/^0\d{9}$/.test(phone)) {
+    const normalizedPhone = normalizePhoneNumber(phone);
+
+    if (!/^0\d{9}$/.test(normalizedPhone)) {
       setError('Số điện thoại không hợp lệ (10 chữ số, bắt đầu bằng 0)');
       return false;
     }
@@ -74,11 +94,12 @@ export const ResetPasswordPage: React.FC = () => {
     setMessage(null);
 
     if (!validate()) return;
+    const normalizedPhone = normalizePhoneNumber(phone);
 
     setLoading(true);
     try {
       const res = await api.post('/auth/reset-password', {
-        phoneNumber: phone,
+        phoneNumber: normalizedPhone,
         otp,
         newPassword: password
       });
@@ -92,15 +113,21 @@ export const ResetPasswordPage: React.FC = () => {
   };
 
   const resendOtp = async () => {
+    if (!canResendOtp) {
+      return;
+    }
+
     setError(null);
     setMessage(null);
-    if (!/^0\d{9}$/.test(phone)) {
+    const normalizedPhone = normalizePhoneNumber(phone);
+
+    if (!/^0\d{9}$/.test(normalizedPhone)) {
       setError('Số điện thoại không hợp lệ (10 chữ số, bắt đầu bằng 0)');
       return;
     }
     setResendLoading(true);
     try {
-      const res = await api.post('/auth/forgot-password', { phoneNumber: phone });
+      const res = await api.post('/auth/forgot-password', { phoneNumber: normalizedPhone });
       setMessage(res.data?.message || 'Đã gửi mã OTP');
       setCountdown(res.data?.expiresInSeconds ?? 60);
     } catch (error: unknown) { const err = error as { response?: { data?: { message?: string } }, message?: string };
@@ -348,14 +375,14 @@ export const ResetPasswordPage: React.FC = () => {
               <button
                 type="button"
                 onClick={resendOtp}
-                disabled={resendLoading}
+                disabled={!canResendOtp}
                 style={{
                   background: 'transparent',
                   border: 'none',
                   color: '#F39C12',
-                  cursor: 'pointer',
+                  cursor: canResendOtp ? 'pointer' : 'not-allowed',
                   fontWeight: 700,
-                  opacity: resendLoading ? 0.7 : 1
+                  opacity: canResendOtp ? 1 : 0.6
                 }}
               >
                 {resendLoading ? 'Đang gửi...' : 'Gửi lại OTP'}
