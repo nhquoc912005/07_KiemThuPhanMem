@@ -1,7 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
 
 import { DispatcherLayout } from '../../components/DispatcherLayout';
+import { SearchInput } from '../../components/SearchInput';
 import { api } from '../../services/api/client';
+import { matchesSearchQuery } from '../../utils/search';
 
 interface RouteSummary {
   MaLoTrinh: number;
@@ -75,6 +77,7 @@ export const AdjustRoutePage: React.FC = () => {
   const [routes, setRoutes] = useState<RouteSummary[]>([]);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [detail, setDetail] = useState<RouteDetailResponse | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
   const [plannedRoute, setPlannedRoute] = useState('');
   const [note, setNote] = useState('');
   const [startTime, setStartTime] = useState('');
@@ -135,6 +138,29 @@ export const AdjustRoutePage: React.FC = () => {
     if (!selectedId) return;
     void loadRouteDetail(selectedId);
   }, [selectedId]);
+
+  const filteredRoutes = useMemo(() => {
+    return routes.filter((route) =>
+      matchesSearchQuery(
+        searchQuery,
+        `LT${String(route.MaLoTrinh).padStart(3, '0')}`,
+        route.BienSo,
+        route.TenTaiXe,
+        route.TrangThaiLoTrinh,
+        route.LoTrinhDuKien,
+        route.GhiChu,
+        route.ThoiGianBatDau,
+        route.LoaiXe,
+        route.SoCho
+      )
+    );
+  }, [routes, searchQuery]);
+
+  useEffect(() => {
+    if (filteredRoutes.length === 0) return;
+    if (selectedId && filteredRoutes.some((route) => route.MaLoTrinh === selectedId)) return;
+    setSelectedId(filteredRoutes[0].MaLoTrinh);
+  }, [filteredRoutes, selectedId]);
 
   const currentRoute = useMemo(
     () => routes.find((route) => route.MaLoTrinh === selectedId) || detail?.route || null,
@@ -242,12 +268,21 @@ export const AdjustRoutePage: React.FC = () => {
           }}
         >
           <div style={{ fontWeight: 600, marginBottom: 8 }}>Danh sách lộ trình</div>
+          <SearchInput
+            value={searchQuery}
+            onChange={setSearchQuery}
+            placeholder="Tìm theo mã LT, biển số, tài xế..."
+            style={{ maxWidth: '100%', marginBottom: 12 }}
+          />
           {loadingList ? (
             <div>Đang tải...</div>
           ) : routes.length === 0 ? (
             <div>Chưa có lộ trình nào.</div>
           ) : (
-            routes.map((route) => (
+            filteredRoutes.length === 0 ? (
+              <div>Không tìm thấy lộ trình phù hợp.</div>
+            ) : (
+              filteredRoutes.map((route) => (
               <div
                 key={route.MaLoTrinh}
                 onClick={() => setSelectedId(route.MaLoTrinh)}
@@ -293,7 +328,8 @@ export const AdjustRoutePage: React.FC = () => {
                   Tổng ghế: <span style={{ color: '#111827' }}>{route.TongGhe || 0}</span>
                 </div>
               </div>
-            ))
+              ))
+            )
           )}
         </div>
 

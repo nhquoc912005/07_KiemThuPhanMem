@@ -1,7 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { api } from '../../services/api/client';
 import { DispatcherLayout } from '../../components/DispatcherLayout';
+import { SearchInput } from '../../components/SearchInput';
 import { VEHICLE_STATUS } from '../../constants/status';
+import { matchesSearchQuery } from '../../utils/search';
 
 interface Vehicle {
     MaXe: number;
@@ -83,6 +85,7 @@ export const VehiclesPage: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [notification, setNotification] = useState<NotificationState | null>(null);
+    const [searchQuery, setSearchQuery] = useState('');
 
     const [showAdd, setShowAdd] = useState(false);
     const [showEdit, setShowEdit] = useState<Vehicle | null>(null);
@@ -125,6 +128,19 @@ export const VehiclesPage: React.FC = () => {
 
         return () => window.clearTimeout(timer);
     }, [notification]);
+
+    const filteredVehicles = useMemo(() => {
+        return vehicles.filter((vehicle) =>
+            matchesSearchQuery(
+                searchQuery,
+                `XE${String(vehicle.MaXe).padStart(8, '0')}`,
+                vehicle.BienSo,
+                vehicle.LoaiXe,
+                vehicle.SoCho,
+                vehicle.TrangThaiXe
+            )
+        );
+    }, [vehicles, searchQuery]);
 
     const getStatusColor = (status: string) => {
         switch (status) {
@@ -352,7 +368,10 @@ export const VehiclesPage: React.FC = () => {
             )}
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-                <h2 style={{ fontSize: 24, fontWeight: 700, color: '#1E293B' }}>Quản lý xe trung chuyển</h2>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    <h2 style={{ fontSize: 24, fontWeight: 700, color: '#1E293B', margin: 0 }}>Quản lý xe trung chuyển</h2>
+                    <SearchInput value={searchQuery} onChange={setSearchQuery} placeholder="Tìm theo mã xe, biển số, loại xe..." />
+                </div>
                 <button
                     onClick={() => {
                         setFormData(defaultForm);
@@ -390,8 +409,10 @@ export const VehiclesPage: React.FC = () => {
                     <div style={{ padding: 32, textAlign: 'center', color: '#64748b' }}>Đang tải...</div>
                 ) : vehicles.length === 0 ? (
                     <div style={{ padding: 32, textAlign: 'center', color: '#64748b' }}>Chưa có dữ liệu xe</div>
+                ) : filteredVehicles.length === 0 ? (
+                    <div style={{ padding: 32, textAlign: 'center', color: '#64748b' }}>Không tìm thấy xe phù hợp</div>
                 ) : (
-                    vehicles.map((vehicle, index) => {
+                    filteredVehicles.map((vehicle, index) => {
                         const statusColor = getStatusColor(vehicle.TrangThaiXe);
 
                         return (

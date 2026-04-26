@@ -1,8 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { DriverLayout } from '../../components/DriverLayout';
+import { SearchInput } from '../../components/SearchInput';
 import { api } from '../../services/api/client';
 import { getStoredUser } from '../../auth/session';
+import { matchesSearchQuery } from '../../utils/search';
 
 interface DriverTrip {
   MaLoTrinh: number;
@@ -19,15 +21,14 @@ export const DriverTripsPage: React.FC = () => {
   const [allTrips, setAllTrips] = useState<DriverTrip[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
   const [menuTripId, setMenuTripId] = useState<number | null>(null);
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [rejectTripId, setRejectTripId] = useState<number | null>(null);
   const [rejectReason, setRejectReason] = useState('');
   const [rejectSaving, setRejectSaving] = useState(false);
   const [rejectError, setRejectError] = useState<string | null>(null);
-  
-  const [gpsStatus, setGpsStatus] = useState<string>('checking'); // checking, granted, denied
-  
+  const [showGpsBanner] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -79,18 +80,6 @@ export const DriverTripsPage: React.FC = () => {
     loadTrips();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [statusFilter, path]);
-
-  useEffect(() => {
-    if ('geolocation' in navigator) {
-      navigator.geolocation.getCurrentPosition(
-        () => setGpsStatus('granted'),
-        () => setGpsStatus('denied'),
-        { enableHighAccuracy: true }
-      );
-    } else {
-      setGpsStatus('denied');
-    }
-  }, []);
 
   const handleView = (id: number) => {
     navigate(`/driver/trips/${id}`);
@@ -155,6 +144,20 @@ export const DriverTripsPage: React.FC = () => {
     navigate(`/driver/trips/${tripId}/customers`);
   };
 
+  const filteredTrips = useMemo(() => {
+    return trips.filter((trip) =>
+      matchesSearchQuery(
+        searchQuery,
+        `CX${trip.MaLoTrinh.toString().padStart(8, '0')}`,
+        trip.BienSo,
+        trip.LoaiXe,
+        trip.TrangThaiLoTrinh,
+        trip.ThoiGianBatDau,
+        trip.ThoiGianKetThuc
+      )
+    );
+  }, [searchQuery, trips]);
+
   const handleSubmitReject = async () => {
     if (!rejectTripId) return;
     if (!rejectReason.trim()) {
@@ -182,11 +185,11 @@ export const DriverTripsPage: React.FC = () => {
 
   return (
     <DriverLayout>
-      {gpsStatus === 'denied' && (
+      {showGpsBanner && (
         <div style={{ background: '#FEF2F2', border: '1px solid #F87171', color: '#B91C1C', padding: '12px 16px', borderRadius: 8, marginBottom: 20, display: 'flex', alignItems: 'center', gap: 12 }}>
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
           <div>
-            <strong>Cảnh báo:</strong> Trình duyệt chưa được cấp quyền vị trí. Hệ thống hiện chỉ hiển thị trạng thái theo điểm đón và không dùng GPS trực tuyến để theo dõi tài xế.
+            <strong>Cảnh báo:</strong> Trình duyệt chưa được cấp quyền vị trí. Trang chi tiết chuyến sẽ không thể tự động vẽ tuyến đường real-time từ GPS hiện tại của tài xế.
           </div>
         </div>
       )}
@@ -268,6 +271,10 @@ export const DriverTripsPage: React.FC = () => {
           border: '1px solid #E5E7EB'
         }}
       >
+        <div style={{ padding: 16, borderBottom: '1px solid #E5E7EB', display: 'flex', justifyContent: 'flex-end' }}>
+          <SearchInput value={searchQuery} onChange={setSearchQuery} placeholder="Tìm theo mã chuyến, biển số, trạng thái..." />
+        </div>
+
         {loading ? (
           <div style={{ padding: 40, textAlign: 'center' }}>Đang tải...</div>
         ) : error ? (
@@ -278,6 +285,8 @@ export const DriverTripsPage: React.FC = () => {
               ? 'Chưa có chuyến nào được phân công'
               : 'Không có chuyến nào.'}
           </div>
+        ) : filteredTrips.length === 0 ? (
+          <div style={{ padding: 40, textAlign: 'center', color: '#6B7280' }}>Không tìm thấy chuyến phù hợp</div>
         ) : (
           <div style={{ width: '100%', overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 15, textAlign: 'center' }}>
@@ -293,7 +302,7 @@ export const DriverTripsPage: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {trips.map((t, index) => (
+              {filteredTrips.map((t, index) => (
                 <tr key={t.MaLoTrinh} style={{ borderTop: '1px solid #E5E7EB', height: 72 }}>
                   <td style={{ padding: 16, fontWeight: 600, color: '#111827' }}>{index + 1}</td>
                   <td style={{ padding: 16, color: '#374151' }}>

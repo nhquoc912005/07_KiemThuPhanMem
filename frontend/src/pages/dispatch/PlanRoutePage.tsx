@@ -3,7 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { api } from '../../services/api/client';
 import { getStoredUser } from '../../auth/session';
 import { DispatcherLayout } from '../../components/DispatcherLayout';
+import { SearchInput } from '../../components/SearchInput';
 import { DRIVER_STATUS, TICKET_STATUS, VEHICLE_STATUS } from '../../constants/status';
+import { matchesSearchQuery } from '../../utils/search';
 
 interface TicketRow {
   MaVe: number;
@@ -83,6 +85,9 @@ export const PlanRoutePage: React.FC = () => {
   const [khuVucDon, setKhuVucDon] = useState('');
   const [nhaXeDich, setNhaXeDich] = useState('');
   const [khungGio, setKhungGio] = useState('');
+  const [ticketSearchQuery, setTicketSearchQuery] = useState('');
+  const [vehicleSearchQuery, setVehicleSearchQuery] = useState('');
+  const [driverSearchQuery, setDriverSearchQuery] = useState('');
 
   const fetchData = async () => {
     setLoading(true);
@@ -124,9 +129,48 @@ export const PlanRoutePage: React.FC = () => {
       if (khuVucDon && !ticket.DiaChiDon.includes(khuVucDon)) return false;
       if (nhaXeDich && ticket.DiaChiTra !== nhaXeDich) return false;
       if (khungGio && ticket.KhungGioTrungChuyen !== khungGio) return false;
+      if (
+        !matchesSearchQuery(
+          ticketSearchQuery,
+          `VE${String(ticket.MaVe).padStart(3, '0')}`,
+          ticket.TenKhachHang,
+          ticket.SoDienThoai,
+          ticket.DiaChiDon,
+          ticket.DiaChiTra,
+          ticket.KhungGioTrungChuyen,
+          ticket.TrangThaiVe
+        )
+      ) {
+        return false;
+      }
       return true;
     });
-  }, [khungGio, khuVucDon, nhaXeDich, tickets]);
+  }, [khungGio, khuVucDon, nhaXeDich, ticketSearchQuery, tickets]);
+
+  const filteredVehicles = useMemo(() => {
+    return vehicles.filter((vehicle) =>
+      matchesSearchQuery(
+        vehicleSearchQuery,
+        `XE${String(vehicle.MaXe).padStart(8, '0')}`,
+        vehicle.BienSo,
+        vehicle.LoaiXe,
+        vehicle.SoCho,
+        vehicle.TrangThaiXe
+      )
+    );
+  }, [vehicleSearchQuery, vehicles]);
+
+  const filteredDrivers = useMemo(() => {
+    return drivers.filter((driver) =>
+      matchesSearchQuery(
+        driverSearchQuery,
+        `TX${String(driver.MaTaiXe).padStart(3, '0')}`,
+        driver.HoTen,
+        driver.SoDienThoai,
+        driver.TrangThaiTaiXe
+      )
+    );
+  }, [driverSearchQuery, drivers]);
 
   const totalSeatsNeeded = useMemo(
     () => selectedTickets.reduce((sum, ticket) => sum + Number(ticket.SoLuongGhe || 0), 0),
@@ -258,13 +302,13 @@ export const PlanRoutePage: React.FC = () => {
           }}
         >
           <div className="step-progress-wrapper">
-            <StepChip step={1} label="Chọn vé" active={currentStep === 1} done={currentStep > 1} />
+            <StepChip step={1} label="Chọn vé" shortLabel="Vé" active={currentStep === 1} done={currentStep > 1} />
             <StepSeparator done={currentStep > 1} />
-            <StepChip step={2} label="Chọn xe" active={currentStep === 2} done={currentStep > 2} />
+            <StepChip step={2} label="Chọn xe" shortLabel="Xe" active={currentStep === 2} done={currentStep > 2} />
             <StepSeparator done={currentStep > 2} />
-            <StepChip step={3} label="Chọn tài xế" active={currentStep === 3} done={currentStep > 3} />
+            <StepChip step={3} label="Chọn tài xế" shortLabel="TX" active={currentStep === 3} done={currentStep > 3} />
             <StepSeparator done={currentStep > 3} />
-            <StepChip step={4} label="Xác nhận" active={currentStep === 4} done={currentStep > 4} />
+            <StepChip step={4} label="Xác nhận" shortLabel="Xác nhận" active={currentStep === 4} done={currentStep > 4} />
           </div>
         </div>
 
@@ -285,8 +329,16 @@ export const PlanRoutePage: React.FC = () => {
             </div>
 
             <div style={{ background: '#FFFFFF', border: '1px solid #F3F4F6', borderRadius: 14, padding: 16, boxShadow: '0 1px 3px rgba(0,0,0,0.1)', marginBottom: 20 }}>
-              <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 12, color: '#101828' }}>
-                Danh sách vé cần trung chuyển ({filteredTickets.length})
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginBottom: 12 }}>
+                <div style={{ fontSize: 15, fontWeight: 700, color: '#101828' }}>
+                  Danh sách vé cần trung chuyển ({filteredTickets.length})
+                </div>
+                <SearchInput
+                  value={ticketSearchQuery}
+                  onChange={setTicketSearchQuery}
+                  placeholder="Tìm theo mã vé, khách hàng, SĐT..."
+                  style={{ maxWidth: 360 }}
+                />
               </div>
 
               <div className="table-responsive-wrapper">
@@ -349,37 +401,50 @@ export const PlanRoutePage: React.FC = () => {
               <div style={{ fontSize: 14, color: '#475569' }}>Cần tối thiểu {totalSeatsNeeded} ghế</div>
             </div>
 
-            <div style={selectionListScrollStyle}>
-              <div className="cards-grid" style={{ marginBottom: 0 }}>
-                {vehicles.map((vehicle) => {
-                  const canFit = vehicle.SoCho >= totalSeatsNeeded && vehicle.TrangThaiXe === VEHICLE_STATUS.AVAILABLE;
-                  const isSelected = selectedVehicleId === vehicle.MaXe;
+            <SearchInput
+              value={vehicleSearchQuery}
+              onChange={setVehicleSearchQuery}
+              placeholder="Tìm theo biển số, loại xe..."
+              style={{ maxWidth: '100%', marginBottom: 16 }}
+            />
 
-                  return (
-                    <div
-                      key={vehicle.MaXe}
-                      onClick={() => canFit && setSelectedVehicleId(vehicle.MaXe)}
-                      style={{
-                        border: `2px solid ${isSelected ? '#155DFC' : '#E5E7EB'}`,
-                        borderRadius: 12,
-                        padding: 20,
-                        cursor: canFit ? 'pointer' : 'not-allowed',
-                        opacity: canFit ? 1 : 0.6,
-                        background: isSelected ? '#EFF6FF' : '#FFFFFF'
-                      }}
-                    >
-                      <div style={{ fontSize: 16, fontWeight: 700, color: '#155DFC', marginBottom: 8 }}>{vehicle.BienSo}</div>
-                      <div style={{ fontSize: 13, color: '#475569', marginBottom: 8 }}>Loại xe: {vehicle.LoaiXe}</div>
-                      <div style={{ fontSize: 13, color: '#475569', marginBottom: 8 }}>Sức chứa: {vehicle.SoCho} ghế</div>
-                      <div style={{ fontSize: 13, color: '#475569', marginBottom: 8 }}>Trạng thái: {vehicle.TrangThaiXe}</div>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: canFit ? '#10B981' : '#EF4444' }}>
-                        {canFit ? 'Đủ điều kiện phân công' : 'Không khả dụng cho nhóm vé này'}
+            {loading ? (
+              <div style={{ padding: 24, textAlign: 'center' }}>Đang tải danh sách...</div>
+            ) : filteredVehicles.length === 0 ? (
+              <div style={{ padding: 24, textAlign: 'center', color: '#6B7280' }}>Không tìm thấy xe phù hợp.</div>
+            ) : (
+              <div style={selectionListScrollStyle}>
+                <div className="cards-grid" style={{ marginBottom: 0 }}>
+                  {filteredVehicles.map((vehicle) => {
+                    const canFit = vehicle.SoCho >= totalSeatsNeeded && vehicle.TrangThaiXe === VEHICLE_STATUS.AVAILABLE;
+                    const isSelected = selectedVehicleId === vehicle.MaXe;
+
+                    return (
+                      <div
+                        key={vehicle.MaXe}
+                        onClick={() => canFit && setSelectedVehicleId(vehicle.MaXe)}
+                        style={{
+                          border: `2px solid ${isSelected ? '#155DFC' : '#E5E7EB'}`,
+                          borderRadius: 12,
+                          padding: 20,
+                          cursor: canFit ? 'pointer' : 'not-allowed',
+                          opacity: canFit ? 1 : 0.6,
+                          background: isSelected ? '#EFF6FF' : '#FFFFFF'
+                        }}
+                      >
+                        <div style={{ fontSize: 16, fontWeight: 700, color: '#155DFC', marginBottom: 8 }}>{vehicle.BienSo}</div>
+                        <div style={{ fontSize: 13, color: '#475569', marginBottom: 8 }}>Loại xe: {vehicle.LoaiXe}</div>
+                        <div style={{ fontSize: 13, color: '#475569', marginBottom: 8 }}>Sức chứa: {vehicle.SoCho} ghế</div>
+                        <div style={{ fontSize: 13, color: '#475569', marginBottom: 8 }}>Trạng thái: {vehicle.TrangThaiXe}</div>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: canFit ? '#10B981' : '#EF4444' }}>
+                          {canFit ? 'Đủ điều kiện phân công' : 'Không khả dụng cho nhóm vé này'}
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
-            </div>
+            )}
 
             <div style={{ display: 'flex', gap: 16 }}>
               <button onClick={handlePrevStep} style={{ padding: '12px 24px', borderRadius: 8, border: 'none', background: '#F3F4F6', color: '#475569', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
@@ -396,65 +461,78 @@ export const PlanRoutePage: React.FC = () => {
           <div style={{ background: '#FFFFFF', border: '1px solid #F3F4F6', borderRadius: 14, padding: 24, boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
             <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 24, color: '#101828' }}>Chọn tài xế phù hợp</h3>
 
-            <div style={selectionListScrollStyle}>
-              <div className="cards-grid-drivers" style={{ marginBottom: 0 }}>
-                {drivers.map((driver) => {
-                  const isAvailable = driver.TrangThaiTaiXe === DRIVER_STATUS.AVAILABLE;
-                  const isSelected = selectedDriverId === driver.MaTaiXe;
-                  const statusBadge = buildStatusBadge(driver.TrangThaiTaiXe);
+            <SearchInput
+              value={driverSearchQuery}
+              onChange={setDriverSearchQuery}
+              placeholder="Tìm theo mã TX, họ tên, SĐT..."
+              style={{ maxWidth: '100%', marginBottom: 16 }}
+            />
 
-                  return (
-                    <div
-                      key={driver.MaTaiXe}
-                      onClick={() => isAvailable && setSelectedDriverId(driver.MaTaiXe)}
-                      style={{
-                        border: `2px solid ${isSelected ? '#2B7FFF' : '#E5E7EB'}`,
-                        borderRadius: 14,
-                        padding: 20,
-                        cursor: isAvailable ? 'pointer' : 'not-allowed',
-                        background: isSelected ? '#EFF6FF' : '#FFFFFF',
-                        opacity: isAvailable ? 1 : 0.65,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        gap: 16
-                      }}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 16, minWidth: 0 }}>
-                        <div
-                          style={{
-                            width: 48,
-                            height: 48,
-                            borderRadius: '999px',
-                            background: isAvailable ? '#16A34A' : '#94A3B8',
-                            color: '#FFFFFF',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            fontWeight: 800,
-                            fontSize: 18,
-                            flex: '0 0 auto'
-                          }}
-                        >
-                          {String(driver.HoTen || 'T').trim().charAt(0).toUpperCase()}
+            {loading ? (
+              <div style={{ padding: 24, textAlign: 'center' }}>Đang tải danh sách...</div>
+            ) : filteredDrivers.length === 0 ? (
+              <div style={{ padding: 24, textAlign: 'center', color: '#6B7280' }}>Không tìm thấy tài xế phù hợp.</div>
+            ) : (
+              <div style={selectionListScrollStyle}>
+                <div className="cards-grid-drivers" style={{ marginBottom: 0 }}>
+                  {filteredDrivers.map((driver) => {
+                    const isAvailable = driver.TrangThaiTaiXe === DRIVER_STATUS.AVAILABLE;
+                    const isSelected = selectedDriverId === driver.MaTaiXe;
+                    const statusBadge = buildStatusBadge(driver.TrangThaiTaiXe);
+
+                    return (
+                      <div
+                        key={driver.MaTaiXe}
+                        onClick={() => isAvailable && setSelectedDriverId(driver.MaTaiXe)}
+                        style={{
+                          border: `2px solid ${isSelected ? '#2B7FFF' : '#E5E7EB'}`,
+                          borderRadius: 14,
+                          padding: 20,
+                          cursor: isAvailable ? 'pointer' : 'not-allowed',
+                          background: isSelected ? '#EFF6FF' : '#FFFFFF',
+                          opacity: isAvailable ? 1 : 0.65,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          gap: 16
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 16, minWidth: 0 }}>
+                          <div
+                            style={{
+                              width: 48,
+                              height: 48,
+                              borderRadius: '999px',
+                              background: isAvailable ? '#16A34A' : '#94A3B8',
+                              color: '#FFFFFF',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontWeight: 800,
+                              fontSize: 18,
+                              flex: '0 0 auto'
+                            }}
+                          >
+                            {String(driver.HoTen || 'T').trim().charAt(0).toUpperCase()}
+                          </div>
+
+                          <div style={{ minWidth: 0 }}>
+                            <div style={{ fontSize: 15, fontWeight: 800, color: '#101828', marginBottom: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              {driver.HoTen}
+                            </div>
+                            <div style={{ fontSize: 13, color: '#64748B', fontWeight: 600 }}>
+                              Mã: TX{String(driver.MaTaiXe).padStart(3, '0')}
+                            </div>
+                          </div>
                         </div>
 
-                        <div style={{ minWidth: 0 }}>
-                          <div style={{ fontSize: 15, fontWeight: 800, color: '#101828', marginBottom: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                            {driver.HoTen}
-                          </div>
-                          <div style={{ fontSize: 13, color: '#64748B', fontWeight: 600 }}>
-                            Mã: TX{String(driver.MaTaiXe).padStart(3, '0')}
-                          </div>
-                        </div>
+                        <div style={statusBadge}>{driver.TrangThaiTaiXe}</div>
                       </div>
-
-                      <div style={statusBadge}>{driver.TrangThaiTaiXe}</div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
-            </div>
+            )}
 
             <div style={{ display: 'flex', gap: 12 }}>
               <button onClick={handlePrevStep} style={{ width: 120, padding: '12px 0', borderRadius: 8, border: 'none', background: '#F1F5F9', color: '#475569', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
@@ -585,27 +663,29 @@ const statusBadgeBase: React.CSSProperties = {
 interface StepChipProps {
   step: number;
   label: string;
+  shortLabel?: string;
   active?: boolean;
   done?: boolean;
 }
 
-const StepChip: React.FC<StepChipProps> = ({ step, label, active, done }) => {
+const StepChip: React.FC<StepChipProps> = ({ step, label, shortLabel, active, done }) => {
   const bg = done ? '#00C950' : active ? '#155DFC' : '#E5E7EB';
   const color = done || active ? '#FFFFFF' : '#6A7282';
   const labelColor = active ? '#101828' : '#99A1AF';
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: labelColor, fontWeight: active ? 600 : 500, fontSize: 13, fontFamily: 'Roboto' }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: labelColor, fontWeight: active ? 600 : 500, fontSize: 13, fontFamily: 'Roboto', whiteSpace: 'nowrap' }}>
       <div style={{ width: 32, height: 32, borderRadius: '50%', background: bg, color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 600 }}>
         {done ? '✓' : step}
       </div>
-      <span>{label}</span>
+      <span className="step-chip-label-long">{label}</span>
+      {shortLabel ? <span className="step-chip-label-short">{shortLabel}</span> : null}
     </div>
   );
 };
 
 const StepSeparator: React.FC<{ done?: boolean }> = ({ done }) => (
-  <div style={{ width: 148, height: 4, background: done ? '#00C950' : '#E5E7EB', margin: '0 8px' }} />
+  <div style={{ flex: '1 1 120px', maxWidth: 148, minWidth: 24, height: 4, background: done ? '#00C950' : '#E5E7EB', margin: '0 8px' }} />
 );
 
 const FilterSelect: React.FC<{

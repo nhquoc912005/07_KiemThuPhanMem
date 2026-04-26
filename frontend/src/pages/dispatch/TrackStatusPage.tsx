@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { api } from '../../services/api/client';
 import { DispatcherLayout } from '../../components/DispatcherLayout';
+import { SearchInput } from '../../components/SearchInput';
+import { matchesSearchQuery } from '../../utils/search';
 
 interface RouteSummary {
   MaLoTrinh: number;
@@ -62,6 +64,7 @@ export const TrackStatusPage: React.FC = () => {
   const [routes, setRoutes] = useState<RouteSummary[]>([]);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [detail, setDetail] = useState<RouteDetail | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
   const [loadingList, setLoadingList] = useState(false);
   const [loadingDetail, setLoadingDetail] = useState(false);
 
@@ -100,6 +103,27 @@ export const TrackStatusPage: React.FC = () => {
     void fetchDetail();
   }, [selectedId]);
 
+  const filteredRoutes = useMemo(() => {
+    return routes.filter((route) =>
+      matchesSearchQuery(
+        searchQuery,
+        `LT${String(route.MaLoTrinh).padStart(3, '0')}`,
+        route.BienSo,
+        route.TenTaiXe,
+        route.TrangThaiLoTrinh,
+        route.ThoiGianBatDau,
+        route.SoKhach,
+        route.TongGhe
+      )
+    );
+  }, [routes, searchQuery]);
+
+  useEffect(() => {
+    if (filteredRoutes.length === 0) return;
+    if (selectedId && filteredRoutes.some((route) => route.MaLoTrinh === selectedId)) return;
+    setSelectedId(filteredRoutes[0].MaLoTrinh);
+  }, [filteredRoutes, selectedId]);
+
   const currentLocation = useMemo(() => {
     if (!detail?.stops.length) return detail?.route?.LoTrinhDuKien || 'Việt Nam';
     const activeStop = detail.stops.find((stop) => !['Đã trả khách', 'Khách hủy'].includes(stop.TrangThaiKhach || ''));
@@ -113,13 +137,21 @@ export const TrackStatusPage: React.FC = () => {
       <div style={{ display: 'grid', gridTemplateColumns: '320px 1fr', gap: 20, alignItems: 'flex-start' }}>
         <div style={{ background: '#FFFFFF', borderRadius: 12, border: '1px solid #E5E7EB', padding: 16, minHeight: 400, boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
           <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 16, color: '#111827' }}>Danh sách lộ trình</div>
+          <SearchInput
+            value={searchQuery}
+            onChange={setSearchQuery}
+            placeholder="Tìm theo mã LT, biển số, tài xế..."
+            style={{ maxWidth: '100%', marginBottom: 12 }}
+          />
           {loadingList ? (
             <div style={{ color: '#6B7280', fontSize: 14 }}>Đang tải...</div>
           ) : routes.length === 0 ? (
             <div style={{ color: '#6B7280', fontSize: 14 }}>Chưa có lộ trình nào.</div>
+          ) : filteredRoutes.length === 0 ? (
+            <div style={{ color: '#6B7280', fontSize: 14 }}>Không tìm thấy lộ trình phù hợp.</div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {routes.map((route) => (
+              {filteredRoutes.map((route) => (
                 <button
                   key={route.MaLoTrinh}
                   onClick={() => setSelectedId(route.MaLoTrinh)}

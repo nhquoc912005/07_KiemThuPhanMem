@@ -1,7 +1,7 @@
 const { getPool, sql } = require('../../backend/src/db');
 const { DRIVER_ROLE, hashPassword } = require('../../backend/src/utils/auth');
 
-const DEFAULT_PASSWORD = '12345678';
+const DEFAULT_PASSWORD = '123456';
 const USERNAME_PREFIX = 'taixe';
 
 function buildUsernameSet(rows) {
@@ -58,7 +58,7 @@ async function seedDriverAccounts() {
         .input('MatKhauMaHoa', sql.VarChar(255), hashedPassword)
         .input('SoDienThoai', sql.VarChar(15), driver.SoDienThoai || null)
         .input('VaiTro', sql.NVarChar(30), DRIVER_ROLE)
-        .input('YeuCauDoiMatKhau', sql.Bit, 1)
+        .input('YeuCauDoiMatKhau', sql.Bit, 0)
         .query(`
           INSERT INTO TaiKhoanNguoiDung (
             TenDangNhap,

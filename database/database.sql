@@ -126,9 +126,37 @@ CREATE TABLE KhachHang (
     TenKhachHang  NVARCHAR(100) NOT NULL,
     SoDienThoai   VARCHAR(15) NOT NULL UNIQUE,
     DiaChiDon     NVARCHAR(255) NOT NULL,
+    DiaChiDonLat  DECIMAL(10,7) NULL,
+    DiaChiDonLng  DECIMAL(10,7) NULL,
     DiaChiTra     NVARCHAR(255) NOT NULL,
+    DiaChiTraLat  DECIMAL(10,7) NULL,
+    DiaChiTraLng  DECIMAL(10,7) NULL,
     TrangThai     NVARCHAR(30) NULL
 );
+GO
+
+IF COL_LENGTH('dbo.KhachHang', 'DiaChiDonLat') IS NULL
+BEGIN
+    ALTER TABLE dbo.KhachHang ADD DiaChiDonLat DECIMAL(10,7) NULL;
+END;
+GO
+
+IF COL_LENGTH('dbo.KhachHang', 'DiaChiDonLng') IS NULL
+BEGIN
+    ALTER TABLE dbo.KhachHang ADD DiaChiDonLng DECIMAL(10,7) NULL;
+END;
+GO
+
+IF COL_LENGTH('dbo.KhachHang', 'DiaChiTraLat') IS NULL
+BEGIN
+    ALTER TABLE dbo.KhachHang ADD DiaChiTraLat DECIMAL(10,7) NULL;
+END;
+GO
+
+IF COL_LENGTH('dbo.KhachHang', 'DiaChiTraLng') IS NULL
+BEGIN
+    ALTER TABLE dbo.KhachHang ADD DiaChiTraLng DECIMAL(10,7) NULL;
+END;
 GO
 
 CREATE TABLE VeTrungChuyen (
@@ -165,7 +193,11 @@ CREATE TABLE ChiTietLoTrinh (
     MaChiTiet         INT IDENTITY(1,1) PRIMARY KEY,
     ThuTuDonTra       INT NOT NULL,
     DiemDon           NVARCHAR(255) NOT NULL,
+    DiemDonLat        DECIMAL(10,7) NULL,
+    DiemDonLng        DECIMAL(10,7) NULL,
     DiemTra           NVARCHAR(255) NOT NULL,
+    DiemTraLat        DECIMAL(10,7) NULL,
+    DiemTraLng        DECIMAL(10,7) NULL,
     ThoiGianDonDuKien DATETIME NULL,
     TrangThaiKhach    NVARCHAR(50) NULL,
     MaLoTrinh         INT NOT NULL,
@@ -237,7 +269,7 @@ GO
 ------------------------------------------------------------
 -- TÃ i khoáº£n máº«u: nhÃ¢n viÃªn Ä‘iá»u phá»‘i
 INSERT INTO TaiKhoanNguoiDung (TenDangNhap, MatKhauMaHoa, SoDienThoai, VaiTro, TrangThaiTaiKhoan)
-VALUES ('dieuphoi1', '$2b$10$EHsLxVEd.xxShRMhCJ8jouTDAlnLzyecGZrHbVk262hVk6YvPd.RS', '0812345678', N'NhÃ¢n viÃªn Ä‘iá»u phá»‘i', 1);
+VALUES ('dieuphoi1', '$2b$10$OjQFSKCq23Kyh6oLUqnRUeJNx2Z/TWT7VtMIJrLMzq7ef9pRl7f/K', '0812345678', N'NhÃ¢n viÃªn Ä‘iá»u phá»‘i', 1);
 
 DECLARE @MaTK_NVDP INT = SCOPE_IDENTITY();
 
@@ -246,7 +278,7 @@ VALUES (N'NhÃ¢n viÃªn Ä‘iá»u phá»‘i 1', '0812345678', N'Hoáº¡t
 
 -- TÃ i khoáº£n máº«u: tÃ i xáº¿ chÃ­nh
 INSERT INTO TaiKhoanNguoiDung (TenDangNhap, MatKhauMaHoa, SoDienThoai, VaiTro, TrangThaiTaiKhoan)
-VALUES ('taixe1', '$2b$10$EHsLxVEd.xxShRMhCJ8jouTDAlnLzyecGZrHbVk262hVk6YvPd.RS', '0912345678', N'TÃ i xáº¿', 1);
+VALUES ('taixe1', '$2b$10$OjQFSKCq23Kyh6oLUqnRUeJNx2Z/TWT7VtMIJrLMzq7ef9pRl7f/K', '0912345678', N'TÃ i xáº¿', 1);
 
 DECLARE @MaTK_TaiXe INT = SCOPE_IDENTITY();
 
@@ -295,6 +327,45 @@ VALUES
     (N'ThÃ¡i Huy ThÃ´ng',     '0977888900', N'909 NÃºi ThÃ nh',            N'Báº¿n xe ÄÃ  Náºµng', N'Hoáº¡t Ä‘á»™ng'),
     (N'ChÃ¢u Gia Uy',        '0988999011', N'1010 Tiá»ƒu La',             N'Báº¿n xe ÄÃ  Náºµng', N'Hoáº¡t Ä‘á»™ng'),
     (N'TrÆ°Æ¡ng Há»¯u VÅ©',      '0999000122', N'1111 Phan ÄÄƒng LÆ°u',       N'Báº¿n xe ÄÃ  Náºµng', N'Hoáº¡t Ä‘á»™ng');
+
+;WITH AddressCoordinates AS (
+    SELECT *
+    FROM (VALUES
+        (N'Báº¿n xe ÄÃ  Náºµng', CAST(16.0677000 AS DECIMAL(10,7)), CAST(108.1886000 AS DECIMAL(10,7))),
+        (N'Báº¿n xe Trung tÃ¢m ÄÃ  Náºµng', CAST(16.0677000 AS DECIMAL(10,7)), CAST(108.1886000 AS DECIMAL(10,7))),
+        (N'56 Chu Máº¡nh Trinh', CAST(16.0612000 AS DECIMAL(10,7)), CAST(108.2218000 AS DECIMAL(10,7))),
+        (N'36 TÃº Quá»³', CAST(16.0755000 AS DECIMAL(10,7)), CAST(108.2422000 AS DECIMAL(10,7))),
+        (N'12 Nguyá»…n VÄƒn Linh', CAST(16.0548000 AS DECIMAL(10,7)), CAST(108.2195000 AS DECIMAL(10,7))),
+        (N'34 LÃª Duáº©n', CAST(16.0710000 AS DECIMAL(10,7)), CAST(108.2200000 AS DECIMAL(10,7))),
+        (N'56 Tráº§n PhÃº', CAST(16.0678000 AS DECIMAL(10,7)), CAST(108.2245000 AS DECIMAL(10,7))),
+        (N'78 HÃ¹ng VÆ°Æ¡ng', CAST(16.0695000 AS DECIMAL(10,7)), CAST(108.2158000 AS DECIMAL(10,7))),
+        (N'90 Äiá»‡n BiÃªn Phá»§', CAST(16.0616000 AS DECIMAL(10,7)), CAST(108.2016000 AS DECIMAL(10,7))),
+        (N'123 Nguyá»…n Táº¥t ThÃ nh', CAST(16.0860000 AS DECIMAL(10,7)), CAST(108.2035000 AS DECIMAL(10,7))),
+        (N'45 Báº¡ch Äáº±ng', CAST(16.0687000 AS DECIMAL(10,7)), CAST(108.2248000 AS DECIMAL(10,7))),
+        (N'67 Tráº§n HÆ°ng Äáº¡o', CAST(16.0638000 AS DECIMAL(10,7)), CAST(108.2302000 AS DECIMAL(10,7))),
+        (N'89 LÃª Lá»£i', CAST(16.0671000 AS DECIMAL(10,7)), CAST(108.2192000 AS DECIMAL(10,7))),
+        (N'101 Nguyá»…n HoÃ ng', CAST(16.0614000 AS DECIMAL(10,7)), CAST(108.2059000 AS DECIMAL(10,7))),
+        (N'202 TÃ´n Äá»©c Tháº¯ng', CAST(16.0738000 AS DECIMAL(10,7)), CAST(108.1662000 AS DECIMAL(10,7))),
+        (N'303 Nguyá»…n LÆ°Æ¡ng Báº±ng', CAST(16.0780000 AS DECIMAL(10,7)), CAST(108.1506000 AS DECIMAL(10,7))),
+        (N'404 Pháº¡m HÃ¹ng', CAST(16.0250000 AS DECIMAL(10,7)), CAST(108.1820000 AS DECIMAL(10,7))),
+        (N'505 LÃª Trá»ng Táº¥n', CAST(16.0300000 AS DECIMAL(10,7)), CAST(108.1718000 AS DECIMAL(10,7))),
+        (N'606 TrÆ°á»ng Chinh', CAST(16.0450000 AS DECIMAL(10,7)), CAST(108.1790000 AS DECIMAL(10,7))),
+        (N'707 Äiá»‡n BiÃªn Phá»§', CAST(16.0548000 AS DECIMAL(10,7)), CAST(108.1914000 AS DECIMAL(10,7))),
+        (N'808 Háº£i PhÃ²ng', CAST(16.0697000 AS DECIMAL(10,7)), CAST(108.2054000 AS DECIMAL(10,7))),
+        (N'909 NÃºi ThÃ nh', CAST(16.0351000 AS DECIMAL(10,7)), CAST(108.2219000 AS DECIMAL(10,7))),
+        (N'1010 Tiá»ƒu La', CAST(16.0417000 AS DECIMAL(10,7)), CAST(108.2230000 AS DECIMAL(10,7))),
+        (N'1111 Phan ÄÄƒng LÆ°u', CAST(16.0346000 AS DECIMAL(10,7)), CAST(108.2138000 AS DECIMAL(10,7)))
+    ) AS src(AddressText, LatValue, LngValue)
+)
+UPDATE kh
+SET
+    kh.DiaChiDonLat = don.LatValue,
+    kh.DiaChiDonLng = don.LngValue,
+    kh.DiaChiTraLat = tra.LatValue,
+    kh.DiaChiTraLng = tra.LngValue
+FROM KhachHang kh
+LEFT JOIN AddressCoordinates don ON don.AddressText = kh.DiaChiDon
+LEFT JOIN AddressCoordinates tra ON tra.AddressText = kh.DiaChiTra;
 
 -- VÃ© trung chuyá»ƒn: map theo sá»‘ Ä‘iá»‡n thoáº¡i Ä‘á»ƒ trÃ¡nh lá»‡ thuá»™c ID cá»©ng
 INSERT INTO VeTrungChuyen (KhungGioTrungChuyen, SoLuongGhe, TrangThaiVe, MaKhachHang)
@@ -360,9 +431,9 @@ DECLARE @MaVe1 INT =
 );
 
 INSERT INTO ChiTietLoTrinh
-    (ThuTuDonTra, DiemDon, DiemTra, ThoiGianDonDuKien, TrangThaiKhach, MaLoTrinh, MaVe)
+    (ThuTuDonTra, DiemDon, DiemDonLat, DiemDonLng, DiemTra, DiemTraLat, DiemTraLng, ThoiGianDonDuKien, TrangThaiKhach, MaLoTrinh, MaVe)
 VALUES
-    (1, N'56 Chu Máº¡nh Trinh', N'Báº¿n xe ÄÃ  Náºµng', DATEADD(HOUR, 1, GETDATE()), N'ÄÃ£ Ä‘áº¿n Ä‘iá»ƒm Ä‘Ã³n', @MaLoTrinh1, @MaVe1);
+    (1, N'56 Chu Máº¡nh Trinh', 16.0612000, 108.2218000, N'Báº¿n xe ÄÃ  Náºµng', 16.0677000, 108.1886000, DATEADD(HOUR, 1, GETDATE()), N'ÄÃ£ Ä‘áº¿n Ä‘iá»ƒm Ä‘Ã³n', @MaLoTrinh1, @MaVe1);
 
 INSERT INTO TheoDoiTrangThai (ViTriHienTai, TrangThai, MaLoTrinh)
 VALUES (N'Äang táº¡i khu vá»±c Háº£i ChÃ¢u', N'Äang thá»±c hiá»‡n', @MaLoTrinh1);
@@ -372,11 +443,11 @@ GO
 -- 6. Gá»£i Ã½ Ä‘Äƒng nháº­p
 ------------------------------------------------------------
 -- TÃªn Ä‘Äƒng nháº­p: dieuphoi1
--- Mật khẩu:      12345678
+-- Mật khẩu:      123456
 --
 -- Hoáº·c tÃ i xáº¿:
 -- TÃªn Ä‘Äƒng nháº­p: taixe1
--- Mật khẩu:      12345678
+-- Mật khẩu:      123456
 
 ------------------------------------------------------------
 -- 7. OPTION 1 - External master data (giáº£ láº­p) + Dispatch schema
@@ -425,6 +496,30 @@ CREATE TABLE dbo.external_drivers (
     CONSTRAINT CK_external_drivers_work_status CHECK (work_status IN (N'ACTIVE', N'INACTIVE')),
     CONSTRAINT CK_external_drivers_availability CHECK (availability_status IN (N'AVAILABLE', N'ASSIGNED', N'BUSY', N'OFF'))
 );
+GO
+
+IF COL_LENGTH('dbo.ChiTietLoTrinh', 'DiemDonLat') IS NULL
+BEGIN
+    ALTER TABLE dbo.ChiTietLoTrinh ADD DiemDonLat DECIMAL(10,7) NULL;
+END;
+GO
+
+IF COL_LENGTH('dbo.ChiTietLoTrinh', 'DiemDonLng') IS NULL
+BEGIN
+    ALTER TABLE dbo.ChiTietLoTrinh ADD DiemDonLng DECIMAL(10,7) NULL;
+END;
+GO
+
+IF COL_LENGTH('dbo.ChiTietLoTrinh', 'DiemTraLat') IS NULL
+BEGIN
+    ALTER TABLE dbo.ChiTietLoTrinh ADD DiemTraLat DECIMAL(10,7) NULL;
+END;
+GO
+
+IF COL_LENGTH('dbo.ChiTietLoTrinh', 'DiemTraLng') IS NULL
+BEGIN
+    ALTER TABLE dbo.ChiTietLoTrinh ADD DiemTraLng DECIMAL(10,7) NULL;
+END;
 GO
 
 IF COL_LENGTH('dbo.external_drivers', 'employee_code') IS NULL

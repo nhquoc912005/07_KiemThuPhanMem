@@ -1,4 +1,12 @@
 const { getPool, sql } = require('../../backend/src/db');
+const { lookupAddressCoordinates } = require('../../backend/src/utils/locationCoordinates');
+
+function attachLocationInputs(request, prefix, address) {
+    const coordinates = lookupAddressCoordinates(address);
+    return request
+        .input(`${prefix}Lat`, sql.Decimal(10, 7), coordinates?.lat ?? null)
+        .input(`${prefix}Lng`, sql.Decimal(10, 7), coordinates?.lng ?? null);
+}
 
 async function seed() {
     try {
@@ -82,6 +90,23 @@ async function seed() {
                     VALUES (@name, @phone, N'Bến xe Trung tâm Đà Nẵng', @tra, N'Hoạt động')
                 `);
             const mKH = rKH.recordset[0].MaKhachHang;
+            const pickupCoordinates = lookupAddressCoordinates('Bến xe Trung tâm Đà Nẵng');
+            const dropoffCoordinates = lookupAddressCoordinates(diemTra);
+
+            await pool.request()
+                .input('mKH', sql.Int, mKH)
+                .input('pickupLat', sql.Decimal(10, 7), pickupCoordinates?.lat ?? null)
+                .input('pickupLng', sql.Decimal(10, 7), pickupCoordinates?.lng ?? null)
+                .input('dropoffLat', sql.Decimal(10, 7), dropoffCoordinates?.lat ?? null)
+                .input('dropoffLng', sql.Decimal(10, 7), dropoffCoordinates?.lng ?? null)
+                .query(`
+                    UPDATE KhachHang
+                    SET DiaChiDonLat = @pickupLat,
+                        DiaChiDonLng = @pickupLng,
+                        DiaChiTraLat = @dropoffLat,
+                        DiaChiTraLng = @dropoffLng
+                    WHERE MaKhachHang = @mKH
+                `);
 
             const rVe = await pool.request().input('mKH', sql.Int, mKH).query(`
                 INSERT INTO VeTrungChuyen (KhungGioTrungChuyen, SoLuongGhe, TrangThaiVe, MaKhachHang) 
@@ -95,6 +120,22 @@ async function seed() {
                 .query(`
                     INSERT INTO ChiTietLoTrinh (ThuTuDonTra, DiemDon, DiemTra, TrangThaiKhach, MaLoTrinh, MaVe) 
                     VALUES (1, N'Bến xe Trung tâm Đà Nẵng', @tra, NULL, @maLT, @mVe)
+                `);
+
+            await pool.request()
+                .input('maLT', sql.Int, maLT)
+                .input('mVe', sql.Int, mVe)
+                .input('pickupLat', sql.Decimal(10, 7), pickupCoordinates?.lat ?? null)
+                .input('pickupLng', sql.Decimal(10, 7), pickupCoordinates?.lng ?? null)
+                .input('dropoffLat', sql.Decimal(10, 7), dropoffCoordinates?.lat ?? null)
+                .input('dropoffLng', sql.Decimal(10, 7), dropoffCoordinates?.lng ?? null)
+                .query(`
+                    UPDATE ChiTietLoTrinh
+                    SET DiemDonLat = @pickupLat,
+                        DiemDonLng = @pickupLng,
+                        DiemTraLat = @dropoffLat,
+                        DiemTraLng = @dropoffLng
+                    WHERE MaLoTrinh = @maLT AND MaVe = @mVe
                 `);
 
             console.log(`✅ [${cxCode}] Đã phân công chuyến "Chưa thực hiện": ${rString}`);

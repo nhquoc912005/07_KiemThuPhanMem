@@ -1,0 +1,14 @@
+{
+  "name": "trung-chuyen-selenium-qa",
+  "version": "1.0.0",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "test": "node run_selenium_tests.js"
+  },
+  "devDependencies": {
+    "chromedriver": "^139.0.0",
+    "selenium-webdriver": "^4.35.0",
+    "xlsx": "^0.18.5"
+  }
+}

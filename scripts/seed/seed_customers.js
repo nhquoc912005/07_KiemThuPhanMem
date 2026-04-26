@@ -1,4 +1,12 @@
 const { getPool, sql } = require('../../backend/src/db');
+const { lookupAddressCoordinates } = require('../../backend/src/utils/locationCoordinates');
+
+function attachLocationInputs(request, prefix, address) {
+    const coordinates = lookupAddressCoordinates(address);
+    return request
+        .input(`${prefix}Lat`, sql.Decimal(10, 7), coordinates?.lat ?? null)
+        .input(`${prefix}Lng`, sql.Decimal(10, 7), coordinates?.lng ?? null);
+}
 
 async function seed() {
     try {
@@ -117,6 +125,23 @@ async function seed() {
                     VALUES (@name, @phone, @don, @tra, N'Hoạt động')
                 `);
             const maKH = khRs.recordset[0].MaKhachHang;
+            const pickupCoordinates = lookupAddressCoordinates('Bến xe Đà Nẵng');
+            const dropoffCoordinates = lookupAddressCoordinates(locations[i]);
+
+            await pool.request()
+                .input('maKH', sql.Int, maKH)
+                .input('pickupLat', sql.Decimal(10, 7), pickupCoordinates?.lat ?? null)
+                .input('pickupLng', sql.Decimal(10, 7), pickupCoordinates?.lng ?? null)
+                .input('dropoffLat', sql.Decimal(10, 7), dropoffCoordinates?.lat ?? null)
+                .input('dropoffLng', sql.Decimal(10, 7), dropoffCoordinates?.lng ?? null)
+                .query(`
+                    UPDATE KhachHang
+                    SET DiaChiDonLat = @pickupLat,
+                        DiaChiDonLng = @pickupLng,
+                        DiaChiTraLat = @dropoffLat,
+                        DiaChiTraLng = @dropoffLng
+                    WHERE MaKhachHang = @maKH
+                `);
 
             const veRs = await pool.request()
                 .input('khId', sql.Int, maKH)
@@ -136,6 +161,22 @@ async function seed() {
                 .query(`
                     INSERT INTO ChiTietLoTrinh (MaLoTrinh, MaVe, ThuTuDonTra, DiemDon, DiemTra, ThoiGianDonDuKien, TrangThaiKhach)
                     VALUES (@routeId, @veId, 1, @pick, @drop, @time, N'Đã trả')
+                `);
+
+            await pool.request()
+                .input('routeId', sql.Int, maLoTrinh)
+                .input('veId', sql.Int, maVe)
+                .input('pickupLat', sql.Decimal(10, 7), pickupCoordinates?.lat ?? null)
+                .input('pickupLng', sql.Decimal(10, 7), pickupCoordinates?.lng ?? null)
+                .input('dropoffLat', sql.Decimal(10, 7), dropoffCoordinates?.lat ?? null)
+                .input('dropoffLng', sql.Decimal(10, 7), dropoffCoordinates?.lng ?? null)
+                .query(`
+                    UPDATE ChiTietLoTrinh
+                    SET DiemDonLat = @pickupLat,
+                        DiemDonLng = @pickupLng,
+                        DiemTraLat = @dropoffLat,
+                        DiemTraLng = @dropoffLng
+                    WHERE MaLoTrinh = @routeId AND MaVe = @veId
                 `);
 
             console.log(`✅ [${maChuyenStr}] | Biển số: ${bienSo} | Tài xế: ${drivers[i]} | Lộ trình: ${loTrinh} (${durationMins} phút)`);

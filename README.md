@@ -92,6 +92,29 @@ Nếu không cấu hình `VITE_API_BASE_URL`, frontend mặc định gọi:
 http://<hostname>:5000/api/v1
 ```
 
+Khi mo frontend bang IP noi bo trong mang LAN, khong nen khoa cung `localhost` trong `frontend/.env`.
+Neu van de `VITE_API_BASE_URL=http://localhost:5000/api/v1`, thiet bi khac se goi API vao chinh no thay vi may chu.
+Frontend hien da tu dong doi host `localhost` thanh host dang mo trang khi truy cap bang IP noi bo.
+
+Frontend hiện dùng stack miễn phí:
+
+- `Leaflet` + `react-leaflet` để render bản đồ
+- `OpenStreetMap` tile layer để hiển thị nền bản đồ
+- `OSRM` public API để tìm tuyến đường lái xe
+
+Project không cần `Google Maps API key`, không cần bật billing và không phát sinh chi phí cho luồng demo/sinh viên.
+
+Luồng map cho tài xế hiện tại:
+
+- Backend chỉ trả dữ liệu chuyến, điểm đón, điểm trả và tọa độ tương ứng
+- Frontend dùng `react-leaflet` để hiển thị marker điểm đón, marker điểm trả và polyline tuyến đường
+- Frontend gọi `OSRM` để tính tuyến xe chạy ngắn nhất giữa `pickupLat/pickupLng` và `dropoffLat/dropoffLng`
+- Tuyến đường chỉ được gọi lại khi tọa độ điểm đón hoặc điểm trả thay đổi, không lưu cứng polyline trong backend
+
+Map chi tiết chuyến hiện không cần `Google Maps API key`, không cần billing và cũng không phụ thuộc quyền GPS của trình duyệt để vẽ tuyến giữa điểm đón và điểm trả.
+
+Lưu ý thêm: `router.project-osrm.org` là dịch vụ public phù hợp cho demo hoặc tải nhẹ. Nếu triển khai production hoặc có lượng truy cập cao, nên dùng hạ tầng riêng hoặc dịch vụ có SLA.
+
 ## Tạo hoặc reset database
 
 1. Mở SQL Server Management Studio hoặc Azure Data Studio.

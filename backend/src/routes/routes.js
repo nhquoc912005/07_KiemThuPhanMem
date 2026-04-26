@@ -3,6 +3,7 @@ const { getPool, sql } = require('../db');
 const { loadRoutePlanSyncState, syncRoutePlanProjection } = require('../services/routePlanSyncService');
 const { DISPATCHER_ROLE, DRIVER_ROLE } = require('../utils/auth');
 const { sendError, sendSuccess } = require('../utils/http');
+const { lookupAddressCoordinates } = require('../utils/locationCoordinates');
 
 const router = express.Router();
 
@@ -71,6 +72,76 @@ function buildRoutePlanText(tickets) {
   const pickupPoints = [...new Set(tickets.map((ticket) => String(ticket.DiaChiDon || '').trim()).filter(Boolean))];
   const dropPoints = [...new Set(tickets.map((ticket) => String(ticket.DiaChiTra || '').trim()).filter(Boolean))];
   return [...pickupPoints, ...dropPoints].join(' -> ');
+}
+
+function normalizeCoordinateValue(value) {
+  if (value == null || value === '') {
+    return null;
+  }
+
+  const numericValue = Number(value);
+  return Number.isFinite(numericValue) ? numericValue : null;
+}
+
+function resolveCoordinates(address, latValue, lngValue) {
+  const lat = normalizeCoordinateValue(latValue);
+  const lng = normalizeCoordinateValue(lngValue);
+
+  if (lat != null && lng != null) {
+    return { lat, lng };
+  }
+
+  return lookupAddressCoordinates(address);
+}
+
+function withResolvedStopCoordinates(stop) {
+  const pickupCoordinates = resolveCoordinates(stop.DiemDon, stop.DiemDonLat, stop.DiemDonLng);
+  const dropoffCoordinates = resolveCoordinates(stop.DiemTra, stop.DiemTraLat, stop.DiemTraLng);
+
+  return {
+    ...stop,
+    DiemDonLat: pickupCoordinates?.lat ?? null,
+    DiemDonLng: pickupCoordinates?.lng ?? null,
+    DiemTraLat: dropoffCoordinates?.lat ?? null,
+    DiemTraLng: dropoffCoordinates?.lng ?? null
+  };
+}
+
+function buildNavigationTrip(route, stops) {
+  const activeStop = stops.find((stop) => !DONE_STOP_STATUSES.has(String(stop.TrangThaiKhach || '').trim())) || null;
+  const referenceStop = activeStop || stops[0] || null;
+  const routeStatus = String(route?.TrangThaiLoTrinh || '').trim();
+  const activeStopStatus = String(referenceStop?.TrangThaiKhach || '').trim();
+
+  let tripStatus = 'ASSIGNED';
+  let currentStageLabel = 'Đang đến điểm đón';
+
+  if (!referenceStop || !activeStop || FINAL_ROUTE_STATUSES.includes(routeStatus)) {
+    tripStatus = 'COMPLETED';
+    currentStageLabel = 'Hoàn thành';
+  } else if (activeStopStatus === 'Đã đón khách') {
+    tripStatus = 'PICKED_UP';
+    currentStageLabel = 'Đã đón khách';
+  } else if (routeStatus === 'Đang thực hiện' || routeStatus === 'Đang gặp sự cố') {
+    tripStatus = 'GOING_TO_PICKUP';
+  }
+
+  return {
+    tripId: Number(route?.MaLoTrinh) || null,
+    customerName: referenceStop?.TenKhachHang || null,
+    pickupAddress: referenceStop?.DiemDon || null,
+    pickupLat: normalizeCoordinateValue(referenceStop?.DiemDonLat),
+    pickupLng: normalizeCoordinateValue(referenceStop?.DiemDonLng),
+    dropoffAddress: referenceStop?.DiemTra || null,
+    dropoffLat: normalizeCoordinateValue(referenceStop?.DiemTraLat),
+    dropoffLng: normalizeCoordinateValue(referenceStop?.DiemTraLng),
+    driverId: Number(route?.MaTaiXe) || null,
+    tripStatus,
+    currentStageLabel,
+    activeStopId: Number(referenceStop?.MaChiTiet) || null,
+    activeStopStatus: activeStopStatus || null,
+    routeStatus: routeStatus || null
+  };
 }
 
 function buildDriverSyncContract(routeId) {
@@ -184,7 +255,11 @@ async function loadRouteStops(db, routeId) {
         ct.MaChiTiet,
         ct.ThuTuDonTra,
         ct.DiemDon,
+        ct.DiemDonLat,
+        ct.DiemDonLng,
         ct.DiemTra,
+        ct.DiemTraLat,
+        ct.DiemTraLng,
         ct.ThoiGianDonDuKien,
         ct.TrangThaiKhach,
         ct.MaLoTrinh,
@@ -202,7 +277,7 @@ async function loadRouteStops(db, routeId) {
       ORDER BY ct.ThuTuDonTra, ct.MaChiTiet
     `);
 
-  return result.recordset;
+  return result.recordset.map(withResolvedStopCoordinates);
 }
 
 async function syncResources(db, route, routeStatus) {
@@ -429,6 +504,7 @@ router.get('/:id', async (req, res) => {
       {
         route,
         stops,
+        navigationTrip: buildNavigationTrip(route, stops),
         sync: buildRouteSyncPayload(routeId, syncState)
       },
       'Lấy thông tin lộ trình thành công'
@@ -740,7 +816,11 @@ router.post('/', async (req, res) => {
             k.TenKhachHang,
             k.SoDienThoai,
             k.DiaChiDon,
-            k.DiaChiTra
+            k.DiaChiDonLat,
+            k.DiaChiDonLng,
+            k.DiaChiTra,
+            k.DiaChiTraLat,
+            k.DiaChiTraLng
           FROM VeTrungChuyen v
           JOIN KhachHang k ON k.MaKhachHang = v.MaKhachHang
           WHERE v.MaVe IN (SELECT TRY_CAST(value AS INT) FROM STRING_SPLIT(@ids, ','))
@@ -837,19 +917,25 @@ router.post('/', async (req, res) => {
 
       for (const [index, ticket] of selectedTickets.entries()) {
         const expectedPickupTime = new Date(routeStart.getTime() + index * 10 * 60 * 1000);
+        const pickupCoordinates = resolveCoordinates(ticket.DiaChiDon, ticket.DiaChiDonLat, ticket.DiaChiDonLng);
+        const dropoffCoordinates = resolveCoordinates(ticket.DiaChiTra, ticket.DiaChiTraLat, ticket.DiaChiTraLng);
 
         await new sql.Request(transaction)
           .input('ThuTuDonTra', sql.Int, index + 1)
           .input('DiemDon', sql.NVarChar(255), ticket.DiaChiDon)
+          .input('DiemDonLat', sql.Decimal(10, 7), pickupCoordinates?.lat ?? null)
+          .input('DiemDonLng', sql.Decimal(10, 7), pickupCoordinates?.lng ?? null)
           .input('DiemTra', sql.NVarChar(255), ticket.DiaChiTra)
+          .input('DiemTraLat', sql.Decimal(10, 7), dropoffCoordinates?.lat ?? null)
+          .input('DiemTraLng', sql.Decimal(10, 7), dropoffCoordinates?.lng ?? null)
           .input('ThoiGianDonDuKien', sql.DateTime, expectedPickupTime)
           .input('TrangThaiKhach', sql.NVarChar(50), null)
           .input('MaLoTrinh', sql.Int, routeId)
           .input('MaVe', sql.Int, ticket.MaVe)
           .query(`
             INSERT INTO ChiTietLoTrinh
-              (ThuTuDonTra, DiemDon, DiemTra, ThoiGianDonDuKien, TrangThaiKhach, MaLoTrinh, MaVe)
-            VALUES (@ThuTuDonTra, @DiemDon, @DiemTra, @ThoiGianDonDuKien, @TrangThaiKhach, @MaLoTrinh, @MaVe)
+              (ThuTuDonTra, DiemDon, DiemDonLat, DiemDonLng, DiemTra, DiemTraLat, DiemTraLng, ThoiGianDonDuKien, TrangThaiKhach, MaLoTrinh, MaVe)
+            VALUES (@ThuTuDonTra, @DiemDon, @DiemDonLat, @DiemDonLng, @DiemTra, @DiemTraLat, @DiemTraLng, @ThoiGianDonDuKien, @TrangThaiKhach, @MaLoTrinh, @MaVe)
           `);
 
         await new sql.Request(transaction)

@@ -1,7 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { DriverLayout } from '../../components/DriverLayout';
+import { SearchInput } from '../../components/SearchInput';
 import { api } from '../../services/api/client';
+import { matchesSearchQuery } from '../../utils/search';
 
 interface DriverStop {
   MaChiTiet: number;
@@ -30,6 +32,7 @@ export const DriverTripCustomersPage: React.FC = () => {
   const [detail, setDetail] = useState<RouteDetail | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const routeId = Number(id);
 
@@ -70,6 +73,22 @@ export const DriverTripCustomersPage: React.FC = () => {
     });
     return { total, done, waiting, canceled };
   }, [detail]);
+
+  const filteredStops = useMemo(() => {
+    const stops = detail?.stops ?? [];
+    return stops.filter((stop) =>
+      matchesSearchQuery(
+        searchQuery,
+        `VE${String(stop.MaVe).padStart(3, '0')}`,
+        stop.TenKhachHang,
+        stop.SoDienThoai,
+        stop.DiemDon,
+        stop.DiemTra,
+        stop.TrangThaiKhach,
+        stop.ThoiGianDonDuKien
+      )
+    );
+  }, [detail, searchQuery]);
 
   const statusBadge = (stRaw: string | null) => {
     const st = (stRaw || '').trim();
@@ -166,7 +185,8 @@ export const DriverTripCustomersPage: React.FC = () => {
           </div>
 
           {/* Button right aligned */}
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 24 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginBottom: 24 }}>
+            <SearchInput value={searchQuery} onChange={setSearchQuery} placeholder="Tìm theo tên, SĐT, điểm đón/trả..." style={{ maxWidth: 420 }} />
             <button
               type="button"
               onClick={() => navigate(`/driver/trips/${routeId}`)}
@@ -206,7 +226,7 @@ export const DriverTripCustomersPage: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {detail.stops.map((s, idx) => (
+                  {filteredStops.map((s, idx) => (
                     <tr key={s.MaChiTiet} style={{ borderBottom: '1px solid #E5E7EB', background: idx % 2 === 0 ? '#FFFFFF' : '#F9FAFB' }}>
                       <td style={{ padding: '16px 20px', color: '#374151', fontWeight: 600 }}>{idx + 1}</td>
                       <td style={{ padding: '16px 20px', textAlign: 'left', color: '#111827', fontWeight: 600 }}>{s.TenKhachHang}</td>
@@ -222,13 +242,19 @@ export const DriverTripCustomersPage: React.FC = () => {
                       <td style={{ padding: '16px 20px' }}>{statusBadge(s.TrangThaiKhach)}</td>
                     </tr>
                   ))}
-                  {detail.stops.length === 0 && (
+                  {detail.stops.length === 0 ? (
                     <tr>
                       <td colSpan={8} style={{ padding: '40px 20px', textAlign: 'center', color: '#6B7280' }}>
                         Không có khách hàng nào trong chuyến này.
                       </td>
                     </tr>
-                  )}
+                  ) : filteredStops.length === 0 ? (
+                    <tr>
+                      <td colSpan={8} style={{ padding: '40px 20px', textAlign: 'center', color: '#6B7280' }}>
+                        Không tìm thấy khách hàng phù hợp
+                      </td>
+                    </tr>
+                  ) : null}
                 </tbody>
               </table>
             </div>

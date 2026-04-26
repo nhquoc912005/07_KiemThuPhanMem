@@ -2,7 +2,7 @@ const { sql } = require('../db');
 const { DRIVER_STATUSES } = require('../constants/status');
 const { DRIVER_ROLE, hashPassword } = require('../utils/auth');
 
-const DEFAULT_DRIVER_PASSWORD = '12345678';
+const DEFAULT_DRIVER_PASSWORD = '123456';
 const GENERATED_EMPLOYEE_CODE_PREFIX = 'NVTX';
 const REQUIRED_EMPLOYEE_CODE_MESSAGE = 'Vui lòng nhập mã nhân viên';
 

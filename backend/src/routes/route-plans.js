@@ -4,6 +4,7 @@ const { getPool, sql } = require('../db');
 const { syncRoutePlanProjection, buildRoutePlanNotes } = require('../services/routePlanSyncService');
 const { DISPATCHER_ROLE } = require('../utils/auth');
 const { sendError, sendSuccess } = require('../utils/http');
+const { lookupAddressCoordinates } = require('../utils/locationCoordinates');
 
 const router = express.Router();
 
@@ -25,6 +26,26 @@ function buildRoutePlanText(tickets) {
   const pickupPoints = [...new Set(tickets.map((ticket) => String(ticket.DiaChiDon || '').trim()).filter(Boolean))];
   const dropPoints = [...new Set(tickets.map((ticket) => String(ticket.DiaChiTra || '').trim()).filter(Boolean))];
   return [...pickupPoints, ...dropPoints].join(' -> ');
+}
+
+function normalizeCoordinateValue(value) {
+  if (value == null || value === '') {
+    return null;
+  }
+
+  const numericValue = Number(value);
+  return Number.isFinite(numericValue) ? numericValue : null;
+}
+
+function resolveCoordinates(address, latValue, lngValue) {
+  const lat = normalizeCoordinateValue(latValue);
+  const lng = normalizeCoordinateValue(lngValue);
+
+  if (lat != null && lng != null) {
+    return { lat, lng };
+  }
+
+  return lookupAddressCoordinates(address);
 }
 
 function generatePlanCode() {
@@ -174,6 +195,10 @@ router.post('/', async (req, res) => {
             k.SoDienThoai,
             k.DiaChiDon,
             k.DiaChiTra,
+            k.DiaChiDonLat,
+            k.DiaChiDonLng,
+            k.DiaChiTraLat,
+            k.DiaChiTraLng,
             ec.id AS ExternalCustomerId,
             ec.customer_code AS ExternalCustomerCode,
             ec.full_name AS ExternalCustomerName,
@@ -469,11 +494,17 @@ router.post('/', async (req, res) => {
 
       for (const [index, ticket] of selectedTickets.entries()) {
         const expectedPickupTime = new Date(routeStart.getTime() + index * 10 * 60 * 1000);
+        const pickupCoordinates = resolveCoordinates(ticket.DiaChiDon, ticket.DiaChiDonLat, ticket.DiaChiDonLng);
+        const dropoffCoordinates = resolveCoordinates(ticket.DiaChiTra, ticket.DiaChiTraLat, ticket.DiaChiTraLng);
 
         await new sql.Request(transaction)
           .input('ThuTuDonTra', sql.Int, index + 1)
           .input('DiemDon', sql.NVarChar(255), ticket.DiaChiDon)
+          .input('DiemDonLat', sql.Decimal(10, 7), pickupCoordinates?.lat ?? null)
+          .input('DiemDonLng', sql.Decimal(10, 7), pickupCoordinates?.lng ?? null)
           .input('DiemTra', sql.NVarChar(255), ticket.DiaChiTra)
+          .input('DiemTraLat', sql.Decimal(10, 7), dropoffCoordinates?.lat ?? null)
+          .input('DiemTraLng', sql.Decimal(10, 7), dropoffCoordinates?.lng ?? null)
           .input('ThoiGianDonDuKien', sql.DateTime, expectedPickupTime)
           .input('TrangThaiKhach', sql.NVarChar(50), null)
           .input('MaLoTrinh', sql.Int, routeId)
@@ -481,8 +512,8 @@ router.post('/', async (req, res) => {
           .query(
             `
             INSERT INTO ChiTietLoTrinh
-              (ThuTuDonTra, DiemDon, DiemTra, ThoiGianDonDuKien, TrangThaiKhach, MaLoTrinh, MaVe)
-            VALUES (@ThuTuDonTra, @DiemDon, @DiemTra, @ThoiGianDonDuKien, @TrangThaiKhach, @MaLoTrinh, @MaVe)
+              (ThuTuDonTra, DiemDon, DiemDonLat, DiemDonLng, DiemTra, DiemTraLat, DiemTraLng, ThoiGianDonDuKien, TrangThaiKhach, MaLoTrinh, MaVe)
+            VALUES (@ThuTuDonTra, @DiemDon, @DiemDonLat, @DiemDonLng, @DiemTra, @DiemTraLat, @DiemTraLng, @ThoiGianDonDuKien, @TrangThaiKhach, @MaLoTrinh, @MaVe)
           `
           );
 

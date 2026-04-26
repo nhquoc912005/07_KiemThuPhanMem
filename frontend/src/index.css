@@ -195,12 +195,31 @@ input[type="password"]::-webkit-reveal {
 }
 @media (max-width: 768px) {
   .step-progress-wrapper {
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 12px;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    gap: 8px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 4px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
   }
-  .step-progress-wrapper > * {
-    margin: 4px;
+  .step-progress-wrapper::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.step-chip-label-short {
+  display: none;
+}
+
+@media (max-width: 520px) {
+  .step-chip-label-long {
+    display: none;
+  }
+
+  .step-chip-label-short {
+    display: inline;
   }
 }
 

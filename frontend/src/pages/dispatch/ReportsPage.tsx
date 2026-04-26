@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { api } from '../../services/api/client';
 import { DispatcherLayout } from '../../components/DispatcherLayout';
+import { SearchInput } from '../../components/SearchInput';
+import { matchesSearchQuery } from '../../utils/search';
 
 interface ReportRow {
   MaLoTrinh: number;
@@ -74,6 +76,7 @@ export const ReportsPage: React.FC = () => {
   const [khuVuc, setKhuVuc] = useState('');
   const [bienSoXe, setBienSoXe] = useState('');
   const [tenTaiXe, setTenTaiXe] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
 
   const [rawData, setRawData] = useState<ReportRow[]>([]);
   const [filteredData, setFilteredData] = useState<ReportRow[]>([]);
@@ -99,6 +102,22 @@ export const ReportsPage: React.FC = () => {
 
     if (tenTaiXe) {
       nextRows = nextRows.filter((row) => row.TenTaiXe === tenTaiXe);
+    }
+
+    if (searchQuery) {
+      nextRows = nextRows.filter((row) =>
+        matchesSearchQuery(
+          searchQuery,
+          row.MaLoTrinh,
+          row.Ngay,
+          row.LoaiXe,
+          row.BienSo,
+          row.TenTaiXe,
+          row.TrangThaiLoTrinh,
+          row.KhuVuc,
+          row.LoTrinhDuKien
+        )
+      );
     }
 
     setFilteredData(nextRows);
@@ -138,6 +157,11 @@ export const ReportsPage: React.FC = () => {
 
     void init();
   }, []);
+
+  useEffect(() => {
+    applyFilters(rawData);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rawData, loaiXe, khuVuc, bienSoXe, tenTaiXe, searchQuery]);
 
   const handleSearch = async () => {
     if (tuNgay && denNgay && tuNgay > denNgay) {
@@ -298,31 +322,34 @@ export const ReportsPage: React.FC = () => {
           </div>
         </div>
 
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginBottom: 24, paddingBottom: 24, borderBottom: '1px solid #E5E7EB' }}>
-          <button onClick={handleSearch} style={{ background: '#2563EB', color: '#fff', padding: '10px 20px', fontSize: 14, borderRadius: 8, border: 'none', fontWeight: 600, cursor: 'pointer' }}>
-            Xem báo cáo
-          </button>
-          <button
-            onClick={handleExport}
-            disabled={!canExport}
-            title={canExport ? 'Xuất file CSV' : EMPTY_EXPORT_MESSAGE}
-            style={{
-              background: '#2563EB',
-              color: '#fff',
-              padding: '10px 20px',
-              fontSize: 14,
-              borderRadius: 8,
-              border: 'none',
-              fontWeight: 600,
-              cursor: canExport ? 'pointer' : 'not-allowed',
-              opacity: canExport ? 1 : 0.6
-            }}
-          >
-            Xuất file
-          </button>
-          <button onClick={handleRefresh} style={{ background: '#F1F5F9', color: '#475569', padding: '10px 20px', fontSize: 14, borderRadius: 8, border: 'none', fontWeight: 600, cursor: 'pointer' }}>
-            Làm mới
-          </button>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginBottom: 24, paddingBottom: 24, borderBottom: '1px solid #E5E7EB' }}>
+          <SearchInput value={searchQuery} onChange={setSearchQuery} placeholder="Tìm theo lộ trình, biển số, tài xế..." style={{ maxWidth: 420 }} />
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, flexWrap: 'wrap' }}>
+            <button onClick={handleSearch} style={{ background: '#2563EB', color: '#fff', padding: '10px 20px', fontSize: 14, borderRadius: 8, border: 'none', fontWeight: 600, cursor: 'pointer' }}>
+              Xem báo cáo
+            </button>
+            <button
+              onClick={handleExport}
+              disabled={!canExport}
+              title={canExport ? 'Xuất file CSV' : EMPTY_EXPORT_MESSAGE}
+              style={{
+                background: '#2563EB',
+                color: '#fff',
+                padding: '10px 20px',
+                fontSize: 14,
+                borderRadius: 8,
+                border: 'none',
+                fontWeight: 600,
+                cursor: canExport ? 'pointer' : 'not-allowed',
+                opacity: canExport ? 1 : 0.6
+              }}
+            >
+              Xuất file
+            </button>
+            <button onClick={handleRefresh} style={{ background: '#F1F5F9', color: '#475569', padding: '10px 20px', fontSize: 14, borderRadius: 8, border: 'none', fontWeight: 600, cursor: 'pointer' }}>
+              Làm mới
+            </button>
+          </div>
         </div>
 
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, marginBottom: 24 }}>

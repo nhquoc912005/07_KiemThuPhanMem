@@ -1,0 +1,21 @@
+
+> frontend@0.0.0 dev
+> vite --host localhost --clearScreen false
+
+Port 3000 is in use, trying another one...
+Port 3001 is in use, trying another one...
+
+  [32m[1mVITE[22m v7.3.1[39m  [2mready in [0m[1m282[22m[2m[0m [2m11:00:38 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/RouteMap.tsx[22m
+[2m11:01:58 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/RouteMap.tsx[22m
+[2m11:02:08 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/pages/driver/DriverTripDetailPage.tsx[22m
+[2m11:02:50 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/pages/driver/DriverTripsPage.tsx[22m
+[2m11:02:54 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/pages/driver/DriverTripsPage.tsx[22m
+[2m11:03:21 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/pages/driver/DriverTripsPage.tsx[22m
+[2m11:04:12 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/RouteMap.tsx[22m
+[2m11:05:37 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/RouteMap.tsx[22m
+[2m11:05:44 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/pages/driver/DriverTripsPage.tsx[22m
+[2m11:06:01 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/pages/driver/DriverTripsPage.tsx[22m
+[2m11:06:06 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/pages/driver/DriverTripsPage.tsx[22m
+[2m11:06:46 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/pages/driver/DriverTripsPage.tsx[22m
+[2m11:16:55 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/RouteMap.tsx[22m
+[2m11:21:05 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/pages/dispatch/TrackStatusPage.tsx, /src/pages/FirstLoginPasswordChangePage.tsx, /src/pages/ProfilePage.tsx, /src/pages/ResetPasswordPage.tsx, /src/pages/ForgotPasswordPage.tsx, /src/pages/driver/DriverTripCustomersPage.tsx, /src/pages/RegisterPage.tsx, /src/pages/dispatch/AdjustRoutePage.tsx, /src/pages/LoginPage.tsx, /src/pages/dispatch/DispatcherDriversPage.tsx, /src/pages/dispatch/ReportsPage.tsx, /src/pages/dispatch/OverviewPage.tsx, /src/pages/dispatch/CustomersPage.tsx, /src/pages/driver/DriverTripDetailPage.tsx, /src/pages/dispatch/VehiclesPage.tsx, /src/pages/dispatch/PlanRoutePage.tsx, /src/pages/driver/DriverTripsPage.tsx, /src/components/DispatcherLayout.tsx, /src/components/DriverLayout.tsx[22m

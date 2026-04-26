@@ -1,11 +1,41 @@
 import axios from 'axios';
 import { clearAuthSession, getStoredAccessToken } from '../../auth/session';
 
-const host = window.location.hostname;
-const defaultBaseUrl = `http://${host}:5000/api/v1`;
+const LOOPBACK_HOSTS = new Set(['localhost', '127.0.0.1', '::1', '[::1]', '0.0.0.0']);
+
+function isLoopbackHost(hostname: string) {
+  return LOOPBACK_HOSTS.has(String(hostname || '').trim().toLowerCase());
+}
+
+function normalizeBaseUrl(url: string) {
+  return url.endsWith('/') ? url.slice(0, -1) : url;
+}
+
+function resolveApiBaseUrl() {
+  const browserHost = window.location.hostname;
+  const defaultBaseUrl = `http://${browserHost}:5000/api/v1`;
+  const configuredBaseUrl = String(import.meta.env.VITE_API_BASE_URL || '').trim();
+
+  if (!configuredBaseUrl) {
+    return defaultBaseUrl;
+  }
+
+  try {
+    const parsedUrl = new URL(configuredBaseUrl);
+
+    if (!isLoopbackHost(browserHost) && isLoopbackHost(parsedUrl.hostname)) {
+      parsedUrl.hostname = browserHost;
+      return normalizeBaseUrl(parsedUrl.toString());
+    }
+
+    return normalizeBaseUrl(parsedUrl.toString());
+  } catch {
+    return normalizeBaseUrl(configuredBaseUrl);
+  }
+}
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || defaultBaseUrl,
+  baseURL: resolveApiBaseUrl(),
   headers: {
     'Content-Type': 'application/json',
     'ngrok-skip-browser-warning': 'true'

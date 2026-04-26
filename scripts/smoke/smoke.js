@@ -1,8 +1,8 @@
 const DEFAULT_API_BASE_URL = process.env.SMOKE_API_BASE_URL || 'http://localhost:5000/api/v1';
 const DISPATCHER_USERNAME = process.env.SMOKE_DISPATCHER_USERNAME || 'dieuphoi1';
-const DISPATCHER_PASSWORD = process.env.SMOKE_DISPATCHER_PASSWORD || '12345678';
+const DISPATCHER_PASSWORD = process.env.SMOKE_DISPATCHER_PASSWORD || '123456';
 const DRIVER_USERNAME = process.env.SMOKE_DRIVER_USERNAME || 'taixe1';
-const DRIVER_PASSWORD = process.env.SMOKE_DRIVER_PASSWORD || '12345678';
+const DRIVER_PASSWORD = process.env.SMOKE_DRIVER_PASSWORD || '123456';
 
 async function apiFetch(path, options = {}) {
   const response = await fetch(`${DEFAULT_API_BASE_URL}${path}`, {

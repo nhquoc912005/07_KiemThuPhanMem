@@ -1,8 +1,10 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 
 import { DispatcherLayout } from '../../components/DispatcherLayout'
+import { SearchInput } from '../../components/SearchInput'
 import { DRIVER_STATUS } from '../../constants/status'
 import { api } from '../../services/api/client'
+import { matchesSearchQuery } from '../../utils/search'
 
 interface Driver {
   MaTaiXe: number
@@ -39,7 +41,7 @@ interface CreateDriverResponse {
 }
 
 const LICENSE_OPTIONS = ['B2', 'C', 'C1', 'D', 'E']
-const DEFAULT_DRIVER_PASSWORD = '12345678'
+const DEFAULT_DRIVER_PASSWORD = '123456'
 const BUSY_DRIVER_DELETE_MESSAGE =
   'Tài xế đang được phân công hoặc đang thực hiện chuyến, không thể ngừng hoạt động'
 
@@ -55,6 +57,7 @@ export const DispatcherDriversPage: React.FC = () => {
   const [drivers, setDrivers] = useState<Driver[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [searchQuery, setSearchQuery] = useState('')
   const [showAdd, setShowAdd] = useState(false)
   const [showEdit, setShowEdit] = useState<Driver | null>(null)
   const [showDelete, setShowDelete] = useState<Driver | null>(null)
@@ -79,15 +82,34 @@ export const DispatcherDriversPage: React.FC = () => {
     void fetchDrivers()
   }, [])
 
+  const filteredDrivers = useMemo(() => {
+    return drivers.filter((driver) =>
+      matchesSearchQuery(
+        searchQuery,
+        `TX${String(driver.MaTaiXe).padStart(3, '0')}`,
+        driver.MaNhanVien,
+        driver.HoTen,
+        driver.SoDienThoai,
+        driver.CCCD,
+        driver.LoaiBangLai,
+        driver.TrangThaiTaiXe
+      )
+    )
+  }, [drivers, searchQuery])
+
   return (
     <DispatcherLayout>
       <div
         style={{
           display: 'flex',
-          justifyContent: 'flex-end',
-          marginBottom: 24
+          justifyContent: 'space-between',
+          marginBottom: 24,
+          gap: 12,
+          flexWrap: 'wrap',
+          alignItems: 'center'
         }}
       >
+        <SearchInput value={searchQuery} onChange={setSearchQuery} placeholder="Tìm theo mã, họ tên, SĐT, CCCD..." />
         <button
           onClick={() => setShowAdd(true)}
           style={{
@@ -155,8 +177,10 @@ export const DispatcherDriversPage: React.FC = () => {
           <div style={{ padding: 32, textAlign: 'center', color: '#64748b' }}>Đang tải...</div>
         ) : drivers.length === 0 ? (
           <div style={{ padding: 32, textAlign: 'center', color: '#64748b' }}>Chưa có dữ liệu tài xế</div>
+        ) : filteredDrivers.length === 0 ? (
+          <div style={{ padding: 32, textAlign: 'center', color: '#64748b' }}>Không tìm thấy tài xế phù hợp</div>
         ) : (
-          drivers.map((driver, index) => (
+          filteredDrivers.map((driver, index) => (
             <div
               key={driver.MaTaiXe}
               style={{
@@ -420,12 +444,12 @@ const DriverFormModal: React.FC<DriverFormModalProps> = ({
             </select>
           </FormField>
 
-          <div style={{ display: 'flex', gap: 16, alignItems: 'flex-end' }}>
-            <button type="submit" disabled={saving} style={{ ...primaryButtonStyle, opacity: saving ? 0.7 : 1 }}>
-              {saving ? 'Đang lưu...' : submitLabel}
-            </button>
-            <button type="button" onClick={onClose} style={secondaryButtonStyle}>
+          <div style={{ gridColumn: '1 / -1', display: 'flex', gap: 12, justifyContent: 'flex-end', alignItems: 'center', flexWrap: 'wrap', marginTop: 8 }}>
+            <button type="button" onClick={onClose} style={driverFormSecondaryButtonStyle}>
               Hủy bỏ
+            </button>
+            <button type="submit" disabled={saving} style={{ ...driverFormPrimaryButtonStyle, opacity: saving ? 0.7 : 1 }}>
+              {saving ? 'Đang lưu...' : submitLabel}
             </button>
           </div>
         </form>

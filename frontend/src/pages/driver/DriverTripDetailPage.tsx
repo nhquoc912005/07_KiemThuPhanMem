@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { DriverLayout } from '../../components/DriverLayout'
+import { RouteMap, type NavigationTrip } from '../../components/RouteMap'
 import { ROUTE_STATUS, STOP_STATUS } from '../../constants/status'
 import { api } from '../../services/api/client'
 
@@ -18,7 +19,11 @@ interface DriverStop {
   MaChiTiet: number
   ThuTuDonTra: number
   DiemDon: string
+  DiemDonLat?: number | null
+  DiemDonLng?: number | null
   DiemTra: string
+  DiemTraLat?: number | null
+  DiemTraLng?: number | null
   ThoiGianDonDuKien: string | null
   TrangThaiKhach: string | null
   MaVe: number
@@ -29,6 +34,7 @@ interface DriverStop {
 interface RouteDetail {
   route: DriverRoute
   stops: DriverStop[]
+  navigationTrip?: NavigationTrip | null
   sync?: RouteSyncPayload
 }
 
@@ -189,12 +195,6 @@ export const DriverTripDetailPage: React.FC = () => {
     }
   }, [detail?.stops])
 
-  const currentMapLocation = useMemo(() => {
-    if (!detail?.stops?.length) return detail?.route.LoTrinhDuKien || 'Việt Nam'
-    const activeStop = detail.stops.find((stop) => !isDoneStatus(stop.TrangThaiKhach))
-    return activeStop?.DiemDon || detail.stops[0].DiemDon || detail.route.LoTrinhDuKien || 'Việt Nam'
-  }, [detail])
-
   const routeSummaryLabel = useMemo(() => {
     if (!detail) return '--'
     return detail.route.LoTrinhDuKien || `${detail.stops[0]?.DiemDon || '--'} -> ${detail.stops[detail.stops.length - 1]?.DiemTra || '--'}`
@@ -302,7 +302,7 @@ export const DriverTripDetailPage: React.FC = () => {
           {message && <div style={{ background: '#DCFCE7', color: '#166534', borderRadius: 8, padding: '10px 16px', marginBottom: 16 }}>{message}</div>}
           {syncNotice && <div style={{ background: '#DBEAFE', color: '#1E3A8A', borderRadius: 8, padding: '10px 16px', marginBottom: 16 }}>{syncNotice}</div>}
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, minmax(0, 1fr))', gap: 12, marginBottom: 16 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 12, marginBottom: 16 }}>
             {[
               { label: 'Đang chờ', value: stats.waiting, bg: '#F3F4F6', color: '#374151' },
               { label: 'Đã đến', value: stats.arrived, bg: '#DBEAFE', color: '#1D4ED8' },
@@ -323,13 +323,9 @@ export const DriverTripDetailPage: React.FC = () => {
             <span>Lộ trình: <strong>{routeSummaryLabel}</strong></span>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 2fr) minmax(320px, 1fr)', gap: 16 }}>
-            <div style={{ position: 'relative', borderRadius: 12, overflow: 'hidden', minHeight: 520, border: '1px solid #E5E7EB' }}>
-              <iframe title="Bản đồ lộ trình" width="100%" height="100%" style={{ border: 0, minHeight: 520 }} loading="lazy" allowFullScreen src={`https://maps.google.com/maps?q=${encodeURIComponent(currentMapLocation)}&t=&z=13&ie=UTF8&iwloc=&output=embed`} />
-              <div style={{ position: 'absolute', left: 16, right: 16, bottom: 16, background: 'rgba(255,255,255,0.92)', borderRadius: 12, padding: '10px 14px', boxShadow: '0 10px 25px rgba(0,0,0,0.12)' }}>
-                <div style={{ fontSize: 12, color: '#64748B', marginBottom: 4 }}>Vị trí ước tính theo điểm đón hiện tại</div>
-                <div style={{ fontSize: 14, fontWeight: 700, color: '#0F172A' }}>{currentMapLocation}</div>
-              </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 16 }}>
+            <div>
+              <RouteMap trip={detail.navigationTrip || null} />
             </div>
 
             <div style={{ background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: 12, padding: 20 }}>
