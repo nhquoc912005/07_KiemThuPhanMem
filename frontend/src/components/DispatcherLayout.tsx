@@ -135,6 +135,9 @@ export const DispatcherLayout: React.FC<DispatcherLayoutProps> = ({
           <Link to="/dispatch/drivers" style={{ textDecoration: 'none' }}>
             <div className={getMainNavClass(pathname.startsWith('/dispatch/drivers'))}>Quản lý tài xế</div>
           </Link>
+          <Link to="/dispatch/vehicles" style={{ textDecoration: 'none' }}>
+            <div className={getMainNavClass(pathname.startsWith('/dispatch/vehicles'))}>Quản lý xe</div>
+          </Link>
           <Link to="/dispatch/customers" style={{ textDecoration: 'none' }}>
             <div className={getMainNavClass(pathname.startsWith('/dispatch/customers'))}>Quản lý khách hàng</div>
           </Link>

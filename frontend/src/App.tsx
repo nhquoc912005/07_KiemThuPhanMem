@@ -9,6 +9,7 @@ import { OverviewPage } from './pages/dispatch/OverviewPage'
 import { PlanRoutePage } from './pages/dispatch/PlanRoutePage'
 import { ReportsPage } from './pages/dispatch/ReportsPage'
 import { TrackStatusPage } from './pages/dispatch/TrackStatusPage'
+import { VehiclesPage } from './pages/dispatch/VehiclesPage'
 import { DriverTripCustomersPage } from './pages/driver/DriverTripCustomersPage'
 import { DriverTripDetailPage } from './pages/driver/DriverTripDetailPage'
 import { DriverTripsPage } from './pages/driver/DriverTripsPage'
@@ -125,6 +126,14 @@ function App() {
           element={
             <ProtectedRoute allowedRoles={[DISPATCHER_ROLE]}>
               <TrackStatusPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dispatch/vehicles"
+          element={
+            <ProtectedRoute allowedRoles={[DISPATCHER_ROLE]}>
+              <VehiclesPage />
             </ProtectedRoute>
           }
         />

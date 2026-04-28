@@ -748,3 +748,7 @@ const secondaryButtonStyle: React.CSSProperties = {
   fontWeight: 700,
   cursor: 'pointer'
 }
+
+const driverFormPrimaryButtonStyle: React.CSSProperties = primaryButtonStyle
+
+const driverFormSecondaryButtonStyle: React.CSSProperties = secondaryButtonStyle
