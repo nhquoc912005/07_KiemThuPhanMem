@@ -50,8 +50,8 @@ export const ResetPasswordPage: React.FC = () => {
   }, [countdown]);
 
   useEffect(() => {
-    if (error) setError(null);
-    if (message) setMessage(null);
+    setError((currentError) => currentError ? null : currentError);
+    setMessage((currentMessage) => currentMessage ? null : currentMessage);
   }, [phone, otp, password, confirmPassword]);
 
   const isStrongPassword = useMemo(() => {

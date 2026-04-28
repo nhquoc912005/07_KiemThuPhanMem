@@ -29,9 +29,9 @@ export const ForgotPasswordPage: React.FC = () => {
   const handleBack = () => navigate('/login');
 
   useEffect(() => {
-    if (error) setError(null);
-    if (message) setMessage(null);
-    if (successData) setSuccessData(null);
+    setError((currentError) => currentError ? null : currentError);
+    setMessage((currentMessage) => currentMessage ? null : currentMessage);
+    setSuccessData((currentSuccessData) => currentSuccessData ? null : currentSuccessData);
   }, [phone]);
 
   const handleSubmit = async (e: React.FormEvent) => {

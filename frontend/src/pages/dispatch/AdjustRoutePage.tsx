@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { DispatcherLayout } from '../../components/DispatcherLayout';
 import { SearchInput } from '../../components/SearchInput';
@@ -88,7 +88,7 @@ export const AdjustRoutePage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
 
-  const loadRoutes = async () => {
+  const loadRoutes = useCallback(async () => {
     setLoadingList(true);
     setError(null);
 
@@ -96,18 +96,16 @@ export const AdjustRoutePage: React.FC = () => {
       const res = await api.get<RouteSummary[]>('/routes');
       setRoutes(res.data);
 
-      if (!selectedId && res.data.length > 0) {
-        setSelectedId(res.data[0].MaLoTrinh);
-      }
+      setSelectedId((currentSelectedId) => currentSelectedId || res.data[0]?.MaLoTrinh || null);
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
       setError(err.response?.data?.message ?? 'Không tải được danh sách lộ trình');
     } finally {
       setLoadingList(false);
     }
-  };
+  }, []);
 
-  const loadRouteDetail = async (routeId: number) => {
+  const loadRouteDetail = useCallback(async (routeId: number) => {
     setLoadingDetail(true);
     setError(null);
     setMessage(null);
@@ -128,16 +126,16 @@ export const AdjustRoutePage: React.FC = () => {
     } finally {
       setLoadingDetail(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     void loadRoutes();
-  }, []);
+  }, [loadRoutes]);
 
   useEffect(() => {
     if (!selectedId) return;
     void loadRouteDetail(selectedId);
-  }, [selectedId]);
+  }, [loadRouteDetail, selectedId]);
 
   const filteredRoutes = useMemo(() => {
     return routes.filter((route) =>
