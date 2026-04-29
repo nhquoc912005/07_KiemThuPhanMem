@@ -1,0 +1,8 @@
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd" >
+<suite name="TrungChuyen Test Suite">
+    <test name="UC07.2 - Xem danh sach khach hang don tra">
+        <classes>
+            <class name="org.example.tests.UC07_2_CustomerListTests"/>
+        </classes>
+    </test>
+</suite>
