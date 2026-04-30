@@ -1,4 +1,4 @@
-const { sql } = require('../db');
+const { query } = require('../db');
 const { ROUTE_STATUSES } = require('../constants/status');
 
 function buildLegacyRouteMarker(routeId) {
@@ -41,27 +41,27 @@ function buildRoutePlanCustomerNote(stop) {
   return parts.join('; ');
 }
 
-async function loadLinkedRoutePlan(db, routeId) {
+async function loadLinkedRoutePlan(client, routeId) {
   const marker = buildLegacyRouteMarker(routeId);
-  const result = await db
-    .request()
-    .input('marker', sql.NVarChar(50), marker)
-    .query(`
-      SELECT TOP 1 id, notes
+  const result = await query(
+    `
+      SELECT id, notes
       FROM route_plans
-      WHERE CHARINDEX(@marker, ISNULL(notes, N'')) > 0
+      WHERE POSITION($1 IN COALESCE(notes, '')) > 0
       ORDER BY id DESC
-    `);
+      LIMIT 1
+    `,
+    [marker],
+    client
+  );
 
-  return result.recordset[0] || null;
+  return result.rows[0] || null;
 }
 
-async function loadLegacyRouteDetail(db, routeId) {
-  const routeResult = await db
-    .request()
-    .input('routeId', sql.Int, routeId)
-    .query(`
-      SELECT TOP 1
+async function loadLegacyRouteDetail(client, routeId) {
+  const routeResult = await query(
+    `
+      SELECT
         lt.MaLoTrinh,
         lt.ThoiGianBatDau,
         lt.ThoiGianKetThuc,
@@ -83,17 +83,19 @@ async function loadLegacyRouteDetail(db, routeId) {
       JOIN XeTrungChuyen x ON x.MaXe = lt.MaXe
       JOIN TaiXe tx ON tx.MaTaiXe = lt.MaTaiXe
       JOIN NhanVienDieuPhoi nv ON nv.MaNhanVien = lt.MaNhanVien
-      WHERE lt.MaLoTrinh = @routeId
-    `);
+      WHERE lt.MaLoTrinh = $1
+      LIMIT 1
+    `,
+    [routeId],
+    client
+  );
 
-  if (routeResult.recordset.length === 0) {
+  if (routeResult.rows.length === 0) {
     return null;
   }
 
-  const stopsResult = await db
-    .request()
-    .input('routeId', sql.Int, routeId)
-    .query(`
+  const stopsResult = await query(
+    `
       SELECT
         ct.MaChiTiet,
         ct.ThuTuDonTra,
@@ -110,77 +112,86 @@ async function loadLegacyRouteDetail(db, routeId) {
       FROM ChiTietLoTrinh ct
       JOIN VeTrungChuyen v ON v.MaVe = ct.MaVe
       JOIN KhachHang k ON k.MaKhachHang = v.MaKhachHang
-      WHERE ct.MaLoTrinh = @routeId
+      WHERE ct.MaLoTrinh = $1
       ORDER BY ct.ThuTuDonTra, ct.MaChiTiet
-    `);
+    `,
+    [routeId],
+    client
+  );
 
   return {
-    route: routeResult.recordset[0],
-    stops: stopsResult.recordset
+    route: routeResult.rows[0],
+    stops: stopsResult.rows
   };
 }
 
-async function loadExternalResources(db, route, stops) {
-  const vehicleResult = await db
-    .request()
-    .input('vehicleId', sql.Int, route.MaXe)
-    .query(`
-      SELECT TOP 1 *
+async function loadExternalResources(client, route, stops) {
+  const vehicleResult = await query(
+    `
+      SELECT *
       FROM external_vehicles
-      WHERE legacy_ma_xe = @vehicleId
-    `);
+      WHERE legacy_ma_xe = $1
+      LIMIT 1
+    `,
+    [route.MaXe],
+    client
+  );
 
-  const driverResult = await db
-    .request()
-    .input('driverId', sql.Int, route.MaTaiXe)
-    .query(`
-      SELECT TOP 1 *
+  const driverResult = await query(
+    `
+      SELECT *
       FROM external_drivers
-      WHERE legacy_ma_tai_xe = @driverId
-    `);
+      WHERE legacy_ma_tai_xe = $1
+      LIMIT 1
+    `,
+    [route.MaTaiXe],
+    client
+  );
 
   const customerLegacyIds = [...new Set(stops.map((stop) => Number(stop.MaKhachHang)).filter(Number.isInteger))];
   const externalCustomersByLegacyId = new Map();
 
   if (customerLegacyIds.length > 0) {
-    const customerResult = await db
-      .request()
-      .input('ids', sql.VarChar(sql.MAX), customerLegacyIds.join(','))
-      .query(`
+    const customerResult = await query(
+      `
         SELECT *
         FROM external_customers
-        WHERE legacy_ma_khach_hang IN (SELECT TRY_CAST(value AS INT) FROM STRING_SPLIT(@ids, ','))
-      `);
+        WHERE legacy_ma_khach_hang = ANY($1::int[])
+      `,
+      [customerLegacyIds],
+      client
+    );
 
-    for (const row of customerResult.recordset) {
+    for (const row of customerResult.rows) {
       externalCustomersByLegacyId.set(Number(row.legacy_ma_khach_hang), row);
     }
   }
 
   return {
-    vehicle: vehicleResult.recordset[0] || null,
-    driver: driverResult.recordset[0] || null,
+    vehicle: vehicleResult.rows[0] || null,
+    driver: driverResult.rows[0] || null,
     customersByLegacyId: externalCustomersByLegacyId
   };
 }
 
-async function insertRoutePlanLog(db, routePlanId, eventType, message, payload, createdBy) {
-  await db
-    .request()
-    .input('routePlanId', sql.BigInt, routePlanId)
-    .input('eventType', sql.NVarChar(50), eventType)
-    .input('message', sql.NVarChar(500), message || null)
-    .input('payload', sql.NVarChar(sql.MAX), payload ? JSON.stringify(payload) : null)
-    .input('createdBy', sql.NVarChar(50), createdBy || null)
-    .query(`
+async function insertRoutePlanLog(client, routePlanId, eventType, message, payload, createdBy) {
+  await query(
+    `
       INSERT INTO route_plan_logs (route_plan_id, event_type, message, payload, created_by)
-      VALUES (@routePlanId, @eventType, @message, @payload, @createdBy)
-    `);
+      VALUES ($1, $2, $3, $4, $5)
+    `,
+    [routePlanId, eventType, message || null, payload ? JSON.stringify(payload) : null, createdBy || null],
+    client
+  );
 }
 
 function parseLogPayload(payload) {
   if (!payload) {
     return null;
+  }
+
+  if (typeof payload === 'object') {
+    return payload;
   }
 
   try {
@@ -192,14 +203,14 @@ function parseLogPayload(payload) {
   }
 }
 
-async function createRoutePlanProjection(db, routeId, createdBy) {
-  const detail = await loadLegacyRouteDetail(db, routeId);
+async function createRoutePlanProjection(client, routeId, createdBy) {
+  const detail = await loadLegacyRouteDetail(client, routeId);
   if (!detail) {
     return null;
   }
 
   const { route, stops } = detail;
-  const externalResources = await loadExternalResources(db, route, stops);
+  const externalResources = await loadExternalResources(client, route, stops);
   if (!externalResources.vehicle || !externalResources.driver) {
     return null;
   }
@@ -212,34 +223,28 @@ async function createRoutePlanProjection(db, routeId, createdBy) {
   }
 
   const planCode = `RP-LT${String(routeId).padStart(6, '0')}`;
-  const planInsert = await db
-    .request()
-    .input('planCode', sql.NVarChar(30), planCode)
-    .input('plannedStart', sql.DateTime2, route.ThoiGianBatDau)
-    .input('plannedEnd', sql.DateTime2, route.ThoiGianKetThuc)
-    .input('status', sql.NVarChar(20), mapLegacyRouteStatusToPlanStatus(route.TrangThaiLoTrinh))
-    .input('notes', sql.NVarChar(500), buildRoutePlanNotes(route.GhiChu, routeId))
-    .input('createdBy', sql.NVarChar(50), createdBy || route.TenNhanVien || null)
-    .query(`
+  const planInsert = await query(
+    `
       INSERT INTO route_plans (plan_code, planned_start_at, planned_end_at, status, notes, created_by)
-      OUTPUT INSERTED.id
-      VALUES (@planCode, @plannedStart, @plannedEnd, @status, @notes, @createdBy)
-    `);
+      VALUES ($1, $2, $3, $4, $5, $6)
+      RETURNING id
+    `,
+    [
+      planCode,
+      route.ThoiGianBatDau,
+      route.ThoiGianKetThuc,
+      mapLegacyRouteStatusToPlanStatus(route.TrangThaiLoTrinh),
+      buildRoutePlanNotes(route.GhiChu, routeId),
+      createdBy || route.TenNhanVien || null
+    ],
+    client
+  );
 
-  const routePlanId = planInsert.recordset[0].id;
+  const routePlanId = planInsert.rows[0].id;
   const { vehicle, driver, customersByLegacyId } = externalResources;
 
-  const vehicleAssignmentInsert = await db
-    .request()
-    .input('routePlanId', sql.BigInt, routePlanId)
-    .input('externalVehicleId', sql.Int, vehicle.id)
-    .input('assignmentStatus', sql.NVarChar(20), 'CONFIRMED')
-    .input('vehicleCode', sql.NVarChar(20), vehicle.vehicle_code)
-    .input('plate', sql.VarChar(20), vehicle.plate_number)
-    .input('vehicleType', sql.NVarChar(50), vehicle.vehicle_type)
-    .input('capacity', sql.Int, vehicle.capacity)
-    .input('seatCount', sql.Int, vehicle.seat_count)
-    .query(`
+  const vehicleAssignmentInsert = await query(
+    `
       INSERT INTO route_plan_vehicle_assignments (
         route_plan_id,
         external_vehicle_id,
@@ -250,25 +255,26 @@ async function createRoutePlanProjection(db, routeId, createdBy) {
         vehicle_capacity_snapshot,
         vehicle_seat_count_snapshot
       )
-      OUTPUT INSERTED.id
-      VALUES (@routePlanId, @externalVehicleId, @assignmentStatus, @vehicleCode, @plate, @vehicleType, @capacity, @seatCount)
-    `);
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      RETURNING id
+    `,
+    [
+      routePlanId,
+      vehicle.id,
+      'CONFIRMED',
+      vehicle.vehicle_code,
+      vehicle.plate_number,
+      vehicle.vehicle_type,
+      vehicle.capacity,
+      vehicle.seat_count
+    ],
+    client
+  );
 
-  const vehicleAssignmentId = vehicleAssignmentInsert.recordset[0].id;
+  const vehicleAssignmentId = vehicleAssignmentInsert.rows[0].id;
 
-  await db
-    .request()
-    .input('routePlanId', sql.BigInt, routePlanId)
-    .input('externalDriverId', sql.Int, driver.id)
-    .input('vehicleAssignmentId', sql.BigInt, vehicleAssignmentId)
-    .input('assignmentStatus', sql.NVarChar(20), 'CONFIRMED')
-    .input('driverCode', sql.NVarChar(20), driver.driver_code)
-    .input('driverName', sql.NVarChar(100), driver.full_name)
-    .input('driverPhone', sql.VarChar(15), driver.phone)
-    .input('driverNationalId', sql.VarChar(20), driver.national_id)
-    .input('driverLicenseNo', sql.VarChar(30), driver.license_no)
-    .input('driverLicenseClass', sql.NVarChar(50), driver.license_class)
-    .query(`
+  await query(
+    `
       INSERT INTO route_plan_driver_assignments (
         route_plan_id,
         external_driver_id,
@@ -281,34 +287,27 @@ async function createRoutePlanProjection(db, routeId, createdBy) {
         driver_license_no_snapshot,
         driver_license_class_snapshot
       )
-      VALUES (
-        @routePlanId,
-        @externalDriverId,
-        @vehicleAssignmentId,
-        @assignmentStatus,
-        @driverCode,
-        @driverName,
-        @driverPhone,
-        @driverNationalId,
-        @driverLicenseNo,
-        @driverLicenseClass
-      )
-    `);
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+    `,
+    [
+      routePlanId,
+      driver.id,
+      vehicleAssignmentId,
+      'CONFIRMED',
+      driver.driver_code,
+      driver.full_name,
+      driver.phone,
+      driver.national_id,
+      driver.license_no,
+      driver.license_class
+    ],
+    client
+  );
 
   for (const stop of stops) {
     const externalCustomer = customersByLegacyId.get(Number(stop.MaKhachHang));
-    await db
-      .request()
-      .input('routePlanId', sql.BigInt, routePlanId)
-      .input('externalCustomerId', sql.Int, externalCustomer.id)
-      .input('sequenceNo', sql.Int, stop.ThuTuDonTra)
-      .input('customerCode', sql.NVarChar(20), externalCustomer.customer_code)
-      .input('customerName', sql.NVarChar(100), externalCustomer.full_name || stop.TenKhachHang)
-      .input('customerPhone', sql.VarChar(15), externalCustomer.phone || stop.SoDienThoai)
-      .input('pickup', sql.NVarChar(255), stop.DiemDon)
-      .input('dropoff', sql.NVarChar(255), stop.DiemTra)
-      .input('note', sql.NVarChar(255), buildRoutePlanCustomerNote(stop))
-      .query(`
+    await query(
+      `
         INSERT INTO route_plan_customers (
           route_plan_id,
           external_customer_id,
@@ -320,105 +319,117 @@ async function createRoutePlanProjection(db, routeId, createdBy) {
           dropoff_address_snapshot,
           note
         )
-        VALUES (
-          @routePlanId,
-          @externalCustomerId,
-          @sequenceNo,
-          @customerCode,
-          @customerName,
-          @customerPhone,
-          @pickup,
-          @dropoff,
-          @note
-        )
-      `);
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      `,
+      [
+        routePlanId,
+        externalCustomer.id,
+        stop.ThuTuDonTra,
+        externalCustomer.customer_code,
+        externalCustomer.full_name || stop.TenKhachHang,
+        externalCustomer.phone || stop.SoDienThoai,
+        stop.DiemDon,
+        stop.DiemTra,
+        buildRoutePlanCustomerNote(stop)
+      ],
+      client
+    );
   }
 
   return { id: routePlanId, created: true };
 }
 
 async function syncRoutePlanProjection(
-  db,
+  client,
   routeId,
   { eventType = null, message = null, payload = null, createdBy = null } = {}
 ) {
-  let linkedPlan = await loadLinkedRoutePlan(db, routeId);
+  let linkedPlan = await loadLinkedRoutePlan(client, routeId);
   if (!linkedPlan) {
-    linkedPlan = await createRoutePlanProjection(db, routeId, createdBy);
+    linkedPlan = await createRoutePlanProjection(client, routeId, createdBy);
   }
 
   if (!linkedPlan) {
     return null;
   }
 
-  const detail = await loadLegacyRouteDetail(db, routeId);
+  const detail = await loadLegacyRouteDetail(client, routeId);
   if (!detail) {
     return null;
   }
 
   const { route, stops } = detail;
   const routePlanId = linkedPlan.id;
-  const externalResources = await loadExternalResources(db, route, stops);
+  const externalResources = await loadExternalResources(client, route, stops);
 
-  await db
-    .request()
-    .input('id', sql.BigInt, routePlanId)
-    .input('plannedStart', sql.DateTime2, route.ThoiGianBatDau)
-    .input('plannedEnd', sql.DateTime2, route.ThoiGianKetThuc)
-    .input('status', sql.NVarChar(20), mapLegacyRouteStatusToPlanStatus(route.TrangThaiLoTrinh))
-    .input('notes', sql.NVarChar(500), buildRoutePlanNotes(route.GhiChu, routeId))
-    .query(`
+  await query(
+    `
       UPDATE route_plans
-      SET planned_start_at = @plannedStart,
-          planned_end_at = @plannedEnd,
-          status = @status,
-          notes = @notes,
-          updated_at = GETDATE()
-      WHERE id = @id
-    `);
+      SET planned_start_at = $1,
+          planned_end_at = $2,
+          status = $3,
+          notes = $4,
+          updated_at = NOW()
+      WHERE id = $5
+    `,
+    [
+      route.ThoiGianBatDau,
+      route.ThoiGianKetThuc,
+      mapLegacyRouteStatusToPlanStatus(route.TrangThaiLoTrinh),
+      buildRoutePlanNotes(route.GhiChu, routeId),
+      routePlanId
+    ],
+    client
+  );
 
   if (externalResources.vehicle) {
-    await db
-      .request()
-      .input('routePlanId', sql.BigInt, routePlanId)
-      .input('vehicleId', sql.Int, externalResources.vehicle.id)
-      .input('plate', sql.VarChar(20), externalResources.vehicle.plate_number)
-      .input('vehicleType', sql.NVarChar(50), externalResources.vehicle.vehicle_type)
-      .input('capacity', sql.Int, externalResources.vehicle.capacity)
-      .input('seatCount', sql.Int, externalResources.vehicle.seat_count)
-      .query(`
+    await query(
+      `
         UPDATE route_plan_vehicle_assignments
-        SET external_vehicle_id = @vehicleId,
-            assignment_status = N'CONFIRMED',
-            vehicle_plate_snapshot = @plate,
-            vehicle_type_snapshot = @vehicleType,
-            vehicle_capacity_snapshot = @capacity,
-            vehicle_seat_count_snapshot = @seatCount,
-            updated_at = GETDATE()
-        WHERE route_plan_id = @routePlanId
-      `);
+        SET external_vehicle_id = $1,
+            assignment_status = 'CONFIRMED',
+            vehicle_plate_snapshot = $2,
+            vehicle_type_snapshot = $3,
+            vehicle_capacity_snapshot = $4,
+            vehicle_seat_count_snapshot = $5,
+            updated_at = NOW()
+        WHERE route_plan_id = $6
+      `,
+      [
+        externalResources.vehicle.id,
+        externalResources.vehicle.plate_number,
+        externalResources.vehicle.vehicle_type,
+        externalResources.vehicle.capacity,
+        externalResources.vehicle.seat_count,
+        routePlanId
+      ],
+      client
+    );
   }
 
   if (externalResources.driver) {
-    await db
-      .request()
-      .input('routePlanId', sql.BigInt, routePlanId)
-      .input('driverId', sql.Int, externalResources.driver.id)
-      .input('driverName', sql.NVarChar(100), externalResources.driver.full_name || route.TenTaiXe)
-      .input('driverPhone', sql.VarChar(15), externalResources.driver.phone || route.SoDienThoaiTaiXe)
-      .input('driverNationalId', sql.VarChar(20), externalResources.driver.national_id || route.CCCD)
-      .input('driverLicenseClass', sql.NVarChar(50), externalResources.driver.license_class || route.LoaiBangLai)
-      .query(`
+    await query(
+      `
         UPDATE route_plan_driver_assignments
-        SET external_driver_id = @driverId,
-            assignment_status = N'CONFIRMED',
-            driver_name_snapshot = @driverName,
-            driver_phone_snapshot = @driverPhone,
-            driver_national_id_snapshot = @driverNationalId,
-            driver_license_class_snapshot = @driverLicenseClass,
-            updated_at = GETDATE()
-        WHERE route_plan_id = @routePlanId
-      `);
+        SET external_driver_id = $1,
+            assignment_status = 'CONFIRMED',
+            driver_name_snapshot = $2,
+            driver_phone_snapshot = $3,
+            driver_national_id_snapshot = $4,
+            driver_license_class_snapshot = $5,
+            updated_at = NOW()
+        WHERE route_plan_id = $6
+      `,
+      [
+        externalResources.driver.id,
+        externalResources.driver.full_name || route.TenTaiXe,
+        externalResources.driver.phone || route.SoDienThoaiTaiXe,
+        externalResources.driver.national_id || route.CCCD,
+        externalResources.driver.license_class || route.LoaiBangLai,
+        routePlanId
+      ],
+      client
+    );
   }
 
   for (const stop of stops) {
@@ -427,43 +438,36 @@ async function syncRoutePlanProjection(
       continue;
     }
 
-    const updateResult = await db
-      .request()
-      .input('routePlanId', sql.BigInt, routePlanId)
-      .input('sequenceNo', sql.Int, stop.ThuTuDonTra)
-      .input('externalCustomerId', sql.Int, externalCustomer.id)
-      .input('customerCode', sql.NVarChar(20), externalCustomer.customer_code)
-      .input('customerName', sql.NVarChar(100), externalCustomer.full_name || stop.TenKhachHang)
-      .input('customerPhone', sql.VarChar(15), externalCustomer.phone || stop.SoDienThoai)
-      .input('pickup', sql.NVarChar(255), stop.DiemDon)
-      .input('dropoff', sql.NVarChar(255), stop.DiemTra)
-      .input('note', sql.NVarChar(255), buildRoutePlanCustomerNote(stop))
-      .query(`
+    const updateResult = await query(
+      `
         UPDATE route_plan_customers
-        SET external_customer_id = @externalCustomerId,
-            customer_code_snapshot = @customerCode,
-            customer_name_snapshot = @customerName,
-            customer_phone_snapshot = @customerPhone,
-            pickup_address_snapshot = @pickup,
-            dropoff_address_snapshot = @dropoff,
-            note = @note,
-            updated_at = GETDATE()
-        WHERE route_plan_id = @routePlanId AND sequence_no = @sequenceNo
-      `);
+        SET external_customer_id = $1,
+            customer_code_snapshot = $2,
+            customer_name_snapshot = $3,
+            customer_phone_snapshot = $4,
+            pickup_address_snapshot = $5,
+            dropoff_address_snapshot = $6,
+            note = $7,
+            updated_at = NOW()
+        WHERE route_plan_id = $8 AND sequence_no = $9
+      `,
+      [
+        externalCustomer.id,
+        externalCustomer.customer_code,
+        externalCustomer.full_name || stop.TenKhachHang,
+        externalCustomer.phone || stop.SoDienThoai,
+        stop.DiemDon,
+        stop.DiemTra,
+        buildRoutePlanCustomerNote(stop),
+        routePlanId,
+        stop.ThuTuDonTra
+      ],
+      client
+    );
 
-    if (updateResult.rowsAffected[0] === 0) {
-      await db
-        .request()
-        .input('routePlanId', sql.BigInt, routePlanId)
-        .input('externalCustomerId', sql.Int, externalCustomer.id)
-        .input('sequenceNo', sql.Int, stop.ThuTuDonTra)
-        .input('customerCode', sql.NVarChar(20), externalCustomer.customer_code)
-        .input('customerName', sql.NVarChar(100), externalCustomer.full_name || stop.TenKhachHang)
-        .input('customerPhone', sql.VarChar(15), externalCustomer.phone || stop.SoDienThoai)
-        .input('pickup', sql.NVarChar(255), stop.DiemDon)
-        .input('dropoff', sql.NVarChar(255), stop.DiemTra)
-        .input('note', sql.NVarChar(255), buildRoutePlanCustomerNote(stop))
-        .query(`
+    if (updateResult.rowCount === 0) {
+      await query(
+        `
           INSERT INTO route_plan_customers (
             route_plan_id,
             external_customer_id,
@@ -475,86 +479,94 @@ async function syncRoutePlanProjection(
             dropoff_address_snapshot,
             note
           )
-          VALUES (
-            @routePlanId,
-            @externalCustomerId,
-            @sequenceNo,
-            @customerCode,
-            @customerName,
-            @customerPhone,
-            @pickup,
-            @dropoff,
-            @note
-          )
-        `);
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        `,
+        [
+          routePlanId,
+          externalCustomer.id,
+          stop.ThuTuDonTra,
+          externalCustomer.customer_code,
+          externalCustomer.full_name || stop.TenKhachHang,
+          externalCustomer.phone || stop.SoDienThoai,
+          stop.DiemDon,
+          stop.DiemTra,
+          buildRoutePlanCustomerNote(stop)
+        ],
+        client
+      );
     }
   }
 
   if (eventType) {
-    await insertRoutePlanLog(db, routePlanId, eventType, message, payload, createdBy);
+    await insertRoutePlanLog(client, routePlanId, eventType, message, payload, createdBy);
   }
 
   return { id: routePlanId, created: Boolean(linkedPlan.created) };
 }
 
-async function loadRoutePlanSyncState(db, routeId, { sinceId = null, limit = 20 } = {}) {
-  const linkedPlan = await loadLinkedRoutePlan(db, routeId);
+async function loadRoutePlanSyncState(client, routeId, { sinceId = null, limit = 20 } = {}) {
+  const linkedPlan = await loadLinkedRoutePlan(client, routeId);
   if (!linkedPlan) {
     return null;
   }
 
   const normalizedLimit = Math.min(Math.max(Number(limit) || 20, 1), 100);
   const normalizedSinceId = Number.isInteger(Number(sinceId)) ? Number(sinceId) : null;
-  const planRequest = db.request().input('routePlanId', sql.BigInt, linkedPlan.id);
-  const logsRequest = db
-    .request()
-    .input('routePlanId', sql.BigInt, linkedPlan.id)
-    .input('limit', sql.Int, normalizedLimit);
-
-  let logFilter = '';
-  if (normalizedSinceId != null) {
-    logsRequest.input('sinceId', sql.BigInt, normalizedSinceId);
-    logFilter = 'AND id > @sinceId';
-  }
+  const logFilter = normalizedSinceId != null ? 'AND id > $2' : '';
+  const logParams = normalizedSinceId != null
+    ? [linkedPlan.id, normalizedSinceId, normalizedLimit]
+    : [linkedPlan.id, normalizedLimit];
+  const limitPlaceholder = normalizedSinceId != null ? '$3' : '$2';
 
   const [planResult, latestEventResult, logsResult] = await Promise.all([
-    planRequest.query(`
-      SELECT TOP 1
-        id,
-        plan_code,
-        planned_start_at,
-        planned_end_at,
-        status,
-        notes,
-        updated_at
-      FROM route_plans
-      WHERE id = @routePlanId
-    `),
-    db
-      .request()
-      .input('routePlanId', sql.BigInt, linkedPlan.id)
-      .query(`
+    query(
+      `
+        SELECT
+          id,
+          plan_code,
+          planned_start_at,
+          planned_end_at,
+          status,
+          notes,
+          updated_at
+        FROM route_plans
+        WHERE id = $1
+        LIMIT 1
+      `,
+      [linkedPlan.id],
+      client
+    ),
+    query(
+      `
         SELECT MAX(id) AS latestEventId
         FROM route_plan_logs
-        WHERE route_plan_id = @routePlanId
-      `),
-    logsRequest.query(`
-      SELECT TOP (@limit)
-        id,
-        event_type,
-        message,
-        payload,
-        created_by,
-        created_at
-      FROM route_plan_logs
-      WHERE route_plan_id = @routePlanId
-        ${logFilter}
-      ORDER BY id DESC
-    `)
+        WHERE route_plan_id = $1
+      `,
+      [linkedPlan.id],
+      client
+    ),
+    query(
+      `
+        SELECT
+          id,
+          event_type,
+          message,
+          payload,
+          created_by,
+          created_at
+        FROM route_plan_logs
+        WHERE route_plan_id = $1
+          ${logFilter}
+        ORDER BY id DESC
+        LIMIT ${limitPlaceholder}
+      `,
+      logParams,
+      client
+    )
   ]);
 
-  const plan = planResult.recordset[0] || null;
-  const events = (logsResult.recordset || [])
+  const plan = planResult.rows[0] || null;
+  const events = (logsResult.rows || [])
     .slice()
     .reverse()
     .map((row) => ({
@@ -574,7 +586,7 @@ async function loadRoutePlanSyncState(db, routeId, { sinceId = null, limit = 20 
     plannedEndAt: plan?.planned_end_at || null,
     notes: plan?.notes || null,
     updatedAt: plan?.updated_at || null,
-    latestEventId: latestEventResult.recordset[0]?.latestEventId || null,
+    latestEventId: latestEventResult.rows[0]?.latestEventId || null,
     events
   };
 }

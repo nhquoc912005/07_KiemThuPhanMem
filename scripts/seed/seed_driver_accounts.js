@@ -58,7 +58,7 @@ async function seedDriverAccounts() {
         .input('MatKhauMaHoa', sql.VarChar(255), hashedPassword)
         .input('SoDienThoai', sql.VarChar(15), driver.SoDienThoai || null)
         .input('VaiTro', sql.NVarChar(30), DRIVER_ROLE)
-        .input('YeuCauDoiMatKhau', sql.Bit, 0)
+        .input('YeuCauDoiMatKhau', sql.Bit, false)
         .query(`
           INSERT INTO TaiKhoanNguoiDung (
             TenDangNhap,
@@ -68,8 +68,8 @@ async function seedDriverAccounts() {
             TrangThaiTaiKhoan,
             YeuCauDoiMatKhau
           )
-          OUTPUT INSERTED.MaTaiKhoan, INSERTED.TenDangNhap
-          VALUES (@TenDangNhap, @MatKhauMaHoa, @SoDienThoai, @VaiTro, 1, @YeuCauDoiMatKhau)
+          VALUES (@TenDangNhap, @MatKhauMaHoa, @SoDienThoai, @VaiTro, TRUE, @YeuCauDoiMatKhau)
+          RETURNING MaTaiKhoan, TenDangNhap
         `);
 
       const account = insertedAccount.recordset[0];

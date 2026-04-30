@@ -29,7 +29,7 @@ async function seed() {
         let maXe;
         const rXe = await pool.request().query("SELECT MaXe FROM XeTrungChuyen WHERE BienSo = '43B-12345'");
         if (rXe.recordset.length === 0) {
-            const rx2 = await pool.request().query("INSERT INTO XeTrungChuyen (BienSo, LoaiXe, SoCho, TrangThaiXe) OUTPUT INSERTED.MaXe VALUES ('43B-12345', N'Xe 16 chỗ', 16, N'Rảnh')");
+            const rx2 = await pool.request().query("INSERT INTO XeTrungChuyen (BienSo, LoaiXe, SoCho, TrangThaiXe) VALUES ('43B-12345', N'Xe 16 chỗ', 16, N'Rảnh') RETURNING MaXe");
             maXe = rx2.recordset[0].MaXe;
         } else {
             maXe = rXe.recordset[0].MaXe;
@@ -37,7 +37,7 @@ async function seed() {
 
         // 3. Truy xuất Điều phối viên để thỏa mãn khóa ngoại
         let maNV = 1;
-        const rNV = await pool.request().query("SELECT TOP 1 MaNhanVien FROM NhanVienDieuPhoi");
+        const rNV = await pool.request().query("SELECT MaNhanVien FROM NhanVienDieuPhoi LIMIT 1");
         if (rNV.recordset.length > 0) maNV = rNV.recordset[0].MaNhanVien;
 
         // ===================================
@@ -74,8 +74,8 @@ async function seed() {
                 .input('maNV', sql.Int, maNV)
                 .query(`
                     INSERT INTO LoTrinhTrungChuyen (ThoiGianBatDau, LoTrinhDuKien, TrangThaiLoTrinh, GhiChu, MaXe, MaTaiXe, MaNhanVien)
-                    OUTPUT INSERTED.MaLoTrinh
                     VALUES (@tgbd, @loTrinh, N'Chưa thực hiện', @ghiChu, @maXe, @maTX, @maNV)
+                    RETURNING MaLoTrinh
                 `);
             const maLT = rInsert.recordset[0].MaLoTrinh;
             
@@ -86,8 +86,8 @@ async function seed() {
                 .input('name', sql.NVarChar, kName).input('phone', sql.VarChar, kPhone).input('tra', sql.NVarChar, diemTra)
                 .query(`
                     INSERT INTO KhachHang (TenKhachHang, SoDienThoai, DiaChiDon, DiaChiTra, TrangThai) 
-                    OUTPUT INSERTED.MaKhachHang 
                     VALUES (@name, @phone, N'Bến xe Trung tâm Đà Nẵng', @tra, N'Hoạt động')
+                    RETURNING MaKhachHang
                 `);
             const mKH = rKH.recordset[0].MaKhachHang;
             const pickupCoordinates = lookupAddressCoordinates('Bến xe Trung tâm Đà Nẵng');
@@ -110,8 +110,8 @@ async function seed() {
 
             const rVe = await pool.request().input('mKH', sql.Int, mKH).query(`
                 INSERT INTO VeTrungChuyen (KhungGioTrungChuyen, SoLuongGhe, TrangThaiVe, MaKhachHang) 
-                OUTPUT INSERTED.MaVe 
                 VALUES (N'Hôm nay', 1, N'Đã có xe', @mKH)
+                RETURNING MaVe
             `);
             const mVe = rVe.recordset[0].MaVe;
 

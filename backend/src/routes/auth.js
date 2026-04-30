@@ -1,6 +1,6 @@
 const express = require('express');
 
-const { getPool, sql } = require('../db');
+const { query, withTransaction } = require('../db');
 const { requireAuth } = require('../middleware/auth');
 const { createDriverWithAccount } = require('../services/driverAccountService');
 const {
@@ -26,10 +26,11 @@ const {
 
 const router = express.Router();
 
-// OTP demo local: phone -> { otpHash, expiresAtMs }
 const otpStore = new Map();
 const MAX_FAILED_LOGIN_ATTEMPTS = 5;
 const TEMPORARY_LOCK_MINUTES = 15;
+const ACCOUNT_LOCK_COLUMN_CANDIDATES = ['khoatamthoidenluc', 'khoatamthoideluc'];
+let accountLockColumnPromise;
 const STRONG_PASSWORD_MESSAGE =
   'Mật khẩu phải có ít nhất 8 ký tự (gồm chữ, số và ký tự đặc biệt)';
 
@@ -112,90 +113,133 @@ function serializeUser(row) {
   };
 }
 
-async function loadUserByAccountId(db, accountId) {
-  const result = await db
-    .request()
-    .input('accountId', sql.Int, accountId)
-    .query(`
+async function getAccountLockColumnName(client = null) {
+  if (!accountLockColumnPromise) {
+    accountLockColumnPromise = (async () => {
+      const result = await query(
+        `
+          SELECT column_name
+          FROM information_schema.columns
+          WHERE table_schema = 'public'
+            AND table_name = 'taikhoannguoidung'
+            AND column_name = ANY($1::text[])
+        `,
+        [ACCOUNT_LOCK_COLUMN_CANDIDATES],
+        client
+      );
+
+      const availableColumns = new Set(
+        result.rows.map((row) => String(row.column_name || '').trim().toLowerCase())
+      );
+
+      for (const candidate of ACCOUNT_LOCK_COLUMN_CANDIDATES) {
+        if (availableColumns.has(candidate)) {
+          return candidate;
+        }
+      }
+
+      throw new Error(
+        `Missing account lock column. Expected one of: ${ACCOUNT_LOCK_COLUMN_CANDIDATES.join(', ')}`
+      );
+    })().catch((error) => {
+      accountLockColumnPromise = null;
+      throw error;
+    });
+  }
+
+  return accountLockColumnPromise;
+}
+
+async function loadUserByAccountId(accountId, client = null) {
+  const lockColumn = await getAccountLockColumnName(client);
+  const result = await query(
+    `
       SELECT
-        tk.MaTaiKhoan,
-        tk.TenDangNhap,
-        tk.MatKhauMaHoa,
-        tk.SoDienThoai,
-        tk.VaiTro,
-        tk.TrangThaiTaiKhoan,
-        tk.YeuCauDoiMatKhau,
-        tk.SoLanDangNhapSai,
-        tk.KhoaTamThoiDenLuc,
-        tx.MaTaiXe,
-        nv.MaNhanVien,
-        COALESCE(tx.HoTen, nv.HoTen) AS HoTen
-      FROM TaiKhoanNguoiDung tk
-      LEFT JOIN TaiXe tx ON tx.MaTaiKhoan = tk.MaTaiKhoan
-      LEFT JOIN NhanVienDieuPhoi nv ON nv.MaTaiKhoan = tk.MaTaiKhoan
-      WHERE tk.MaTaiKhoan = @accountId
-    `);
+        tk.mataikhoan AS "MaTaiKhoan",
+        tk.tendangnhap AS "TenDangNhap",
+        tk.matkhaumahoa AS "MatKhauMaHoa",
+        tk.sodienthoai AS "SoDienThoai",
+        tk.vaitro AS "VaiTro",
+        tk.trangthaitaikhoan AS "TrangThaiTaiKhoan",
+        tk.yeucaudoimatkhau AS "YeuCauDoiMatKhau",
+        tk.solandangnhapsai AS "SoLanDangNhapSai",
+        tk.${lockColumn} AS "KhoaTamThoiDenLuc",
+        tx.mataixe AS "MaTaiXe",
+        nv.manhanvien AS "MaNhanVien",
+        COALESCE(tx.hoten, nv.hoten) AS "HoTen"
+      FROM taikhoannguoidung tk
+      LEFT JOIN taixe tx ON tx.mataikhoan = tk.mataikhoan
+      LEFT JOIN nhanviendieuphoi nv ON nv.mataikhoan = tk.mataikhoan
+      WHERE tk.mataikhoan = $1
+    `,
+    [accountId],
+    client
+  );
 
-  return result.recordset[0] || null;
+  return result.rows[0] || null;
 }
 
-async function loadUserByUsername(db, username) {
-  const result = await db
-    .request()
-    .input('username', sql.VarChar(50), username)
-    .query(`
+async function loadUserByUsername(username, client = null) {
+  const lockColumn = await getAccountLockColumnName(client);
+  const result = await query(
+    `
       SELECT
-        tk.MaTaiKhoan,
-        tk.TenDangNhap,
-        tk.MatKhauMaHoa,
-        tk.SoDienThoai,
-        tk.VaiTro,
-        tk.TrangThaiTaiKhoan,
-        tk.YeuCauDoiMatKhau,
-        tk.SoLanDangNhapSai,
-        tk.KhoaTamThoiDenLuc,
-        tx.MaTaiXe,
-        nv.MaNhanVien,
-        COALESCE(tx.HoTen, nv.HoTen) AS HoTen
-      FROM TaiKhoanNguoiDung tk
-      LEFT JOIN TaiXe tx ON tx.MaTaiKhoan = tk.MaTaiKhoan
-      LEFT JOIN NhanVienDieuPhoi nv ON nv.MaTaiKhoan = tk.MaTaiKhoan
-      WHERE tk.TenDangNhap = @username
-    `);
+        tk.mataikhoan AS "MaTaiKhoan",
+        tk.tendangnhap AS "TenDangNhap",
+        tk.matkhaumahoa AS "MatKhauMaHoa",
+        tk.sodienthoai AS "SoDienThoai",
+        tk.vaitro AS "VaiTro",
+        tk.trangthaitaikhoan AS "TrangThaiTaiKhoan",
+        tk.yeucaudoimatkhau AS "YeuCauDoiMatKhau",
+        tk.solandangnhapsai AS "SoLanDangNhapSai",
+        tk.${lockColumn} AS "KhoaTamThoiDenLuc",
+        tx.mataixe AS "MaTaiXe",
+        nv.manhanvien AS "MaNhanVien",
+        COALESCE(tx.hoten, nv.hoten) AS "HoTen"
+      FROM taikhoannguoidung tk
+      LEFT JOIN taixe tx ON tx.mataikhoan = tk.mataikhoan
+      LEFT JOIN nhanviendieuphoi nv ON nv.mataikhoan = tk.mataikhoan
+      WHERE tk.tendangnhap = $1
+    `,
+    [username],
+    client
+  );
 
-  return result.recordset[0] || null;
+  return result.rows[0] || null;
 }
 
-async function clearLoginFailures(db, accountId) {
-  await db
-    .request()
-    .input('accountId', sql.Int, accountId)
-    .query(`
-      UPDATE TaiKhoanNguoiDung
-      SET SoLanDangNhapSai = 0,
-          KhoaTamThoiDenLuc = NULL
-      WHERE MaTaiKhoan = @accountId
-    `);
+async function clearLoginFailures(accountId, client = null) {
+  const lockColumn = await getAccountLockColumnName(client);
+  await query(
+    `
+      UPDATE taikhoannguoidung
+      SET solandangnhapsai = 0,
+          ${lockColumn} = NULL
+      WHERE mataikhoan = $1
+    `,
+    [accountId],
+    client
+  );
 }
 
-async function registerFailedLoginAttempt(db, user) {
+async function registerFailedLoginAttempt(user, client = null) {
   const nextFailedCount = Number(user.SoLanDangNhapSai || 0) + 1;
   const shouldLock = nextFailedCount >= MAX_FAILED_LOGIN_ATTEMPTS;
   const lockUntil = shouldLock
     ? new Date(Date.now() + TEMPORARY_LOCK_MINUTES * 60 * 1000)
     : null;
+  const lockColumn = await getAccountLockColumnName(client);
 
-  await db
-    .request()
-    .input('accountId', sql.Int, user.MaTaiKhoan)
-    .input('failedCount', sql.Int, shouldLock ? 0 : nextFailedCount)
-    .input('lockUntil', sql.DateTime, lockUntil)
-    .query(`
-      UPDATE TaiKhoanNguoiDung
-      SET SoLanDangNhapSai = @failedCount,
-          KhoaTamThoiDenLuc = @lockUntil
-      WHERE MaTaiKhoan = @accountId
-    `);
+  await query(
+    `
+      UPDATE taikhoannguoidung
+      SET solandangnhapsai = $1,
+          ${lockColumn} = $2
+      WHERE mataikhoan = $3
+    `,
+    [shouldLock ? 0 : nextFailedCount, lockUntil, user.MaTaiKhoan],
+    client
+  );
 
   return { shouldLock, lockUntil };
 }
@@ -216,8 +260,7 @@ router.post('/login', async (req, res) => {
   }
 
   try {
-    const pool = await getPool();
-    const user = await loadUserByUsername(pool, username);
+    const user = await loadUserByUsername(username);
 
     if (!user) {
       return sendError(res, 404, 'Tài khoản không tồn tại', 'ACCOUNT_NOT_FOUND');
@@ -239,14 +282,14 @@ router.post('/login', async (req, res) => {
     }
 
     if (lockUntil) {
-      await clearLoginFailures(pool, user.MaTaiKhoan);
+      await clearLoginFailures(user.MaTaiKhoan);
       user.SoLanDangNhapSai = 0;
       user.KhoaTamThoiDenLuc = null;
     }
 
     const isValidPassword = await verifyPassword(password, user.MatKhauMaHoa);
     if (!isValidPassword) {
-      const failedAttempt = await registerFailedLoginAttempt(pool, user);
+      const failedAttempt = await registerFailedLoginAttempt(user);
       if (failedAttempt.shouldLock) {
         return sendError(
           res,
@@ -261,7 +304,7 @@ router.post('/login', async (req, res) => {
     }
 
     const serializedUser = serializeUser(user);
-    await clearLoginFailures(pool, user.MaTaiKhoan);
+    await clearLoginFailures(user.MaTaiKhoan);
 
     if (user.YeuCauDoiMatKhau) {
       return sendSuccess(
@@ -293,8 +336,7 @@ router.post('/login', async (req, res) => {
 
 router.get('/me', requireAuth, async (req, res) => {
   try {
-    const pool = await getPool();
-    const user = await loadUserByAccountId(pool, Number(req.auth?.sub));
+    const user = await loadUserByAccountId(Number(req.auth?.sub));
 
     if (!user) {
       return sendError(res, 404, 'Không tìm thấy người dùng hiện tại', 'NOT_FOUND');
@@ -331,17 +373,16 @@ router.post('/forgot-password', async (req, res) => {
   }
 
   try {
-    const pool = await getPool();
-    const result = await pool
-      .request()
-      .input('phone', sql.VarChar(15), phoneNumber)
-      .query(`
-        SELECT MaTaiKhoan
-        FROM TaiKhoanNguoiDung
-        WHERE SoDienThoai = @phone
-      `);
+    const result = await query(
+      `
+        SELECT mataikhoan AS "MaTaiKhoan"
+        FROM taikhoannguoidung
+        WHERE sodienthoai = $1
+      `,
+      [phoneNumber]
+    );
 
-    if (result.recordset.length === 0) {
+    if (result.rows.length === 0) {
       return sendError(res, 404, 'Tài khoản không tồn tại', 'NOT_FOUND');
     }
 
@@ -387,30 +428,25 @@ router.post('/register', async (req, res) => {
     );
   }
 
-    if (!isStrongPassword(password)) {
-      return sendError(res, 400, STRONG_PASSWORD_MESSAGE, 'VALIDATION_ERROR');
-    }
+  if (!isStrongPassword(password)) {
+    return sendError(res, 400, STRONG_PASSWORD_MESSAGE, 'VALIDATION_ERROR');
+  }
 
   const normalizedRole = role === 'driver' ? 'driver' : 'dispatcher';
   const roleLabel = normalizedRole === 'driver' ? DRIVER_ROLE : DISPATCHER_ROLE;
 
-    if (normalizedRole === 'driver' && !isValidNationalId(cccd)) {
-      return sendError(res, 400, 'CCCD không hợp lệ (12 chữ số)', 'VALIDATION_ERROR');
-    }
+  if (normalizedRole === 'driver' && !isValidNationalId(cccd)) {
+    return sendError(res, 400, 'CCCD không hợp lệ (12 chữ số)', 'VALIDATION_ERROR');
+  }
 
-    if (normalizedRole === 'driver' && !String(licenseType || '').trim()) {
-      return sendError(res, 400, 'Vui lòng chọn loại bằng lái', 'VALIDATION_ERROR');
-    }
+  if (normalizedRole === 'driver' && !String(licenseType || '').trim()) {
+    return sendError(res, 400, 'Vui lòng chọn loại bằng lái', 'VALIDATION_ERROR');
+  }
 
   try {
-    const pool = await getPool();
-    const transaction = new sql.Transaction(pool);
-
-    await transaction.begin();
-
-    try {
+    const createdPayload = await withTransaction(async (client) => {
       if (normalizedRole === 'driver') {
-        const result = await createDriverWithAccount(transaction, {
+        const result = await createDriverWithAccount(client, {
           HoTen: String(fullName).trim(),
           SoDienThoai: normalizedPhoneNumber,
           CCCD: String(cccd).trim(),
@@ -420,94 +456,81 @@ router.post('/register', async (req, res) => {
           MatKhau: password
         });
 
-        await transaction.commit();
-        const createdUser = await loadUserByAccountId(pool, result.account.MaTaiKhoan);
-
-        return sendSuccess(res, { user: serializeUser(createdUser) }, 'Đăng ký thành công', 201);
+        const createdUser = await loadUserByAccountId(result.account.MaTaiKhoan, client);
+        return { user: serializeUser(createdUser) };
       }
 
       const hashedPassword = await hashPassword(password);
 
-      const existingUser = await new sql.Request(transaction)
-        .input('username', sql.VarChar(50), normalizedUsername)
-        .query('SELECT 1 FROM TaiKhoanNguoiDung WHERE TenDangNhap = @username');
-
-      if (existingUser.recordset.length > 0) {
-        await transaction.rollback();
-        return sendError(res, 409, 'Tên đăng nhập đã tồn tại', 'CONFLICT');
-      }
-
-      const existingPhone = await new sql.Request(transaction)
-        .input('phone', sql.VarChar(15), normalizedPhoneNumber)
-        .query('SELECT 1 FROM TaiKhoanNguoiDung WHERE SoDienThoai = @phone');
-
-      if (existingPhone.recordset.length > 0) {
-        await transaction.rollback();
-        return sendError(res, 409, 'Số điện thoại đã tồn tại', 'CONFLICT');
-      }
-
-      const accountResult = await new sql.Request(transaction)
-        .input('TenDangNhap', sql.VarChar(50), normalizedUsername)
-        .input('MatKhauMaHoa', sql.VarChar(255), hashedPassword)
-        .input('SoDienThoai', sql.VarChar(15), normalizedPhoneNumber)
-        .input('VaiTro', sql.NVarChar(30), roleLabel)
-        .input('YeuCauDoiMatKhau', sql.Bit, 0)
-        .query(`
-          INSERT INTO TaiKhoanNguoiDung (
-            TenDangNhap,
-            MatKhauMaHoa,
-            SoDienThoai,
-            VaiTro,
-            YeuCauDoiMatKhau
-          )
-          OUTPUT INSERTED.*
-          VALUES (
-            @TenDangNhap,
-            @MatKhauMaHoa,
-            @SoDienThoai,
-            @VaiTro,
-            @YeuCauDoiMatKhau
-          )
-        `);
-
-      const account = accountResult.recordset[0];
-      const dispatcherResult = await new sql.Request(transaction)
-        .input('HoTen', sql.NVarChar(100), fullName)
-        .input('SoDienThoai', sql.VarChar(15), normalizedPhoneNumber)
-        .input('TrangThai', sql.NVarChar(30), 'Hoạt động')
-        .input('MaTaiKhoan', sql.Int, account.MaTaiKhoan)
-        .query(`
-          INSERT INTO NhanVienDieuPhoi (HoTen, SoDienThoai, TrangThai, MaTaiKhoan)
-          OUTPUT INSERTED.*
-          VALUES (@HoTen, @SoDienThoai, @TrangThai, @MaTaiKhoan)
-        `);
-
-      await transaction.commit();
-
-      return sendSuccess(
-        res,
-        {
-          user: {
-            MaTaiKhoan: account.MaTaiKhoan,
-            TenDangNhap: account.TenDangNhap,
-            VaiTro: account.VaiTro,
-            TrangThaiTaiKhoan: account.TrangThaiTaiKhoan,
-            YeuCauDoiMatKhau: Boolean(account.YeuCauDoiMatKhau),
-            SoDienThoai: account.SoDienThoai,
-            HoTen: fullName,
-            MaTaiXe: null,
-            MaNhanVien: dispatcherResult.recordset[0]?.MaNhanVien
-          }
-        },
-        'Đăng ký thành công',
-        201
+      const existingUser = await query(
+        'SELECT 1 FROM taikhoannguoidung WHERE tendangnhap = $1 LIMIT 1',
+        [normalizedUsername],
+        client
       );
-    } catch (innerError) {
-      if (transaction._aborted !== true) {
-        await transaction.rollback();
+
+      if (existingUser.rows.length > 0) {
+        throw Object.assign(new Error('Tên đăng nhập đã tồn tại'), { status: 409, code: 'CONFLICT' });
       }
-      throw innerError;
-    }
+
+      const existingPhone = await query(
+        'SELECT 1 FROM taikhoannguoidung WHERE sodienthoai = $1 LIMIT 1',
+        [normalizedPhoneNumber],
+        client
+      );
+
+      if (existingPhone.rows.length > 0) {
+        throw Object.assign(new Error('Số điện thoại đã tồn tại'), { status: 409, code: 'CONFLICT' });
+      }
+
+      const accountResult = await query(
+        `
+          INSERT INTO taikhoannguoidung (
+            tendangnhap,
+            matkhaumahoa,
+            sodienthoai,
+            vaitro,
+            yeucaudoimatkhau
+          )
+          VALUES ($1, $2, $3, $4, $5)
+          RETURNING
+            mataikhoan AS "MaTaiKhoan",
+            tendangnhap AS "TenDangNhap",
+            sodienthoai AS "SoDienThoai",
+            vaitro AS "VaiTro",
+            trangthaitaikhoan AS "TrangThaiTaiKhoan",
+            yeucaudoimatkhau AS "YeuCauDoiMatKhau"
+        `,
+        [normalizedUsername, hashedPassword, normalizedPhoneNumber, roleLabel, false],
+        client
+      );
+
+      const account = accountResult.rows[0];
+      const dispatcherResult = await query(
+        `
+          INSERT INTO nhanviendieuphoi (hoten, sodienthoai, trangthai, mataikhoan)
+          VALUES ($1, $2, $3, $4)
+          RETURNING manhanvien AS "MaNhanVien"
+        `,
+        [fullName, normalizedPhoneNumber, 'Hoạt động', account.MaTaiKhoan],
+        client
+      );
+
+      return {
+        user: {
+          MaTaiKhoan: account.MaTaiKhoan,
+          TenDangNhap: account.TenDangNhap,
+          VaiTro: account.VaiTro,
+          TrangThaiTaiKhoan: account.TrangThaiTaiKhoan,
+          YeuCauDoiMatKhau: Boolean(account.YeuCauDoiMatKhau),
+          SoDienThoai: account.SoDienThoai,
+          HoTen: fullName,
+          MaTaiXe: null,
+          MaNhanVien: dispatcherResult.rows[0]?.MaNhanVien
+        }
+      };
+    });
+
+    return sendSuccess(res, createdPayload, 'Đăng ký thành công', 201);
   } catch (err) {
     console.error('Register error:', err);
     return sendError(
@@ -557,8 +580,7 @@ router.post('/change-password-first-login', async (req, res) => {
   }
 
   try {
-    const pool = await getPool();
-    const user = await loadUserByAccountId(pool, Number(payload.sub));
+    const user = await loadUserByAccountId(Number(payload.sub));
 
     if (!user) {
       return sendError(res, 404, 'Tài khoản không tồn tại', 'ACCOUNT_NOT_FOUND');
@@ -589,20 +611,20 @@ router.post('/change-password-first-login', async (req, res) => {
     }
 
     const hashedPassword = await hashPassword(newPassword);
-    await pool
-      .request()
-      .input('accountId', sql.Int, user.MaTaiKhoan)
-      .input('MatKhauMaHoa', sql.VarChar(255), hashedPassword)
-      .query(`
-        UPDATE TaiKhoanNguoiDung
-        SET MatKhauMaHoa = @MatKhauMaHoa,
-            YeuCauDoiMatKhau = 0,
-            SoLanDangNhapSai = 0,
-            KhoaTamThoiDenLuc = NULL
-        WHERE MaTaiKhoan = @accountId
-      `);
+    const lockColumn = await getAccountLockColumnName();
+    await query(
+      `
+        UPDATE taikhoannguoidung
+        SET matkhaumahoa = $1,
+            yeucaudoimatkhau = FALSE,
+            solandangnhapsai = 0,
+            ${lockColumn} = NULL
+        WHERE mataikhoan = $2
+      `,
+      [hashedPassword, user.MaTaiKhoan]
+    );
 
-    const refreshedUser = await loadUserByAccountId(pool, user.MaTaiKhoan);
+    const refreshedUser = await loadUserByAccountId(user.MaTaiKhoan);
     const serializedUser = serializeUser(refreshedUser);
 
     return sendSuccess(
@@ -658,40 +680,41 @@ router.post('/reset-password', async (req, res) => {
   }
 
   try {
-    const pool = await getPool();
-    const existing = await pool
-      .request()
-      .input('phone', sql.VarChar(15), phoneNumber)
-      .query(`
-        SELECT MaTaiKhoan, MatKhauMaHoa
-        FROM TaiKhoanNguoiDung
-        WHERE SoDienThoai = @phone
-      `);
+    const existing = await query(
+      `
+        SELECT
+          mataikhoan AS "MaTaiKhoan",
+          matkhaumahoa AS "MatKhauMaHoa"
+        FROM taikhoannguoidung
+        WHERE sodienthoai = $1
+      `,
+      [phoneNumber]
+    );
 
-    if (existing.recordset.length === 0) {
+    if (existing.rows.length === 0) {
       return sendError(res, 404, 'Tài khoản không tồn tại', 'NOT_FOUND');
     }
 
-    const currentPassword = existing.recordset[0].MatKhauMaHoa;
+    const currentPassword = existing.rows[0].MatKhauMaHoa;
     const sameAsCurrentPassword = await verifyPassword(newPassword, currentPassword);
     if (sameAsCurrentPassword) {
       return sendError(res, 400, 'Nhập mật khẩu khác', 'VALIDATION_ERROR');
     }
 
     const hashedPassword = await hashPassword(newPassword);
+    const lockColumn = await getAccountLockColumnName();
 
-    await pool
-      .request()
-      .input('phone', sql.VarChar(15), phoneNumber)
-      .input('MatKhauMaHoa', sql.VarChar(255), hashedPassword)
-      .query(`
-        UPDATE TaiKhoanNguoiDung
-        SET MatKhauMaHoa = @MatKhauMaHoa,
-            YeuCauDoiMatKhau = 0,
-            SoLanDangNhapSai = 0,
-            KhoaTamThoiDenLuc = NULL
-        WHERE SoDienThoai = @phone
-      `);
+    await query(
+      `
+        UPDATE taikhoannguoidung
+        SET matkhaumahoa = $1,
+            yeucaudoimatkhau = FALSE,
+            solandangnhapsai = 0,
+            ${lockColumn} = NULL
+        WHERE sodienthoai = $2
+      `,
+      [hashedPassword, phoneNumber]
+    );
 
     otpStore.delete(phoneNumber);
     return sendSuccess(res, null, 'Đặt lại mật khẩu thành công');

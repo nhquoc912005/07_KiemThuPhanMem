@@ -8,7 +8,7 @@ Backend:
 
 - Node.js
 - Express
-- SQL Server, kết nối qua thư viện `mssql`
+- Supabase PostgreSQL, kết nối qua thư viện `pg`
 - JWT xác thực qua `jsonwebtoken`
 - Hash mật khẩu bằng `bcryptjs`
 - `dotenv` để đọc biến môi trường
@@ -36,7 +36,7 @@ Script hỗ trợ:
 │   ├── src/
 │   │   ├── app.js              # Khởi tạo Express app và khai báo route
 │   │   ├── server.js           # Entry chạy API server
-│   │   ├── db.js               # Cấu hình kết nối SQL Server
+│   │   ├── db.js               # Cấu hình kết nối PostgreSQL/Supabase
 │   │   ├── routes/             # Các endpoint API
 │   │   ├── middleware/         # Middleware xác thực/phân quyền
 │   │   ├── services/           # Logic nghiệp vụ dùng lại
@@ -57,7 +57,8 @@ Script hỗ trợ:
 │   ├── package.json
 │   └── .env.example
 ├── database/
-│   ├── database.sql            # Tạo/reset database demo
+│   ├── database.sql            # Script SQL Server cũ, giữ để tham chiếu
+│   ├── supabase-postgres.sql   # Tạo/reset schema demo trên Supabase PostgreSQL
 │   └── migrations/             # Script migration bổ sung
 ├── docs/                       # Tài liệu API, kiến trúc, test plan
 ├── scripts/
@@ -72,9 +73,9 @@ Script hỗ trợ:
 
 - Node.js 18 trở lên. Smoke test dùng `fetch` toàn cục, nên Node.js 18+ là lựa chọn an toàn.
 - npm, đi kèm Node.js.
-- SQL Server local hoặc SQL Server trong mạng nội bộ.
-- Công cụ chạy SQL như SQL Server Management Studio hoặc Azure Data Studio.
-- Không thấy cấu hình Docker trong project hiện tại, nên README này hướng dẫn chạy trực tiếp bằng Node.js và SQL Server.
+- Một project Supabase có PostgreSQL database.
+- Supabase SQL Editor để chạy script `database/supabase-postgres.sql`.
+- Không hardcode mật khẩu database trong source; backend đọc chuỗi kết nối từ `DATABASE_URL`.
 
 ## Cài dependencies
 
@@ -114,14 +115,8 @@ Các biến chính:
 
 ```env
 APP_PORT=5000
-SQL_SERVER=localhost
-SQL_PORT=1433
-SQL_DATABASE=TrungChuyenDB
-SQL_USER=your_sql_user
-SQL_PASSWORD=your_sql_password
-SQL_ENCRYPT=false
-SQL_TRUST_SERVER_CERTIFICATE=true
-JWT_SECRET=replace-with-a-long-random-secret
+DATABASE_URL=postgresql://postgres.vbbfjdfizcgxomdhalmm:YOUR_PASSWORD@aws-1-ap-south-1.pooler.supabase.com:6543/postgres
+JWT_SECRET=your_secret_key
 JWT_EXPIRES_IN=12h
 PASSWORD_CHANGE_TOKEN_EXPIRES_IN=15m
 ```
@@ -129,7 +124,7 @@ PASSWORD_CHANGE_TOKEN_EXPIRES_IN=15m
 Lưu ý:
 
 - Không dùng giá trị mẫu cho `JWT_SECRET` ở môi trường thật.
-- `SQL_USER` và `SQL_PASSWORD` phải là tài khoản có quyền đọc/ghi database.
+- Thay `YOUR_PASSWORD` trong `DATABASE_URL` bằng mật khẩu Supabase thật ở môi trường local/deploy, không commit mật khẩu thật.
 - `APP_PORT` nên đặt `5000` để khớp với cấu hình frontend mẫu.
 
 ### Frontend
@@ -160,13 +155,13 @@ VITE_API_BASE_URL=http://192.168.1.10:5000/api/v1
 
 Frontend cũng có logic tự đổi `localhost` sang host hiện tại khi truy cập bằng IP mạng nội bộ, nhưng cấu hình đúng ngay từ `.env` vẫn dễ kiểm soát hơn.
 
-## Tạo hoặc reset database
+## Tạo hoặc reset database Supabase
 
-1. Mở SQL Server Management Studio hoặc Azure Data Studio.
-2. Kết nối tới SQL Server.
-3. Chạy toàn bộ file `database/database.sql`.
+1. Mở Supabase Dashboard.
+2. Vào SQL Editor của project.
+3. Chạy toàn bộ file `database/supabase-postgres.sql`.
 
-Script này tạo database `TrungChuyenDB` nếu chưa có, tạo lại các bảng nghiệp vụ và seed dữ liệu demo. Nếu database đã có dữ liệu quan trọng, đọc kỹ script trước khi chạy vì file có các đoạn drop/tạo lại bảng.
+Script này tạo lại các bảng nghiệp vụ và seed dữ liệu demo trực tiếp trong database `postgres` của Supabase. Nếu database đã có dữ liệu quan trọng, đọc kỹ script trước khi chạy vì file có các đoạn `DROP TABLE ... CASCADE`.
 
 Sau khi cấu hình xong, có thể kiểm tra kết nối backend bằng endpoint:
 
@@ -243,7 +238,7 @@ cd backend
 npm start
 ```
 
-Project hiện chưa có script build riêng cho backend. Khi deploy production, cần tự cấu hình process manager hoặc môi trường chạy Node.js phù hợp, đồng thời dùng `JWT_SECRET` mạnh và thông tin SQL Server thật qua biến môi trường.
+Project hiện chưa có script build riêng cho backend. Khi deploy production, cần tự cấu hình process manager hoặc môi trường chạy Node.js phù hợp, đồng thời dùng `JWT_SECRET` mạnh và `DATABASE_URL` Supabase thật qua biến môi trường.
 
 ## API chính
 
@@ -324,7 +319,7 @@ Các nhóm này yêu cầu đăng nhập và có quyền điều phối:
 
 Luồng sử dụng cơ bản:
 
-1. Chạy SQL Server và tạo database bằng `database/database.sql`.
+1. Chạy `database/supabase-postgres.sql` trong Supabase SQL Editor.
 2. Chạy backend.
 3. Chạy frontend.
 4. Mở frontend tại `http://localhost:3000`.
@@ -332,7 +327,7 @@ Luồng sử dụng cơ bản:
 6. Điều phối viên có thể xem khách hàng, xe, tài xế, vé cần trung chuyển, lập kế hoạch và xem báo cáo.
 7. Tài xế có thể xem chuyến được phân công và cập nhật trạng thái đón/trả khách.
 
-README này không ghi mật khẩu thật hoặc secret thật. Nếu cần biết tài khoản demo trong môi trường local, hãy kiểm tra dữ liệu seed trong `database/database.sql` hoặc tự tạo tài khoản mới qua chức năng đăng ký.
+README này không ghi mật khẩu thật hoặc secret thật. Nếu cần biết tài khoản demo trong môi trường local, hãy kiểm tra dữ liệu seed trong `database/supabase-postgres.sql` hoặc tự tạo tài khoản mới qua chức năng đăng ký.
 
 ## Lệnh thường dùng
 
@@ -392,10 +387,9 @@ Nếu backend không chạy ở port `5000`, cập nhật lại `APP_PORT` hoặ
 
 Kiểm tra:
 
-- SQL Server đang chạy.
-- `SQL_SERVER`, `SQL_PORT`, `SQL_DATABASE`, `SQL_USER`, `SQL_PASSWORD` trong `backend/.env` đúng.
-- Tài khoản SQL có quyền truy cập database.
-- Nếu dùng SQL Server local có chứng chỉ tự ký, giữ `SQL_TRUST_SERVER_CERTIFICATE=true` cho môi trường development.
+- `DATABASE_URL` trong `backend/.env` đã thay `YOUR_PASSWORD` bằng mật khẩu Supabase thật.
+- Supabase project đang hoạt động và allow connection qua pooler host/port trong connection string.
+- Đã chạy `database/supabase-postgres.sql` trong Supabase SQL Editor.
 
 ### Chạy frontend từ thiết bị khác trong LAN nhưng API lỗi
 
@@ -413,7 +407,7 @@ VITE_API_BASE_URL=http://192.168.1.10:5000/api/v1
 
 ### `npm run smoke` thất bại vì không có dữ liệu phù hợp
 
-Smoke test cần dữ liệu vé, xe rảnh và tài xế rảnh. Chạy lại `database/database.sql` trên database demo hoặc dùng các script seed trong `scripts/seed/`.
+Smoke test cần dữ liệu vé, xe rảnh và tài xế rảnh. Chạy lại `database/supabase-postgres.sql` trên database demo hoặc tự seed thêm dữ liệu phù hợp.
 
 ### Cài dependency lỗi hoặc thiếu module
 

@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 
-const { getPool } = require('./db');
+const { testConnection } = require('./db');
 const { requireAuth, requireRole } = require('./middleware/auth');
 const { DISPATCHER_ROLE } = require('./utils/auth');
 
@@ -14,16 +14,59 @@ const routePlanRoutes = require('./routes/route-plans');
 const ticketRoutes = require('./routes/tickets');
 const reportRoutes = require('./routes/reports');
 
+const ALLOWED_DEV_PORTS = new Set(['3000', '5173']);
+
+function isIpv4Host(hostname) {
+  const parts = String(hostname || '').trim().split('.');
+  if (parts.length !== 4 || parts.some((part) => !/^\d+$/.test(part))) {
+    return false;
+  }
+
+  return parts.every((part) => {
+    const value = Number(part);
+    return value >= 0 && value <= 255;
+  });
+}
+
+function isAllowedDevOrigin(origin) {
+  if (!origin) {
+    return true;
+  }
+
+  try {
+    const parsedOrigin = new URL(origin);
+    const hostname = String(parsedOrigin.hostname || '').trim().toLowerCase();
+    const port = String(parsedOrigin.port || (parsedOrigin.protocol === 'https:' ? '443' : '80'));
+
+    if (!ALLOWED_DEV_PORTS.has(port)) {
+      return false;
+    }
+
+    return hostname === 'localhost' || hostname === '::1' || hostname === '[::1]' || isIpv4Host(hostname);
+  } catch {
+    return false;
+  }
+}
+
 function createApp() {
   const app = express();
 
-  app.use(cors());
+  app.use(
+    cors({
+      origin(origin, callback) {
+        if (isAllowedDevOrigin(origin)) {
+          return callback(null, true);
+        }
+
+        return callback(null, false);
+      }
+    })
+  );
   app.use(express.json());
 
   app.get('/health', async (req, res) => {
     try {
-      const pool = await getPool();
-      await pool.request().query('SELECT 1 AS ok');
+      await testConnection();
       res.json({ status: 'ok', db: 'connected' });
     } catch (err) {
       res.status(500).json({ status: 'error', message: 'DB connection failed', detail: err.message });

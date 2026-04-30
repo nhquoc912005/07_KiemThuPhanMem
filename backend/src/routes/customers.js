@@ -1,6 +1,6 @@
 const express = require('express');
 
-const { getPool, sql } = require('../db');
+const { query, withTransaction } = require('../db');
 const { CUSTOMER_STATUSES } = require('../constants/status');
 const { sendError, sendSuccess } = require('../utils/http');
 const {
@@ -18,20 +18,8 @@ const CUSTOMER_SELECT_COLUMNS = `
   default_pickup_address AS DiaChiDon,
   default_dropoff_address AS DiaChiTra,
   CASE
-    WHEN status = N'ACTIVE' AND is_active = 1 THEN N'${CUSTOMER_STATUSES.ACTIVE}'
-    ELSE N'${CUSTOMER_STATUSES.INACTIVE}'
-  END AS TrangThai
-`;
-
-const CUSTOMER_OUTPUT_COLUMNS = `
-  INSERTED.legacy_ma_khach_hang AS MaKhachHang,
-  INSERTED.full_name AS TenKhachHang,
-  INSERTED.phone AS SoDienThoai,
-  INSERTED.default_pickup_address AS DiaChiDon,
-  INSERTED.default_dropoff_address AS DiaChiTra,
-  CASE
-    WHEN INSERTED.status = N'ACTIVE' AND INSERTED.is_active = 1 THEN N'${CUSTOMER_STATUSES.ACTIVE}'
-    ELSE N'${CUSTOMER_STATUSES.INACTIVE}'
+    WHEN status = 'ACTIVE' AND is_active = TRUE THEN '${CUSTOMER_STATUSES.ACTIVE}'
+    ELSE '${CUSTOMER_STATUSES.INACTIVE}'
   END AS TrangThai
 `;
 
@@ -50,7 +38,7 @@ function toExternalStatus(customerStatus) {
 }
 
 function toExternalIsActive(customerStatus) {
-  return customerStatus === CUSTOMER_STATUSES.INACTIVE ? 0 : 1;
+  return customerStatus !== CUSTOMER_STATUSES.INACTIVE;
 }
 
 function getCustomerPayload(body = {}) {
@@ -122,32 +110,52 @@ function sendCustomerValidationError(res, status, message, fieldErrors, errorCod
   return sendError(res, status, message, errorCode, { fieldErrors });
 }
 
+async function loadCustomerByLegacyId(id, client = null) {
+  const result = await query(
+    `
+      SELECT ${CUSTOMER_SELECT_COLUMNS}
+      FROM external_customers
+      WHERE legacy_ma_khach_hang = $1
+    `,
+    [id],
+    client
+  );
+
+  return result.rows[0] || null;
+}
+
 router.get('/', async (req, res) => {
   const keyword = String(req.query.keyword || '').trim();
   const includeInactive = String(req.query.includeInactive || '').trim() === '1';
 
   try {
-    const pool = await getPool();
-    const request = pool.request();
-    let query = `
+    const params = [];
+    let sqlText = `
       SELECT ${CUSTOMER_SELECT_COLUMNS}
       FROM external_customers
       WHERE 1 = 1
     `;
 
     if (!includeInactive) {
-      query += ` AND status = N'ACTIVE' AND is_active = 1`;
+      sqlText += ` AND status = 'ACTIVE' AND is_active = TRUE`;
     }
 
     if (keyword) {
-      query += ' AND (full_name LIKE @kw OR phone LIKE @kw OR default_pickup_address LIKE @kw OR default_dropoff_address LIKE @kw)';
-      request.input('kw', sql.NVarChar(100), `%${keyword}%`);
+      params.push(`%${keyword}%`);
+      sqlText += `
+        AND (
+          full_name ILIKE $${params.length} OR
+          phone ILIKE $${params.length} OR
+          default_pickup_address ILIKE $${params.length} OR
+          default_dropoff_address ILIKE $${params.length}
+        )
+      `;
     }
 
-    query += ' ORDER BY legacy_ma_khach_hang DESC';
+    sqlText += ' ORDER BY legacy_ma_khach_hang DESC';
 
-    const result = await request.query(query);
-    return sendSuccess(res, result.recordset, 'Lấy danh sách khách hàng thành công');
+    const result = await query(sqlText, params);
+    return sendSuccess(res, result.rows, 'Lấy danh sách khách hàng thành công');
   } catch (err) {
     console.error('Get customers error:', err);
     return sendError(res, 500, 'Lỗi lấy danh sách khách hàng', 'SERVER_ERROR');
@@ -161,21 +169,13 @@ router.get('/:id', async (req, res) => {
   }
 
   try {
-    const pool = await getPool();
-    const result = await pool
-      .request()
-      .input('id', sql.Int, id)
-      .query(`
-        SELECT ${CUSTOMER_SELECT_COLUMNS}
-        FROM external_customers
-        WHERE legacy_ma_khach_hang = @id
-      `);
+    const customer = await loadCustomerByLegacyId(id);
 
-    if (result.recordset.length === 0) {
+    if (!customer) {
       return sendError(res, 404, 'Không tìm thấy khách hàng', 'NOT_FOUND');
     }
 
-    return sendSuccess(res, result.recordset[0], 'Lấy thông tin khách hàng thành công');
+    return sendSuccess(res, customer, 'Lấy thông tin khách hàng thành công');
   } catch (err) {
     console.error('Get customer detail error:', err);
     return sendError(res, 500, 'Lỗi lấy thông tin khách hàng', 'SERVER_ERROR');
@@ -195,54 +195,34 @@ router.post('/', async (req, res) => {
   }
 
   try {
-    const pool = await getPool();
-    const transaction = new sql.Transaction(pool);
+    const created = await withTransaction(async (client) => {
+      const existing = await query(
+        'SELECT 1 FROM external_customers WHERE phone = $1 LIMIT 1',
+        [customer.SoDienThoai],
+        client
+      );
 
-    await transaction.begin();
-
-    try {
-      const existing = await new sql.Request(transaction)
-        .input('phone', sql.VarChar(15), customer.SoDienThoai)
-        .query(`
-          SELECT TOP 1 1
-          FROM external_customers
-          WHERE phone = @phone
-        `);
-
-      if (existing.recordset.length > 0) {
-        await transaction.rollback();
-        return sendCustomerValidationError(
-          res,
-          409,
-          DUPLICATE_PHONE_MESSAGE,
-          { SoDienThoai: DUPLICATE_PHONE_MESSAGE },
-          'CONFLICT'
-        );
+      if (existing.rows.length > 0) {
+        throw Object.assign(new Error(DUPLICATE_PHONE_MESSAGE), {
+          status: 409,
+          code: 'CONFLICT',
+          fieldErrors: { SoDienThoai: DUPLICATE_PHONE_MESSAGE }
+        });
       }
 
-      const legacyInsert = await new sql.Request(transaction)
-        .input('TenKhachHang', sql.NVarChar(100), customer.TenKhachHang)
-        .input('SoDienThoai', sql.VarChar(15), customer.SoDienThoai)
-        .input('DiaChiDon', sql.NVarChar(255), customer.DiaChiDon)
-        .input('DiaChiTra', sql.NVarChar(255), customer.DiaChiTra)
-        .input('TrangThai', sql.NVarChar(30), customer.TrangThai)
-        .query(`
+      const legacyInsert = await query(
+        `
           INSERT INTO KhachHang (TenKhachHang, SoDienThoai, DiaChiDon, DiaChiTra, TrangThai)
-          OUTPUT INSERTED.MaKhachHang
-          VALUES (@TenKhachHang, @SoDienThoai, @DiaChiDon, @DiaChiTra, @TrangThai)
-        `);
+          VALUES ($1, $2, $3, $4, $5)
+          RETURNING MaKhachHang
+        `,
+        [customer.TenKhachHang, customer.SoDienThoai, customer.DiaChiDon, customer.DiaChiTra, customer.TrangThai],
+        client
+      );
 
-      const legacyId = legacyInsert.recordset[0].MaKhachHang;
-      const result = await new sql.Request(transaction)
-        .input('legacyId', sql.Int, legacyId)
-        .input('customerCode', sql.NVarChar(20), buildCustomerCode(legacyId))
-        .input('fullName', sql.NVarChar(100), customer.TenKhachHang)
-        .input('phone', sql.VarChar(15), customer.SoDienThoai)
-        .input('pickup', sql.NVarChar(255), customer.DiaChiDon)
-        .input('dropoff', sql.NVarChar(255), customer.DiaChiTra)
-        .input('status', sql.NVarChar(20), toExternalStatus(customer.TrangThai))
-        .input('isActive', sql.Bit, toExternalIsActive(customer.TrangThai))
-        .query(`
+      const legacyId = legacyInsert.rows[0].MaKhachHang;
+      await query(
+        `
           INSERT INTO external_customers (
             legacy_ma_khach_hang,
             customer_code,
@@ -253,20 +233,32 @@ router.post('/', async (req, res) => {
             status,
             is_active
           )
-          OUTPUT ${CUSTOMER_OUTPUT_COLUMNS}
-          VALUES (@legacyId, @customerCode, @fullName, @phone, @pickup, @dropoff, @status, @isActive)
-        `);
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        `,
+        [
+          legacyId,
+          buildCustomerCode(legacyId),
+          customer.TenKhachHang,
+          customer.SoDienThoai,
+          customer.DiaChiDon,
+          customer.DiaChiTra,
+          toExternalStatus(customer.TrangThai),
+          toExternalIsActive(customer.TrangThai)
+        ],
+        client
+      );
 
-      await transaction.commit();
-      return sendSuccess(res, result.recordset[0], 'Tạo khách hàng thành công', 201);
-    } catch (innerError) {
-      if (transaction._aborted !== true) {
-        await transaction.rollback();
-      }
-      throw innerError;
-    }
+      return loadCustomerByLegacyId(legacyId, client);
+    });
+
+    return sendSuccess(res, created, 'Tạo khách hàng thành công', 201);
   } catch (err) {
     console.error('Create customer error:', err);
+
+    if (err.fieldErrors) {
+      return sendCustomerValidationError(res, err.status || 409, err.message, err.fieldErrors, err.code || 'CONFLICT');
+    }
+
     return sendError(res, 500, 'Lỗi tạo khách hàng', 'SERVER_ERROR');
   }
 });
@@ -289,93 +281,86 @@ router.put('/:id', async (req, res) => {
   }
 
   try {
-    const pool = await getPool();
-    const transaction = new sql.Transaction(pool);
-    await transaction.begin();
+    const updated = await withTransaction(async (client) => {
+      const existingCustomer = await loadCustomerByLegacyId(id, client);
 
-    try {
-      const existingCustomer = await new sql.Request(transaction)
-        .input('id', sql.Int, id)
-        .query(`
-          SELECT TOP 1 legacy_ma_khach_hang
-          FROM external_customers
-          WHERE legacy_ma_khach_hang = @id
-        `);
-
-      if (existingCustomer.recordset.length === 0) {
-        await transaction.rollback();
-        return sendError(res, 404, 'Không tìm thấy khách hàng', 'NOT_FOUND');
+      if (!existingCustomer) {
+        throw Object.assign(new Error('Không tìm thấy khách hàng'), { status: 404, code: 'NOT_FOUND' });
       }
 
-      const existingPhone = await new sql.Request(transaction)
-        .input('id', sql.Int, id)
-        .input('phone', sql.VarChar(15), customer.SoDienThoai)
-        .query(`
-          SELECT TOP 1 1
+      const existingPhone = await query(
+        `
+          SELECT 1
           FROM external_customers
-          WHERE phone = @phone
-            AND legacy_ma_khach_hang <> @id
-        `);
+          WHERE phone = $1
+            AND legacy_ma_khach_hang <> $2
+          LIMIT 1
+        `,
+        [customer.SoDienThoai, id],
+        client
+      );
 
-      if (existingPhone.recordset.length > 0) {
-        await transaction.rollback();
-        return sendCustomerValidationError(
-          res,
-          409,
-          DUPLICATE_PHONE_MESSAGE,
-          { SoDienThoai: DUPLICATE_PHONE_MESSAGE },
-          'CONFLICT'
-        );
+      if (existingPhone.rows.length > 0) {
+        throw Object.assign(new Error(DUPLICATE_PHONE_MESSAGE), {
+          status: 409,
+          code: 'CONFLICT',
+          fieldErrors: { SoDienThoai: DUPLICATE_PHONE_MESSAGE }
+        });
       }
 
-      await new sql.Request(transaction)
-        .input('id', sql.Int, id)
-        .input('TenKhachHang', sql.NVarChar(100), customer.TenKhachHang)
-        .input('SoDienThoai', sql.VarChar(15), customer.SoDienThoai)
-        .input('DiaChiDon', sql.NVarChar(255), customer.DiaChiDon)
-        .input('DiaChiTra', sql.NVarChar(255), customer.DiaChiTra)
-        .input('TrangThai', sql.NVarChar(30), customer.TrangThai)
-        .query(`
+      await query(
+        `
           UPDATE KhachHang
-          SET TenKhachHang = @TenKhachHang,
-              SoDienThoai = @SoDienThoai,
-              DiaChiDon = @DiaChiDon,
-              DiaChiTra = @DiaChiTra,
-              TrangThai = @TrangThai
-          WHERE MaKhachHang = @id
-        `);
+          SET TenKhachHang = $1,
+              SoDienThoai = $2,
+              DiaChiDon = $3,
+              DiaChiTra = $4,
+              TrangThai = $5
+          WHERE MaKhachHang = $6
+        `,
+        [customer.TenKhachHang, customer.SoDienThoai, customer.DiaChiDon, customer.DiaChiTra, customer.TrangThai, id],
+        client
+      );
 
-      const result = await new sql.Request(transaction)
-        .input('id', sql.Int, id)
-        .input('fullName', sql.NVarChar(100), customer.TenKhachHang)
-        .input('phone', sql.VarChar(15), customer.SoDienThoai)
-        .input('pickup', sql.NVarChar(255), customer.DiaChiDon)
-        .input('dropoff', sql.NVarChar(255), customer.DiaChiTra)
-        .input('status', sql.NVarChar(20), toExternalStatus(customer.TrangThai))
-        .input('isActive', sql.Bit, toExternalIsActive(customer.TrangThai))
-        .query(`
+      await query(
+        `
           UPDATE external_customers
-          SET full_name = @fullName,
-              phone = @phone,
-              default_pickup_address = @pickup,
-              default_dropoff_address = @dropoff,
-              status = @status,
-              is_active = @isActive,
-              updated_at = GETDATE()
-          OUTPUT ${CUSTOMER_OUTPUT_COLUMNS}
-          WHERE legacy_ma_khach_hang = @id
-        `);
+          SET full_name = $1,
+              phone = $2,
+              default_pickup_address = $3,
+              default_dropoff_address = $4,
+              status = $5,
+              is_active = $6,
+              updated_at = NOW()
+          WHERE legacy_ma_khach_hang = $7
+        `,
+        [
+          customer.TenKhachHang,
+          customer.SoDienThoai,
+          customer.DiaChiDon,
+          customer.DiaChiTra,
+          toExternalStatus(customer.TrangThai),
+          toExternalIsActive(customer.TrangThai),
+          id
+        ],
+        client
+      );
 
-      await transaction.commit();
-      return sendSuccess(res, result.recordset[0], 'Cập nhật khách hàng thành công');
-    } catch (innerError) {
-      if (transaction._aborted !== true) {
-        await transaction.rollback();
-      }
-      throw innerError;
-    }
+      return loadCustomerByLegacyId(id, client);
+    });
+
+    return sendSuccess(res, updated, 'Cập nhật khách hàng thành công');
   } catch (err) {
     console.error('Update customer error:', err);
+
+    if (err.fieldErrors) {
+      return sendCustomerValidationError(res, err.status || 409, err.message, err.fieldErrors, err.code || 'CONFLICT');
+    }
+
+    if (err.code === 'NOT_FOUND') {
+      return sendError(res, 404, err.message, 'NOT_FOUND');
+    }
+
     return sendError(res, 500, 'Lỗi cập nhật khách hàng', 'SERVER_ERROR');
   }
 });
@@ -387,63 +372,56 @@ router.delete('/:id', async (req, res) => {
   }
 
   try {
-    const pool = await getPool();
-    const transaction = new sql.Transaction(pool);
-    await transaction.begin();
+    const disabled = await withTransaction(async (client) => {
+      const relatedTickets = await query('SELECT 1 FROM VeTrungChuyen WHERE MaKhachHang = $1 LIMIT 1', [id], client);
 
-    try {
-      const relatedTickets = await new sql.Request(transaction)
-        .input('id', sql.Int, id)
-        .query('SELECT TOP 1 1 FROM VeTrungChuyen WHERE MaKhachHang = @id');
-
-      if (relatedTickets.recordset.length > 0) {
-        await transaction.rollback();
-        return sendError(res, 409, DELETE_BLOCKED_MESSAGE, 'CONFLICT');
+      if (relatedTickets.rows.length > 0) {
+        throw Object.assign(new Error(DELETE_BLOCKED_MESSAGE), { status: 409, code: 'CONFLICT' });
       }
 
-      const existingCustomer = await new sql.Request(transaction)
-        .input('id', sql.Int, id)
-        .query(`
-          SELECT TOP 1 legacy_ma_khach_hang
-          FROM external_customers
-          WHERE legacy_ma_khach_hang = @id
-        `);
+      const existingCustomer = await loadCustomerByLegacyId(id, client);
 
-      if (existingCustomer.recordset.length === 0) {
-        await transaction.rollback();
-        return sendError(res, 404, 'Không tìm thấy khách hàng', 'NOT_FOUND');
+      if (!existingCustomer) {
+        throw Object.assign(new Error('Không tìm thấy khách hàng'), { status: 404, code: 'NOT_FOUND' });
       }
 
-      await new sql.Request(transaction)
-        .input('id', sql.Int, id)
-        .input('TrangThai', sql.NVarChar(30), CUSTOMER_STATUSES.INACTIVE)
-        .query(`
+      await query(
+        `
           UPDATE KhachHang
-          SET TrangThai = @TrangThai
-          WHERE MaKhachHang = @id
-        `);
+          SET TrangThai = $1
+          WHERE MaKhachHang = $2
+        `,
+        [CUSTOMER_STATUSES.INACTIVE, id],
+        client
+      );
 
-      const result = await new sql.Request(transaction)
-        .input('id', sql.Int, id)
-        .query(`
+      await query(
+        `
           UPDATE external_customers
-          SET status = N'INACTIVE',
-              is_active = 0,
-              updated_at = GETDATE()
-          OUTPUT ${CUSTOMER_OUTPUT_COLUMNS}
-          WHERE legacy_ma_khach_hang = @id
-        `);
+          SET status = 'INACTIVE',
+              is_active = FALSE,
+              updated_at = NOW()
+          WHERE legacy_ma_khach_hang = $1
+        `,
+        [id],
+        client
+      );
 
-      await transaction.commit();
-      return sendSuccess(res, result.recordset[0], 'Đã chuyển khách hàng sang ngừng hoạt động');
-    } catch (innerError) {
-      if (transaction._aborted !== true) {
-        await transaction.rollback();
-      }
-      throw innerError;
-    }
+      return loadCustomerByLegacyId(id, client);
+    });
+
+    return sendSuccess(res, disabled, 'Đã chuyển khách hàng sang ngừng hoạt động');
   } catch (err) {
     console.error('Delete customer error:', err);
+
+    if (err.code === 'CONFLICT') {
+      return sendError(res, err.status || 409, err.message, 'CONFLICT');
+    }
+
+    if (err.code === 'NOT_FOUND') {
+      return sendError(res, 404, err.message, 'NOT_FOUND');
+    }
+
     return sendError(res, 500, 'Lỗi cập nhật trạng thái khách hàng', 'SERVER_ERROR');
   }
 });
