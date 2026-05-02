@@ -1,6 +1,7 @@
-D:\07_KiemThuPhanMem\tests\selenium-java\src\test\java\TC_UC07_1_03.java
-D:\07_KiemThuPhanMem\tests\selenium-java\src\test\java\TC_UC07_1_04.java
-D:\07_KiemThuPhanMem\tests\selenium-java\src\test\java\TC_UC07_1_01.java
-D:\07_KiemThuPhanMem\tests\selenium-java\src\test\java\TC_UC07_1_02.java
-D:\07_KiemThuPhanMem\tests\selenium-java\src\test\java\TC_UC07_1_05.java
-D:\07_KiemThuPhanMem\tests\selenium-java\src\test\java\TC_UC07_1_06.java
+D:\HK6\07_KiemThuPhanMem\tests\selenium-java\src\test\java\pages\LoginPage.java
+D:\HK6\07_KiemThuPhanMem\tests\selenium-java\src\test\java\base\BaseTest.java
+D:\HK6\07_KiemThuPhanMem\tests\selenium-java\src\test\java\pages\DriverCustomerListPage.java
+D:\HK6\07_KiemThuPhanMem\tests\selenium-java\src\test\java\tests\UC07_2_CustomerListTest.java
+D:\HK6\07_KiemThuPhanMem\tests\selenium-java\src\test\java\pages\DriverTripDetailPage.java
+D:\HK6\07_KiemThuPhanMem\tests\selenium-java\src\test\java\pages\DriverTripsPage.java
+D:\HK6\07_KiemThuPhanMem\tests\selenium-java\src\test\java\tests\TripStatusTest.java
