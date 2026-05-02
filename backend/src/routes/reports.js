@@ -1,6 +1,6 @@
 const express = require('express');
 
-const { getPool, sql } = require('../db');
+const { query } = require('../db');
 const { sendError, sendSuccess } = require('../utils/http');
 
 const router = express.Router();
@@ -39,13 +39,12 @@ router.get('/summary', async (req, res) => {
   }
 
   try {
-    const pool = await getPool();
-    const request = pool.request();
+    const params = [];
 
-    let query = `
+    let sqlText = `
       SELECT
         lt.MaLoTrinh,
-        CONVERT(date, lt.ThoiGianBatDau) AS Ngay,
+        lt.ThoiGianBatDau::date AS Ngay,
         lt.MaXe,
         lt.MaTaiXe,
         xtc.LoaiXe,
@@ -54,7 +53,7 @@ router.get('/summary', async (req, res) => {
         lt.TrangThaiLoTrinh,
         COUNT(DISTINCT ct.MaChiTiet) AS SoDiemDonTra,
         COUNT(DISTINCT ct.MaVe) AS SoKhach,
-        ISNULL(SUM(v.SoLuongGhe), 0) AS TongGhe,
+        COALESCE(SUM(v.SoLuongGhe), 0) AS TongGhe,
         MIN(k.DiaChiDon) AS KhuVuc,
         lt.LoTrinhDuKien
       FROM LoTrinhTrungChuyen lt
@@ -67,19 +66,19 @@ router.get('/summary', async (req, res) => {
     `;
 
     if (fromDate) {
-      request.input('fromDate', sql.DateTime, parsedFromDate);
-      query += ' AND lt.ThoiGianBatDau >= @fromDate';
+      params.push(parsedFromDate);
+      sqlText += ` AND lt.ThoiGianBatDau >= $${params.length}`;
     }
 
     if (toDate) {
-      request.input('toDate', sql.DateTime, parsedToDate);
-      query += ' AND lt.ThoiGianBatDau < DATEADD(DAY, 1, @toDate)';
+      params.push(parsedToDate);
+      sqlText += ` AND lt.ThoiGianBatDau < ($${params.length}::timestamp + INTERVAL '1 day')`;
     }
 
-    query += `
+    sqlText += `
       GROUP BY
         lt.MaLoTrinh,
-        CONVERT(date, lt.ThoiGianBatDau),
+        lt.ThoiGianBatDau::date,
         lt.MaXe,
         lt.MaTaiXe,
         xtc.LoaiXe,
@@ -90,8 +89,8 @@ router.get('/summary', async (req, res) => {
       ORDER BY Ngay DESC, lt.MaLoTrinh DESC
     `;
 
-    const result = await request.query(query);
-    return sendSuccess(res, result.recordset, 'Lấy báo cáo tổng hợp thành công');
+    const result = await query(sqlText, params);
+    return sendSuccess(res, result.rows, 'Lấy báo cáo tổng hợp thành công');
   } catch (err) {
     console.error('Get summary report error:', err);
     return sendError(res, 500, 'Lỗi lấy báo cáo tổng hợp', 'SERVER_ERROR');

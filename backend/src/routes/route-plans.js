@@ -1,6 +1,6 @@
 const express = require('express');
 
-const { getPool, sql } = require('../db');
+const { query, withTransaction } = require('../db');
 const { syncRoutePlanProjection, buildRoutePlanNotes } = require('../services/routePlanSyncService');
 const { DISPATCHER_ROLE } = require('../utils/auth');
 const { sendError, sendSuccess } = require('../utils/http');
@@ -63,7 +63,7 @@ function ticketNote(ticket) {
   return `MaVe=${ticket.MaVe}; SoLuongGhe=${ticket.SoLuongGhe}; KhungGio=${slot}`;
 }
 
-async function syncLegacyResources(db, { MaXe, MaTaiXe }, routeStatus) {
+async function syncLegacyResources(client, { MaXe, MaTaiXe }, routeStatus) {
   let vehicleStatus = 'Rảnh';
   let driverStatus = 'Rảnh';
 
@@ -75,19 +75,9 @@ async function syncLegacyResources(db, { MaXe, MaTaiXe }, routeStatus) {
     driverStatus = 'Đang thực hiện';
   }
 
-  await db
-    .request()
-    .input('MaXe', sql.Int, MaXe)
-    .input('TrangThaiXe', sql.NVarChar(30), vehicleStatus)
-    .query('UPDATE XeTrungChuyen SET TrangThaiXe = @TrangThaiXe WHERE MaXe = @MaXe');
+  await query('UPDATE XeTrungChuyen SET TrangThaiXe = $1 WHERE MaXe = $2', [vehicleStatus, MaXe], client);
+  await query('UPDATE TaiXe SET TrangThaiTaiXe = $1 WHERE MaTaiXe = $2', [driverStatus, MaTaiXe], client);
 
-  await db
-    .request()
-    .input('MaTaiXe', sql.Int, MaTaiXe)
-    .input('TrangThaiTaiXe', sql.NVarChar(30), driverStatus)
-    .query('UPDATE TaiXe SET TrangThaiTaiXe = @TrangThaiTaiXe WHERE MaTaiXe = @MaTaiXe');
-
-  // Sync external status for selection screens
   const externalVehicleStatus =
     vehicleStatus === 'Rảnh'
       ? 'AVAILABLE'
@@ -110,34 +100,29 @@ async function syncLegacyResources(db, { MaXe, MaTaiXe }, routeStatus) {
             ? 'OFF'
             : 'AVAILABLE';
 
-  await db
-    .request()
-    .input('MaXe', sql.Int, MaXe)
-    .input('availability', sql.NVarChar(20), externalVehicleStatus)
-    .query(
-      `
-        UPDATE external_vehicles
-        SET availability_status = @availability,
-            updated_at = GETDATE()
-        WHERE legacy_ma_xe = @MaXe
-      `
-    );
+  await query(
+    `
+      UPDATE external_vehicles
+      SET availability_status = $1,
+          updated_at = NOW()
+      WHERE legacy_ma_xe = $2
+    `,
+    [externalVehicleStatus, MaXe],
+    client
+  );
 
-  await db
-    .request()
-    .input('MaTaiXe', sql.Int, MaTaiXe)
-    .input('availability', sql.NVarChar(20), externalDriverStatus)
-    .query(
-      `
-        UPDATE external_drivers
-        SET availability_status = @availability,
-            updated_at = GETDATE()
-        WHERE legacy_ma_tai_xe = @MaTaiXe
-      `
-    );
+  await query(
+    `
+      UPDATE external_drivers
+      SET availability_status = $1,
+          updated_at = NOW()
+      WHERE legacy_ma_tai_xe = $2
+    `,
+    [externalDriverStatus, MaTaiXe],
+    client
+  );
 }
 
-// POST /route-plans - tạo kế hoạch điều phối (mới) + vẫn tạo lộ trình legacy để demo luồng hiện tại
 router.post('/', async (req, res) => {
   const { MaXe, MaTaiXe, ThoiGianBatDau, ThoiGianKetThuc, LoTrinhDuKien, GhiChu, ticketIds } = req.body || {};
 
@@ -175,16 +160,9 @@ router.post('/', async (req, res) => {
   }
 
   try {
-    const pool = await getPool();
-    const transaction = new sql.Transaction(pool);
-
-    await transaction.begin();
-
-    try {
-      const ticketsResult = await new sql.Request(transaction)
-        .input('ids', sql.VarChar(sql.MAX), selectedTicketIds.join(','))
-        .query(
-          `
+    const payload = await withTransaction(async (client) => {
+      const ticketsResult = await query(
+        `
           SELECT
             v.MaVe,
             v.KhungGioTrungChuyen,
@@ -208,12 +186,14 @@ router.post('/', async (req, res) => {
           FROM VeTrungChuyen v
           JOIN KhachHang k ON k.MaKhachHang = v.MaKhachHang
           LEFT JOIN external_customers ec ON ec.legacy_ma_khach_hang = k.MaKhachHang
-          WHERE v.MaVe IN (SELECT TRY_CAST(value AS INT) FROM STRING_SPLIT(@ids, ','))
+          WHERE v.MaVe = ANY($1::int[])
           ORDER BY k.DiaChiDon, k.DiaChiTra, v.MaVe
-        `
-        );
+        `,
+        [selectedTicketIds],
+        client
+      );
 
-      const selectedTickets = ticketsResult.recordset;
+      const selectedTickets = ticketsResult.rows;
 
       if (selectedTickets.length !== selectedTicketIds.length) {
         throw Object.assign(new Error('Có vé không tồn tại hoặc đã bị loại khỏi hệ thống'), { status: 400 });
@@ -238,31 +218,30 @@ router.post('/', async (req, res) => {
 
       const totalSeats = selectedTickets.reduce((sum, ticket) => sum + Number(ticket.SoLuongGhe || 0), 0);
 
-      const vehicleLegacyResult = await new sql.Request(transaction)
-        .input('MaXe', sql.Int, Number(MaXe))
-        .query('SELECT TOP 1 * FROM XeTrungChuyen WHERE MaXe = @MaXe');
+      const vehicleLegacyResult = await query('SELECT * FROM XeTrungChuyen WHERE MaXe = $1 LIMIT 1', [Number(MaXe)], client);
 
-      if (vehicleLegacyResult.recordset.length === 0) {
+      if (vehicleLegacyResult.rows.length === 0) {
         throw Object.assign(new Error('Xe không tồn tại'), { status: 400 });
       }
 
-      const legacyVehicle = vehicleLegacyResult.recordset[0];
+      const legacyVehicle = vehicleLegacyResult.rows[0];
 
-      const externalVehicleResult = await new sql.Request(transaction)
-        .input('MaXe', sql.Int, Number(MaXe))
-        .query(
-          `
-          SELECT TOP 1 *
-          FROM external_vehicles
-          WHERE legacy_ma_xe = @MaXe
+      const externalVehicleResult = await query(
         `
-        );
+          SELECT *
+          FROM external_vehicles
+          WHERE legacy_ma_xe = $1
+          LIMIT 1
+        `,
+        [Number(MaXe)],
+        client
+      );
 
-      if (externalVehicleResult.recordset.length === 0) {
+      if (externalVehicleResult.rows.length === 0) {
         throw Object.assign(new Error('Xe chưa có dữ liệu external (vui lòng chạy seed Option 1)'), { status: 422 });
       }
 
-      const externalVehicle = externalVehicleResult.recordset[0];
+      const externalVehicle = externalVehicleResult.rows[0];
 
       if (externalVehicle.operational_status === 'INACTIVE' || externalVehicle.is_active === false) {
         throw Object.assign(new Error('Xe đang ngừng hoạt động'), { status: 409 });
@@ -272,106 +251,89 @@ router.post('/', async (req, res) => {
         throw Object.assign(new Error('Hành khách vượt quá sức chứa xe'), { status: 422 });
       }
 
-      const vehicleConflict = await new sql.Request(transaction)
-        .input('MaXe', sql.Int, Number(MaXe))
-        .query(
-          `
-          SELECT TOP 1 MaLoTrinh
-          FROM LoTrinhTrungChuyen
-          WHERE MaXe = @MaXe
-            AND TrangThaiLoTrinh IN (N'Chưa thực hiện', N'Đang thực hiện', N'Đang gặp sự cố')
+      const vehicleConflict = await query(
         `
-        );
+          SELECT MaLoTrinh
+          FROM LoTrinhTrungChuyen
+          WHERE MaXe = $1
+            AND TrangThaiLoTrinh IN ('Chưa thực hiện', 'Đang thực hiện', 'Đang gặp sự cố')
+          LIMIT 1
+        `,
+        [Number(MaXe)],
+        client
+      );
 
-      if (vehicleConflict.recordset.length > 0) {
+      if (vehicleConflict.rows.length > 0) {
         throw Object.assign(new Error('Xe đang được phân công cho lộ trình khác'), { status: 409 });
       }
 
-      const driverLegacyResult = await new sql.Request(transaction)
-        .input('MaTaiXe', sql.Int, Number(MaTaiXe))
-        .query('SELECT TOP 1 * FROM TaiXe WHERE MaTaiXe = @MaTaiXe');
+      const driverLegacyResult = await query('SELECT * FROM TaiXe WHERE MaTaiXe = $1 LIMIT 1', [Number(MaTaiXe)], client);
 
-      if (driverLegacyResult.recordset.length === 0) {
+      if (driverLegacyResult.rows.length === 0) {
         throw Object.assign(new Error('Tài xế không tồn tại'), { status: 400 });
       }
 
-      const legacyDriver = driverLegacyResult.recordset[0];
+      const legacyDriver = driverLegacyResult.rows[0];
 
-      const externalDriverResult = await new sql.Request(transaction)
-        .input('MaTaiXe', sql.Int, Number(MaTaiXe))
-        .query(
-          `
-          SELECT TOP 1 *
-          FROM external_drivers
-          WHERE legacy_ma_tai_xe = @MaTaiXe
+      const externalDriverResult = await query(
         `
-        );
+          SELECT *
+          FROM external_drivers
+          WHERE legacy_ma_tai_xe = $1
+          LIMIT 1
+        `,
+        [Number(MaTaiXe)],
+        client
+      );
 
-      if (externalDriverResult.recordset.length === 0) {
+      if (externalDriverResult.rows.length === 0) {
         throw Object.assign(new Error('Tài xế chưa có dữ liệu external (vui lòng chạy seed Option 1)'), {
           status: 422
         });
       }
 
-      const externalDriver = externalDriverResult.recordset[0];
+      const externalDriver = externalDriverResult.rows[0];
       if (externalDriver.work_status === 'INACTIVE' || externalDriver.is_active === false) {
         throw Object.assign(new Error('Tài xế đang ngừng hoạt động'), { status: 409 });
       }
 
-      const driverConflict = await new sql.Request(transaction)
-        .input('MaTaiXe', sql.Int, Number(MaTaiXe))
-        .query(
-          `
-          SELECT TOP 1 MaLoTrinh
-          FROM LoTrinhTrungChuyen
-          WHERE MaTaiXe = @MaTaiXe
-            AND TrangThaiLoTrinh IN (N'Chưa thực hiện', N'Đang thực hiện', N'Đang gặp sự cố')
+      const driverConflict = await query(
         `
-        );
+          SELECT MaLoTrinh
+          FROM LoTrinhTrungChuyen
+          WHERE MaTaiXe = $1
+            AND TrangThaiLoTrinh IN ('Chưa thực hiện', 'Đang thực hiện', 'Đang gặp sự cố')
+          LIMIT 1
+        `,
+        [Number(MaTaiXe)],
+        client
+      );
 
-      if (driverConflict.recordset.length > 0) {
+      if (driverConflict.rows.length > 0) {
         throw Object.assign(new Error('Tài xế đang được phân công cho lộ trình khác'), { status: 409 });
       }
 
-      const dispatcherResult = await new sql.Request(transaction)
-        .input('MaNhanVien', sql.Int, dispatcherId)
-        .query('SELECT TOP 1 1 FROM NhanVienDieuPhoi WHERE MaNhanVien = @MaNhanVien');
+      const dispatcherResult = await query('SELECT 1 FROM NhanVienDieuPhoi WHERE MaNhanVien = $1 LIMIT 1', [dispatcherId], client);
 
-      if (dispatcherResult.recordset.length === 0) {
+      if (dispatcherResult.rows.length === 0) {
         throw Object.assign(new Error('Nhân viên điều phối không tồn tại'), { status: 400 });
       }
 
-      // 1) Insert route plan (new schema)
       const planCode = generatePlanCode();
-      const planInsert = await new sql.Request(transaction)
-        .input('planCode', sql.NVarChar(30), planCode)
-        .input('plannedStart', sql.DateTime, routeStart)
-        .input('plannedEnd', sql.DateTime, routeEnd)
-        .input('status', sql.NVarChar(20), 'CONFIRMED')
-        .input('notes', sql.NVarChar(500), GhiChu ? String(GhiChu).trim() : null)
-        .input('createdBy', sql.NVarChar(50), createdBy)
-        .query(
-          `
-          INSERT INTO route_plans (plan_code, planned_start_at, planned_end_at, status, notes, created_by)
-          OUTPUT INSERTED.id
-          VALUES (@planCode, @plannedStart, @plannedEnd, @status, @notes, @createdBy)
+      const planInsert = await query(
         `
-        );
+          INSERT INTO route_plans (plan_code, planned_start_at, planned_end_at, status, notes, created_by)
+          VALUES ($1, $2, $3, $4, $5, $6)
+          RETURNING id
+        `,
+        [planCode, routeStart, routeEnd, 'CONFIRMED', GhiChu ? String(GhiChu).trim() : null, createdBy],
+        client
+      );
 
-      const routePlanId = planInsert.recordset[0].id;
+      const routePlanId = planInsert.rows[0].id;
 
-      // 2) Insert vehicle assignment + snapshot
-      const vehicleAssignmentInsert = await new sql.Request(transaction)
-        .input('routePlanId', sql.BigInt, routePlanId)
-        .input('externalVehicleId', sql.Int, externalVehicle.id)
-        .input('assignmentStatus', sql.NVarChar(20), 'CONFIRMED')
-        .input('vehicleCode', sql.NVarChar(20), externalVehicle.vehicle_code)
-        .input('plate', sql.VarChar(20), externalVehicle.plate_number)
-        .input('vehicleType', sql.NVarChar(50), externalVehicle.vehicle_type)
-        .input('capacity', sql.Int, externalVehicle.capacity)
-        .input('seatCount', sql.Int, externalVehicle.seat_count)
-        .query(
-          `
+      const vehicleAssignmentInsert = await query(
+        `
           INSERT INTO route_plan_vehicle_assignments (
             route_plan_id,
             external_vehicle_id,
@@ -382,27 +344,26 @@ router.post('/', async (req, res) => {
             vehicle_capacity_snapshot,
             vehicle_seat_count_snapshot
           )
-          OUTPUT INSERTED.id
-          VALUES (@routePlanId, @externalVehicleId, @assignmentStatus, @vehicleCode, @plate, @vehicleType, @capacity, @seatCount)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+          RETURNING id
+        `,
+        [
+          routePlanId,
+          externalVehicle.id,
+          'CONFIRMED',
+          externalVehicle.vehicle_code,
+          externalVehicle.plate_number,
+          externalVehicle.vehicle_type,
+          externalVehicle.capacity,
+          externalVehicle.seat_count
+        ],
+        client
+      );
+
+      const vehicleAssignmentId = vehicleAssignmentInsert.rows[0].id;
+
+      await query(
         `
-        );
-
-      const vehicleAssignmentId = vehicleAssignmentInsert.recordset[0].id;
-
-      // 3) Insert driver assignment + snapshot
-      await new sql.Request(transaction)
-        .input('routePlanId', sql.BigInt, routePlanId)
-        .input('externalDriverId', sql.Int, externalDriver.id)
-        .input('vehicleAssignmentId', sql.BigInt, vehicleAssignmentId)
-        .input('assignmentStatus', sql.NVarChar(20), 'CONFIRMED')
-        .input('driverCode', sql.NVarChar(20), externalDriver.driver_code)
-        .input('driverName', sql.NVarChar(100), externalDriver.full_name)
-        .input('driverPhone', sql.VarChar(15), externalDriver.phone)
-        .input('driverNationalId', sql.VarChar(20), externalDriver.national_id)
-        .input('driverLicenseNo', sql.VarChar(30), externalDriver.license_no)
-        .input('driverLicenseClass', sql.NVarChar(50), externalDriver.license_class)
-        .query(
-          `
           INSERT INTO route_plan_driver_assignments (
             route_plan_id,
             external_driver_id,
@@ -415,35 +376,26 @@ router.post('/', async (req, res) => {
             driver_license_no_snapshot,
             driver_license_class_snapshot
           )
-          VALUES (
-            @routePlanId,
-            @externalDriverId,
-            @vehicleAssignmentId,
-            @assignmentStatus,
-            @driverCode,
-            @driverName,
-            @driverPhone,
-            @driverNationalId,
-            @driverLicenseNo,
-            @driverLicenseClass
-          )
-        `
-        );
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+        `,
+        [
+          routePlanId,
+          externalDriver.id,
+          vehicleAssignmentId,
+          'CONFIRMED',
+          externalDriver.driver_code,
+          externalDriver.full_name,
+          externalDriver.phone,
+          externalDriver.national_id,
+          externalDriver.license_no,
+          externalDriver.license_class
+        ],
+        client
+      );
 
-      // 4) Insert selected customers + snapshots (1 row per ticket)
       for (const [index, ticket] of selectedTickets.entries()) {
-        await new sql.Request(transaction)
-          .input('routePlanId', sql.BigInt, routePlanId)
-          .input('externalCustomerId', sql.Int, ticket.ExternalCustomerId)
-          .input('sequenceNo', sql.Int, index + 1)
-          .input('customerCode', sql.NVarChar(20), ticket.ExternalCustomerCode || null)
-          .input('customerName', sql.NVarChar(100), ticket.ExternalCustomerName || ticket.TenKhachHang)
-          .input('customerPhone', sql.VarChar(15), ticket.ExternalCustomerPhone || ticket.SoDienThoai)
-          .input('pickup', sql.NVarChar(255), ticket.ExternalPickup || ticket.DiaChiDon)
-          .input('dropoff', sql.NVarChar(255), ticket.ExternalDropoff || ticket.DiaChiTra)
-          .input('note', sql.NVarChar(255), ticketNote(ticket))
-          .query(
-            `
+        await query(
+          `
             INSERT INTO route_plan_customers (
               route_plan_id,
               external_customer_id,
@@ -455,120 +407,114 @@ router.post('/', async (req, res) => {
               dropoff_address_snapshot,
               note
             )
-            VALUES (
-              @routePlanId,
-              @externalCustomerId,
-              @sequenceNo,
-              @customerCode,
-              @customerName,
-              @customerPhone,
-              @pickup,
-              @dropoff,
-              @note
-            )
-          `
-          );
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+          `,
+          [
+            routePlanId,
+            ticket.ExternalCustomerId,
+            index + 1,
+            ticket.ExternalCustomerCode || null,
+            ticket.ExternalCustomerName || ticket.TenKhachHang,
+            ticket.ExternalCustomerPhone || ticket.SoDienThoai,
+            ticket.ExternalPickup || ticket.DiaChiDon,
+            ticket.ExternalDropoff || ticket.DiaChiTra,
+            ticketNote(ticket)
+          ],
+          client
+        );
       }
 
-      // 5) Create legacy route for current app screens
       const routePlanText = String(LoTrinhDuKien || '').trim() || buildRoutePlanText(selectedTickets);
-      const routeInsert = await new sql.Request(transaction)
-        .input('ThoiGianBatDau', sql.DateTime, routeStart)
-        .input('ThoiGianKetThuc', sql.DateTime, routeEnd)
-        .input('LoTrinhDuKien', sql.NVarChar(sql.MAX), routePlanText || null)
-        .input('GhiChu', sql.NVarChar(sql.MAX), GhiChu ? String(GhiChu).trim() : null)
-        .input('TrangThaiLoTrinh', sql.NVarChar(30), 'Chưa thực hiện')
-        .input('MaXe', sql.Int, Number(MaXe))
-        .input('MaTaiXe', sql.Int, Number(MaTaiXe))
-        .input('MaNhanVien', sql.Int, dispatcherId)
-        .query(
-          `
+      const routeInsert = await query(
+        `
           INSERT INTO LoTrinhTrungChuyen
             (ThoiGianBatDau, ThoiGianKetThuc, LoTrinhDuKien, GhiChu, TrangThaiLoTrinh, MaXe, MaTaiXe, MaNhanVien)
-          OUTPUT INSERTED.MaLoTrinh
-          VALUES (@ThoiGianBatDau, @ThoiGianKetThuc, @LoTrinhDuKien, @GhiChu, @TrangThaiLoTrinh, @MaXe, @MaTaiXe, @MaNhanVien)
-        `
-        );
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+          RETURNING MaLoTrinh
+        `,
+        [
+          routeStart,
+          routeEnd,
+          routePlanText || null,
+          GhiChu ? String(GhiChu).trim() : null,
+          'Chưa thực hiện',
+          Number(MaXe),
+          Number(MaTaiXe),
+          dispatcherId
+        ],
+        client
+      );
 
-      const routeId = routeInsert.recordset[0].MaLoTrinh;
+      const routeId = routeInsert.rows[0].MaLoTrinh;
 
       for (const [index, ticket] of selectedTickets.entries()) {
         const expectedPickupTime = new Date(routeStart.getTime() + index * 10 * 60 * 1000);
         const pickupCoordinates = resolveCoordinates(ticket.DiaChiDon, ticket.DiaChiDonLat, ticket.DiaChiDonLng);
         const dropoffCoordinates = resolveCoordinates(ticket.DiaChiTra, ticket.DiaChiTraLat, ticket.DiaChiTraLng);
 
-        await new sql.Request(transaction)
-          .input('ThuTuDonTra', sql.Int, index + 1)
-          .input('DiemDon', sql.NVarChar(255), ticket.DiaChiDon)
-          .input('DiemDonLat', sql.Decimal(10, 7), pickupCoordinates?.lat ?? null)
-          .input('DiemDonLng', sql.Decimal(10, 7), pickupCoordinates?.lng ?? null)
-          .input('DiemTra', sql.NVarChar(255), ticket.DiaChiTra)
-          .input('DiemTraLat', sql.Decimal(10, 7), dropoffCoordinates?.lat ?? null)
-          .input('DiemTraLng', sql.Decimal(10, 7), dropoffCoordinates?.lng ?? null)
-          .input('ThoiGianDonDuKien', sql.DateTime, expectedPickupTime)
-          .input('TrangThaiKhach', sql.NVarChar(50), null)
-          .input('MaLoTrinh', sql.Int, routeId)
-          .input('MaVe', sql.Int, ticket.MaVe)
-          .query(
-            `
+        await query(
+          `
             INSERT INTO ChiTietLoTrinh
               (ThuTuDonTra, DiemDon, DiemDonLat, DiemDonLng, DiemTra, DiemTraLat, DiemTraLng, ThoiGianDonDuKien, TrangThaiKhach, MaLoTrinh, MaVe)
-            VALUES (@ThuTuDonTra, @DiemDon, @DiemDonLat, @DiemDonLng, @DiemTra, @DiemTraLat, @DiemTraLng, @ThoiGianDonDuKien, @TrangThaiKhach, @MaLoTrinh, @MaVe)
-          `
-          );
-
-        await new sql.Request(transaction)
-          .input('MaVe', sql.Int, ticket.MaVe)
-          .input('TrangThaiVe', sql.NVarChar(50), 'Đã có xe trung chuyển')
-          .query(
-            `
-            UPDATE VeTrungChuyen
-            SET TrangThaiVe = @TrangThaiVe
-            WHERE MaVe = @MaVe
-          `
-          );
-      }
-
-      // link plan -> legacy route
-      await new sql.Request(transaction)
-        .input('routePlanId', sql.BigInt, routePlanId)
-        .input('notes', sql.NVarChar(500), buildRoutePlanNotes(GhiChu, routeId))
-        .query(
-          `
-          UPDATE route_plans
-          SET updated_at = GETDATE(),
-              notes = @notes
-          WHERE id = @routePlanId
-        `
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+          `,
+          [
+            index + 1,
+            ticket.DiaChiDon,
+            pickupCoordinates?.lat ?? null,
+            pickupCoordinates?.lng ?? null,
+            ticket.DiaChiTra,
+            dropoffCoordinates?.lat ?? null,
+            dropoffCoordinates?.lng ?? null,
+            expectedPickupTime,
+            null,
+            routeId,
+            ticket.MaVe
+          ],
+          client
         );
 
-      await syncLegacyResources(transaction, { MaXe: Number(MaXe), MaTaiXe: Number(MaTaiXe) }, 'Chưa thực hiện');
-      await syncRoutePlanProjection(transaction, routeId, {
+        await query(
+          `
+            UPDATE VeTrungChuyen
+            SET TrangThaiVe = $1
+            WHERE MaVe = $2
+          `,
+          ['Đã có xe trung chuyển', ticket.MaVe],
+          client
+        );
+      }
+
+      await query(
+        `
+          UPDATE route_plans
+          SET updated_at = NOW(),
+              notes = $1
+          WHERE id = $2
+        `,
+        [buildRoutePlanNotes(GhiChu, routeId), routePlanId],
+        client
+      );
+
+      await syncLegacyResources(client, { MaXe: Number(MaXe), MaTaiXe: Number(MaTaiXe) }, 'Chưa thực hiện');
+      await syncRoutePlanProjection(client, routeId, {
         eventType: 'ROUTE_CREATED',
         message: 'Tạo kế hoạch điều phối',
         payload: { source: 'route-plans' },
         createdBy
       });
 
-      await transaction.commit();
-
-      return sendSuccess(
-        res,
-        {
-          route: {
-            MaLoTrinh: routeId,
-            BienSo: legacyVehicle.BienSo,
-            TenTaiXe: legacyDriver.HoTen
-          },
-          routePlan: { id: routePlanId, planCode }
+      return {
+        route: {
+          MaLoTrinh: routeId,
+          BienSo: legacyVehicle.BienSo,
+          TenTaiXe: legacyDriver.HoTen
         },
-        'Tạo lộ trình thành công',
-        201
-      );
-    } catch (innerError) {
-      await transaction.rollback();
-      throw innerError;
-    }
+        routePlan: { id: routePlanId, planCode }
+      };
+    });
+
+    return sendSuccess(res, payload, 'Tạo lộ trình thành công', 201);
   } catch (err) {
     console.error('Create route plan error:', err);
     return sendError(

@@ -1,6 +1,6 @@
 const express = require('express');
 
-const { getPool, sql } = require('../db');
+const { query, withTransaction } = require('../db');
 const { VEHICLE_STATUSES } = require('../constants/status');
 const { sendError, sendSuccess } = require('../utils/http');
 const {
@@ -19,16 +19,16 @@ const VEHICLE_SELECT_COLUMNS = `
   e.vehicle_type AS LoaiXe,
   e.seat_count AS SoCho,
   CASE
-    WHEN e.operational_status = N'INACTIVE' OR e.is_active = 0 THEN N'${VEHICLE_STATUSES.INACTIVE}'
-    WHEN e.availability_status = N'ASSIGNED' THEN N'${VEHICLE_STATUSES.ASSIGNED}'
-    WHEN e.availability_status = N'ON_TRIP' THEN N'${VEHICLE_STATUSES.RUNNING}'
-    WHEN e.availability_status = N'MAINTENANCE' THEN N'${VEHICLE_STATUSES.MAINTENANCE}'
-    ELSE N'${VEHICLE_STATUSES.AVAILABLE}'
+    WHEN e.operational_status = 'INACTIVE' OR e.is_active = FALSE THEN '${VEHICLE_STATUSES.INACTIVE}'
+    WHEN e.availability_status = 'ASSIGNED' THEN '${VEHICLE_STATUSES.ASSIGNED}'
+    WHEN e.availability_status = 'ON_TRIP' THEN '${VEHICLE_STATUSES.RUNNING}'
+    WHEN e.availability_status = 'MAINTENANCE' THEN '${VEHICLE_STATUSES.MAINTENANCE}'
+    ELSE '${VEHICLE_STATUSES.AVAILABLE}'
   END AS TrangThaiXe
 `;
 
 const ALLOWED_VEHICLE_STATUSES = new Set(Object.values(VEHICLE_STATUSES));
-const NORMALIZED_PLATE_LOOKUP_SQL = "UPPER(REPLACE(REPLACE(REPLACE(LTRIM(RTRIM(plate_number)), ' ', ''), '-', ''), '.', ''))";
+const NORMALIZED_PLATE_LOOKUP_SQL = "UPPER(REPLACE(REPLACE(REPLACE(TRIM(plate_number), ' ', ''), '-', ''), '.', ''))";
 
 function buildVehicleCode(legacyId) {
   if (legacyId < 1000) {
@@ -56,7 +56,7 @@ function toExternalAvailabilityStatus(vehicleStatus) {
 }
 
 function toExternalIsActive(vehicleStatus) {
-  return vehicleStatus === VEHICLE_STATUSES.INACTIVE ? 0 : 1;
+  return vehicleStatus !== VEHICLE_STATUSES.INACTIVE;
 }
 
 function toVehicleResponse(record) {
@@ -70,17 +70,19 @@ function toVehicleResponse(record) {
   };
 }
 
-async function loadVehicleByLegacyId(db, legacyId) {
-  const result = await db
-    .request()
-    .input('id', sql.Int, legacyId)
-    .query(`
-      SELECT TOP 1 ${VEHICLE_SELECT_COLUMNS}
+async function loadVehicleByLegacyId(legacyId, client = null) {
+  const result = await query(
+    `
+      SELECT ${VEHICLE_SELECT_COLUMNS}
       FROM external_vehicles e
-      WHERE e.legacy_ma_xe = @id
-    `);
+      WHERE e.legacy_ma_xe = $1
+      LIMIT 1
+    `,
+    [legacyId],
+    client
+  );
 
-  return toVehicleResponse(result.recordset[0]);
+  return toVehicleResponse(result.rows[0]);
 }
 
 function getVehiclePayload(body = {}) {
@@ -118,14 +120,13 @@ function validateVehicleInput(vehicle) {
 
 router.get('/', async (_req, res) => {
   try {
-    const pool = await getPool();
-    const result = await pool.request().query(`
+    const result = await query(`
       SELECT ${VEHICLE_SELECT_COLUMNS}
       FROM external_vehicles e
       ORDER BY e.legacy_ma_xe DESC
     `);
 
-    const vehicles = result.recordset.map(toVehicleResponse);
+    const vehicles = result.rows.map(toVehicleResponse);
     return sendSuccess(res, vehicles, 'Lấy danh sách xe thành công');
   } catch (err) {
     console.error('Get vehicles error:', err);
@@ -140,8 +141,7 @@ router.get('/:id', async (req, res) => {
   }
 
   try {
-    const pool = await getPool();
-    const vehicle = await loadVehicleByLegacyId(pool, id);
+    const vehicle = await loadVehicleByLegacyId(id);
 
     if (!vehicle) {
       return sendError(res, 404, 'Không tìm thấy xe', 'NOT_FOUND');
@@ -162,49 +162,36 @@ router.post('/', async (req, res) => {
   }
 
   try {
-    const pool = await getPool();
-    const transaction = new sql.Transaction(pool);
-
-    await transaction.begin();
-
-    try {
-      const existing = await new sql.Request(transaction)
-        .input('plateLookup', sql.VarChar(20), normalizeVehiclePlateLookupKey(vehicle.BienSo))
-        .query(`
-          SELECT TOP 1 1
+    const created = await withTransaction(async (client) => {
+      const existing = await query(
+        `
+          SELECT 1
           FROM external_vehicles
-          WHERE ${NORMALIZED_PLATE_LOOKUP_SQL} = @plateLookup
-        `);
+          WHERE ${NORMALIZED_PLATE_LOOKUP_SQL} = $1
+          LIMIT 1
+        `,
+        [normalizeVehiclePlateLookupKey(vehicle.BienSo)],
+        client
+      );
 
-      if (existing.recordset.length > 0) {
-        await transaction.rollback();
-        return sendError(res, 409, 'Xe đã tồn tại với biển số này', 'CONFLICT');
+      if (existing.rows.length > 0) {
+        throw Object.assign(new Error('Xe đã tồn tại với biển số này'), { status: 409, code: 'CONFLICT' });
       }
 
-      const legacyInsert = await new sql.Request(transaction)
-        .input('BienSo', sql.VarChar(50), vehicle.BienSo)
-        .input('LoaiXe', sql.NVarChar(50), vehicle.LoaiXe)
-        .input('SoCho', sql.Int, vehicle.SoCho)
-        .input('TrangThaiXe', sql.NVarChar(30), vehicle.TrangThaiXe)
-        .query(`
+      const legacyInsert = await query(
+        `
           INSERT INTO XeTrungChuyen (BienSo, LoaiXe, SoCho, TrangThaiXe)
-          OUTPUT INSERTED.MaXe
-          VALUES (@BienSo, @LoaiXe, @SoCho, @TrangThaiXe)
-        `);
+          VALUES ($1, $2, $3, $4)
+          RETURNING MaXe
+        `,
+        [vehicle.BienSo, vehicle.LoaiXe, vehicle.SoCho, vehicle.TrangThaiXe],
+        client
+      );
 
-      const legacyId = legacyInsert.recordset[0].MaXe;
+      const legacyId = legacyInsert.rows[0].MaXe;
 
-      await new sql.Request(transaction)
-        .input('legacyId', sql.Int, legacyId)
-        .input('vehicleCode', sql.NVarChar(20), buildVehicleCode(legacyId))
-        .input('plate', sql.VarChar(20), vehicle.BienSo)
-        .input('vehicleType', sql.NVarChar(50), vehicle.LoaiXe)
-        .input('capacity', sql.Int, vehicle.SoCho)
-        .input('seatCount', sql.Int, vehicle.SoCho)
-        .input('operationalStatus', sql.NVarChar(20), toExternalOperationalStatus(vehicle.TrangThaiXe))
-        .input('availabilityStatus', sql.NVarChar(20), toExternalAvailabilityStatus(vehicle.TrangThaiXe))
-        .input('isActive', sql.Bit, toExternalIsActive(vehicle.TrangThaiXe))
-        .query(`
+      await query(
+        `
           INSERT INTO external_vehicles (
             legacy_ma_xe,
             vehicle_code,
@@ -216,20 +203,33 @@ router.post('/', async (req, res) => {
             availability_status,
             is_active
           )
-          VALUES (@legacyId, @vehicleCode, @plate, @vehicleType, @capacity, @seatCount, @operationalStatus, @availabilityStatus, @isActive)
-        `);
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        `,
+        [
+          legacyId,
+          buildVehicleCode(legacyId),
+          vehicle.BienSo,
+          vehicle.LoaiXe,
+          vehicle.SoCho,
+          vehicle.SoCho,
+          toExternalOperationalStatus(vehicle.TrangThaiXe),
+          toExternalAvailabilityStatus(vehicle.TrangThaiXe),
+          toExternalIsActive(vehicle.TrangThaiXe)
+        ],
+        client
+      );
 
-      await transaction.commit();
-      const created = await loadVehicleByLegacyId(pool, legacyId);
-      return sendSuccess(res, created, 'Tạo xe thành công', 201);
-    } catch (innerError) {
-      if (transaction._aborted !== true) {
-        await transaction.rollback();
-      }
-      throw innerError;
-    }
+      return loadVehicleByLegacyId(legacyId, client);
+    });
+
+    return sendSuccess(res, created, 'Tạo xe thành công', 201);
   } catch (err) {
     console.error('Create vehicle error:', err);
+
+    if (err.code === 'CONFLICT') {
+      return sendError(res, err.status || 409, err.message, 'CONFLICT');
+    }
+
     return sendError(res, 500, 'Lỗi tạo xe', 'SERVER_ERROR');
   }
 });
@@ -247,82 +247,83 @@ router.put('/:id', async (req, res) => {
   }
 
   try {
-    const pool = await getPool();
-    const transaction = new sql.Transaction(pool);
-
-    await transaction.begin();
-
-    try {
-      const existing = await loadVehicleByLegacyId(transaction, id);
+    const updated = await withTransaction(async (client) => {
+      const existing = await loadVehicleByLegacyId(id, client);
 
       if (!existing) {
-        await transaction.rollback();
-        return sendError(res, 404, 'Không tìm thấy xe', 'NOT_FOUND');
+        throw Object.assign(new Error('Không tìm thấy xe'), { status: 404, code: 'NOT_FOUND' });
       }
 
-      const existingPlate = await new sql.Request(transaction)
-        .input('id', sql.Int, id)
-        .input('plateLookup', sql.VarChar(20), normalizeVehiclePlateLookupKey(vehicle.BienSo))
-        .query(`
-          SELECT TOP 1 1
+      const existingPlate = await query(
+        `
+          SELECT 1
           FROM external_vehicles
-          WHERE ${NORMALIZED_PLATE_LOOKUP_SQL} = @plateLookup
-            AND legacy_ma_xe <> @id
-        `);
+          WHERE ${NORMALIZED_PLATE_LOOKUP_SQL} = $1
+            AND legacy_ma_xe <> $2
+          LIMIT 1
+        `,
+        [normalizeVehiclePlateLookupKey(vehicle.BienSo), id],
+        client
+      );
 
-      if (existingPlate.recordset.length > 0) {
-        await transaction.rollback();
-        return sendError(res, 409, 'Biển số đã tồn tại cho xe khác', 'CONFLICT');
+      if (existingPlate.rows.length > 0) {
+        throw Object.assign(new Error('Biển số đã tồn tại cho xe khác'), { status: 409, code: 'CONFLICT' });
       }
 
-      await new sql.Request(transaction)
-        .input('id', sql.Int, id)
-        .input('BienSo', sql.VarChar(50), vehicle.BienSo)
-        .input('LoaiXe', sql.NVarChar(50), vehicle.LoaiXe)
-        .input('SoCho', sql.Int, vehicle.SoCho)
-        .input('TrangThaiXe', sql.NVarChar(30), vehicle.TrangThaiXe)
-        .query(`
+      await query(
+        `
           UPDATE XeTrungChuyen
-          SET BienSo = @BienSo,
-              LoaiXe = @LoaiXe,
-              SoCho = @SoCho,
-              TrangThaiXe = @TrangThaiXe
-          WHERE MaXe = @id
-        `);
+          SET BienSo = $1,
+              LoaiXe = $2,
+              SoCho = $3,
+              TrangThaiXe = $4
+          WHERE MaXe = $5
+        `,
+        [vehicle.BienSo, vehicle.LoaiXe, vehicle.SoCho, vehicle.TrangThaiXe, id],
+        client
+      );
 
-      await new sql.Request(transaction)
-        .input('id', sql.Int, id)
-        .input('plate', sql.VarChar(20), vehicle.BienSo)
-        .input('vehicleType', sql.NVarChar(50), vehicle.LoaiXe)
-        .input('capacity', sql.Int, vehicle.SoCho)
-        .input('seatCount', sql.Int, vehicle.SoCho)
-        .input('operationalStatus', sql.NVarChar(20), toExternalOperationalStatus(vehicle.TrangThaiXe))
-        .input('availabilityStatus', sql.NVarChar(20), toExternalAvailabilityStatus(vehicle.TrangThaiXe))
-        .input('isActive', sql.Bit, toExternalIsActive(vehicle.TrangThaiXe))
-        .query(`
+      await query(
+        `
           UPDATE external_vehicles
-          SET plate_number = @plate,
-              vehicle_type = @vehicleType,
-              capacity = @capacity,
-              seat_count = @seatCount,
-              operational_status = @operationalStatus,
-              availability_status = @availabilityStatus,
-              is_active = @isActive,
-              updated_at = GETDATE()
-          WHERE legacy_ma_xe = @id
-        `);
+          SET plate_number = $1,
+              vehicle_type = $2,
+              capacity = $3,
+              seat_count = $4,
+              operational_status = $5,
+              availability_status = $6,
+              is_active = $7,
+              updated_at = NOW()
+          WHERE legacy_ma_xe = $8
+        `,
+        [
+          vehicle.BienSo,
+          vehicle.LoaiXe,
+          vehicle.SoCho,
+          vehicle.SoCho,
+          toExternalOperationalStatus(vehicle.TrangThaiXe),
+          toExternalAvailabilityStatus(vehicle.TrangThaiXe),
+          toExternalIsActive(vehicle.TrangThaiXe),
+          id
+        ],
+        client
+      );
 
-      await transaction.commit();
-      const updated = await loadVehicleByLegacyId(pool, id);
-      return sendSuccess(res, updated, 'Cập nhật xe thành công');
-    } catch (innerError) {
-      if (transaction._aborted !== true) {
-        await transaction.rollback();
-      }
-      throw innerError;
-    }
+      return loadVehicleByLegacyId(id, client);
+    });
+
+    return sendSuccess(res, updated, 'Cập nhật xe thành công');
   } catch (err) {
     console.error('Update vehicle error:', err);
+
+    if (err.code === 'NOT_FOUND') {
+      return sendError(res, 404, err.message, 'NOT_FOUND');
+    }
+
+    if (err.code === 'CONFLICT') {
+      return sendError(res, err.status || 409, err.message, 'CONFLICT');
+    }
+
     return sendError(res, 500, 'Lỗi cập nhật xe', 'SERVER_ERROR');
   }
 });
@@ -334,59 +335,58 @@ router.delete('/:id', async (req, res) => {
   }
 
   try {
-    const pool = await getPool();
-    const transaction = new sql.Transaction(pool);
-
-    await transaction.begin();
-
-    try {
-      const existing = await loadVehicleByLegacyId(transaction, id);
+    const deleted = await withTransaction(async (client) => {
+      const existing = await loadVehicleByLegacyId(id, client);
       if (!existing) {
-        await transaction.rollback();
-        return sendError(res, 404, 'Không tìm thấy xe', 'NOT_FOUND');
+        throw Object.assign(new Error('Không tìm thấy xe'), { status: 404, code: 'NOT_FOUND' });
       }
 
-      const relatedRoutes = await new sql.Request(transaction)
-        .input('id', sql.Int, id)
-        .query('SELECT TOP 1 1 FROM LoTrinhTrungChuyen WHERE MaXe = @id');
+      const relatedRoutes = await query('SELECT 1 FROM LoTrinhTrungChuyen WHERE MaXe = $1 LIMIT 1', [id], client);
 
-      if (relatedRoutes.recordset.length > 0) {
-        await transaction.rollback();
-        return sendError(res, 409, 'Không thể xóa xe đã từng được phân công lộ trình', 'CONFLICT');
+      if (relatedRoutes.rows.length > 0) {
+        throw Object.assign(new Error('Không thể xóa xe đã từng được phân công lộ trình'), {
+          status: 409,
+          code: 'CONFLICT'
+        });
       }
 
-      const relatedAssignments = await new sql.Request(transaction)
-        .input('id', sql.Int, id)
-        .query(`
-          SELECT TOP 1 1
+      const relatedAssignments = await query(
+        `
+          SELECT 1
           FROM route_plan_vehicle_assignments a
           JOIN external_vehicles e ON e.id = a.external_vehicle_id
-          WHERE e.legacy_ma_xe = @id
-        `);
+          WHERE e.legacy_ma_xe = $1
+          LIMIT 1
+        `,
+        [id],
+        client
+      );
 
-      if (relatedAssignments.recordset.length > 0) {
-        await transaction.rollback();
-        return sendError(res, 409, 'Không thể xóa xe đã từng được dùng trong kế hoạch điều phối', 'CONFLICT');
+      if (relatedAssignments.rows.length > 0) {
+        throw Object.assign(new Error('Không thể xóa xe đã từng được dùng trong kế hoạch điều phối'), {
+          status: 409,
+          code: 'CONFLICT'
+        });
       }
 
-      await new sql.Request(transaction)
-        .input('id', sql.Int, id)
-        .query('DELETE FROM external_vehicles WHERE legacy_ma_xe = @id');
+      await query('DELETE FROM external_vehicles WHERE legacy_ma_xe = $1', [id], client);
+      await query('DELETE FROM XeTrungChuyen WHERE MaXe = $1', [id], client);
 
-      await new sql.Request(transaction)
-        .input('id', sql.Int, id)
-        .query('DELETE FROM XeTrungChuyen WHERE MaXe = @id');
+      return existing;
+    });
 
-      await transaction.commit();
-      return sendSuccess(res, existing, 'Xóa xe thành công');
-    } catch (innerError) {
-      if (transaction._aborted !== true) {
-        await transaction.rollback();
-      }
-      throw innerError;
-    }
+    return sendSuccess(res, deleted, 'Xóa xe thành công');
   } catch (err) {
     console.error('Delete vehicle error:', err);
+
+    if (err.code === 'NOT_FOUND') {
+      return sendError(res, 404, err.message, 'NOT_FOUND');
+    }
+
+    if (err.code === 'CONFLICT') {
+      return sendError(res, err.status || 409, err.message, 'CONFLICT');
+    }
+
     return sendError(res, 500, 'Lỗi xóa xe', 'SERVER_ERROR');
   }
 });

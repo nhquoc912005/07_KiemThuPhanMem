@@ -1,5 +1,6 @@
 const express = require('express');
-const { getPool, sql } = require('../db');
+
+const { query, withTransaction } = require('../db');
 const { loadRoutePlanSyncState, syncRoutePlanProjection } = require('../services/routePlanSyncService');
 const { DISPATCHER_ROLE, DRIVER_ROLE } = require('../utils/auth');
 const { sendError, sendSuccess } = require('../utils/http');
@@ -171,11 +172,11 @@ function buildRouteSyncPayload(routeId, syncState) {
   };
 }
 
-async function loadRouteSyncForResponse(db, routeId, options) {
+async function loadRouteSyncForResponse(client, routeId, options) {
   try {
-    return await loadRoutePlanSyncState(db, routeId, options);
+    return await loadRoutePlanSyncState(client, routeId, options);
   } catch (error) {
-    if (error?.code === 'EREQUEST' && /route_plan/i.test(String(error.message || ''))) {
+    if (/route_plan/i.test(String(error.message || ''))) {
       return null;
     }
 
@@ -183,74 +184,76 @@ async function loadRouteSyncForResponse(db, routeId, options) {
   }
 }
 
-async function loadRouteSummary(db, routeId) {
-  const request = db.request();
+async function loadRouteSummary(client = null, routeId = null) {
+  const params = [];
   let whereClause = '';
 
   if (routeId != null) {
-    request.input('routeId', sql.Int, routeId);
-    whereClause = ' AND lt.MaLoTrinh = @routeId';
+    params.push(routeId);
+    whereClause = ` AND lt.MaLoTrinh = $${params.length}`;
   }
 
-  const result = await request.query(`
-    SELECT
-      lt.MaLoTrinh,
-      lt.ThoiGianBatDau,
-      lt.ThoiGianKetThuc,
-      lt.LoTrinhDuKien,
-      lt.GhiChu,
-      lt.TrangThaiLoTrinh,
-      lt.MaXe,
-      lt.MaTaiXe,
-      lt.MaNhanVien,
-      x.BienSo,
-      x.LoaiXe,
-      x.SoCho,
-      x.TrangThaiXe,
-      tx.HoTen AS TenTaiXe,
-      tx.SoDienThoai AS SoDienThoaiTaiXe,
-      tx.TrangThaiTaiXe,
-      nv.HoTen AS TenNhanVien,
-      COUNT(ct.MaChiTiet) AS SoDiemDonTra,
-      COUNT(DISTINCT ct.MaVe) AS SoKhach,
-      ISNULL(SUM(v.SoLuongGhe), 0) AS TongGhe
-    FROM LoTrinhTrungChuyen lt
-    JOIN XeTrungChuyen x ON x.MaXe = lt.MaXe
-    JOIN TaiXe tx ON tx.MaTaiXe = lt.MaTaiXe
-    JOIN NhanVienDieuPhoi nv ON nv.MaNhanVien = lt.MaNhanVien
-    LEFT JOIN ChiTietLoTrinh ct ON ct.MaLoTrinh = lt.MaLoTrinh
-    LEFT JOIN VeTrungChuyen v ON v.MaVe = ct.MaVe
-    WHERE 1 = 1
-      ${whereClause}
-    GROUP BY
-      lt.MaLoTrinh,
-      lt.ThoiGianBatDau,
-      lt.ThoiGianKetThuc,
-      lt.LoTrinhDuKien,
-      lt.GhiChu,
-      lt.TrangThaiLoTrinh,
-      lt.MaXe,
-      lt.MaTaiXe,
-      lt.MaNhanVien,
-      x.BienSo,
-      x.LoaiXe,
-      x.SoCho,
-      x.TrangThaiXe,
-      tx.HoTen,
-      tx.SoDienThoai,
-      tx.TrangThaiTaiXe,
-      nv.HoTen
-    ORDER BY lt.ThoiGianBatDau DESC, lt.MaLoTrinh DESC
-  `);
+  const result = await query(
+    `
+      SELECT
+        lt.MaLoTrinh,
+        lt.ThoiGianBatDau,
+        lt.ThoiGianKetThuc,
+        lt.LoTrinhDuKien,
+        lt.GhiChu,
+        lt.TrangThaiLoTrinh,
+        lt.MaXe,
+        lt.MaTaiXe,
+        lt.MaNhanVien,
+        x.BienSo,
+        x.LoaiXe,
+        x.SoCho,
+        x.TrangThaiXe,
+        tx.HoTen AS TenTaiXe,
+        tx.SoDienThoai AS SoDienThoaiTaiXe,
+        tx.TrangThaiTaiXe,
+        nv.HoTen AS TenNhanVien,
+        COUNT(ct.MaChiTiet) AS SoDiemDonTra,
+        COUNT(DISTINCT ct.MaVe) AS SoKhach,
+        COALESCE(SUM(v.SoLuongGhe), 0) AS TongGhe
+      FROM LoTrinhTrungChuyen lt
+      JOIN XeTrungChuyen x ON x.MaXe = lt.MaXe
+      JOIN TaiXe tx ON tx.MaTaiXe = lt.MaTaiXe
+      JOIN NhanVienDieuPhoi nv ON nv.MaNhanVien = lt.MaNhanVien
+      LEFT JOIN ChiTietLoTrinh ct ON ct.MaLoTrinh = lt.MaLoTrinh
+      LEFT JOIN VeTrungChuyen v ON v.MaVe = ct.MaVe
+      WHERE 1 = 1
+        ${whereClause}
+      GROUP BY
+        lt.MaLoTrinh,
+        lt.ThoiGianBatDau,
+        lt.ThoiGianKetThuc,
+        lt.LoTrinhDuKien,
+        lt.GhiChu,
+        lt.TrangThaiLoTrinh,
+        lt.MaXe,
+        lt.MaTaiXe,
+        lt.MaNhanVien,
+        x.BienSo,
+        x.LoaiXe,
+        x.SoCho,
+        x.TrangThaiXe,
+        tx.HoTen,
+        tx.SoDienThoai,
+        tx.TrangThaiTaiXe,
+        nv.HoTen
+      ORDER BY lt.ThoiGianBatDau DESC, lt.MaLoTrinh DESC
+    `,
+    params,
+    client
+  );
 
-  return routeId != null ? result.recordset[0] || null : result.recordset;
+  return routeId != null ? result.rows[0] || null : result.rows;
 }
 
-async function loadRouteStops(db, routeId) {
-  const result = await db
-    .request()
-    .input('routeId', sql.Int, routeId)
-    .query(`
+async function loadRouteStops(client, routeId) {
+  const result = await query(
+    `
       SELECT
         ct.MaChiTiet,
         ct.ThuTuDonTra,
@@ -273,14 +276,17 @@ async function loadRouteStops(db, routeId) {
       FROM ChiTietLoTrinh ct
       JOIN VeTrungChuyen v ON v.MaVe = ct.MaVe
       JOIN KhachHang k ON k.MaKhachHang = v.MaKhachHang
-      WHERE ct.MaLoTrinh = @routeId
+      WHERE ct.MaLoTrinh = $1
       ORDER BY ct.ThuTuDonTra, ct.MaChiTiet
-    `);
+    `,
+    [routeId],
+    client
+  );
 
-  return result.recordset.map(withResolvedStopCoordinates);
+  return result.rows.map(withResolvedStopCoordinates);
 }
 
-async function syncResources(db, route, routeStatus) {
+async function syncResources(client, route, routeStatus) {
   let vehicleStatus = 'Rảnh';
   let driverStatus = 'Rảnh';
 
@@ -295,27 +301,9 @@ async function syncResources(db, route, routeStatus) {
     driverStatus = route.TrangThaiTaiXe || 'Rảnh';
   }
 
-  await db
-    .request()
-    .input('MaXe', sql.Int, route.MaXe)
-    .input('TrangThaiXe', sql.NVarChar(30), vehicleStatus)
-    .query(`
-      UPDATE XeTrungChuyen
-      SET TrangThaiXe = @TrangThaiXe
-      WHERE MaXe = @MaXe
-    `);
+  await query('UPDATE XeTrungChuyen SET TrangThaiXe = $1 WHERE MaXe = $2', [vehicleStatus, route.MaXe], client);
+  await query('UPDATE TaiXe SET TrangThaiTaiXe = $1 WHERE MaTaiXe = $2', [driverStatus, route.MaTaiXe], client);
 
-  await db
-    .request()
-    .input('MaTaiXe', sql.Int, route.MaTaiXe)
-    .input('TrangThaiTaiXe', sql.NVarChar(30), driverStatus)
-    .query(`
-      UPDATE TaiXe
-      SET TrangThaiTaiXe = @TrangThaiTaiXe
-      WHERE MaTaiXe = @MaTaiXe
-    `);
-
-  // Sync sang external_* để danh sách chọn xe/tài xế (UI) phản ánh đúng trạng thái.
   const externalVehicleAvailability =
     vehicleStatus === 'Đã phân công'
       ? 'ASSIGNED'
@@ -334,31 +322,31 @@ async function syncResources(db, route, routeStatus) {
           ? 'OFF'
           : 'AVAILABLE';
 
-  await db
-    .request()
-    .input('MaXe', sql.Int, route.MaXe)
-    .input('availability', sql.NVarChar(20), externalVehicleAvailability)
-    .query(`
+  await query(
+    `
       UPDATE external_vehicles
-      SET availability_status = @availability,
-          updated_at = GETDATE()
-      WHERE legacy_ma_xe = @MaXe
-    `);
+      SET availability_status = $1,
+          updated_at = NOW()
+      WHERE legacy_ma_xe = $2
+    `,
+    [externalVehicleAvailability, route.MaXe],
+    client
+  );
 
-  await db
-    .request()
-    .input('MaTaiXe', sql.Int, route.MaTaiXe)
-    .input('availability', sql.NVarChar(20), externalDriverAvailability)
-    .query(`
+  await query(
+    `
       UPDATE external_drivers
-      SET availability_status = @availability,
-          updated_at = GETDATE()
-      WHERE legacy_ma_tai_xe = @MaTaiXe
-    `);
+      SET availability_status = $1,
+          updated_at = NOW()
+      WHERE legacy_ma_tai_xe = $2
+    `,
+    [externalDriverAvailability, route.MaTaiXe],
+    client
+  );
 }
 
-async function syncTicketsForCancelledRoute(db, routeId) {
-  const stops = await loadRouteStops(db, routeId);
+async function syncTicketsForCancelledRoute(client, routeId) {
+  const stops = await loadRouteStops(client, routeId);
 
   for (const stop of stops) {
     let ticketStatus = 'Cần trung chuyển';
@@ -370,19 +358,14 @@ async function syncTicketsForCancelledRoute(db, routeId) {
       ticketStatus = 'Hủy';
     }
 
-    await db
-      .request()
-      .input('MaVe', sql.Int, stop.MaVe)
-      .input('TrangThaiVe', sql.NVarChar(50), ticketStatus)
-      .query(`
-        UPDATE VeTrungChuyen
-        SET TrangThaiVe = @TrangThaiVe
-        WHERE MaVe = @MaVe
-      `);
+    await query(
+      'UPDATE VeTrungChuyen SET TrangThaiVe = $1 WHERE MaVe = $2',
+      [ticketStatus, stop.MaVe],
+      client
+    );
   }
 }
 
-// GET /routes - danh sách lộ trình
 router.get('/', async (req, res) => {
   const { status } = req.query;
 
@@ -391,8 +374,7 @@ router.get('/', async (req, res) => {
   }
 
   try {
-    const pool = await getPool();
-    let rows = await loadRouteSummary(pool);
+    let rows = await loadRouteSummary();
 
     if (status) {
       rows = rows.filter((row) => row.TrangThaiLoTrinh === status);
@@ -405,7 +387,6 @@ router.get('/', async (req, res) => {
   }
 });
 
-// GET /routes/by-driver/:driverId - danh sách lộ trình theo tài xế
 router.get('/by-driver/:driverId', async (req, res) => {
   const driverId = Number(req.params.driverId);
   const { status } = req.query;
@@ -419,10 +400,8 @@ router.get('/by-driver/:driverId', async (req, res) => {
   }
 
   try {
-    const pool = await getPool();
-    const request = pool.request().input('driverId', sql.Int, driverId);
-
-    let query = `
+    const params = [driverId];
+    let sqlText = `
       SELECT
         lt.MaLoTrinh,
         lt.ThoiGianBatDau,
@@ -437,20 +416,20 @@ router.get('/by-driver/:driverId', async (req, res) => {
         x.SoCho,
         COUNT(ct.MaChiTiet) AS SoDiemDonTra,
         COUNT(DISTINCT ct.MaVe) AS SoKhach,
-        ISNULL(SUM(v.SoLuongGhe), 0) AS TongGhe
+        COALESCE(SUM(v.SoLuongGhe), 0) AS TongGhe
       FROM LoTrinhTrungChuyen lt
       JOIN XeTrungChuyen x ON x.MaXe = lt.MaXe
       LEFT JOIN ChiTietLoTrinh ct ON ct.MaLoTrinh = lt.MaLoTrinh
       LEFT JOIN VeTrungChuyen v ON v.MaVe = ct.MaVe
-      WHERE lt.MaTaiXe = @driverId
+      WHERE lt.MaTaiXe = $1
     `;
 
     if (status) {
-      request.input('status', sql.NVarChar(50), status);
-      query += ' AND lt.TrangThaiLoTrinh = @status';
+      params.push(status);
+      sqlText += ` AND lt.TrangThaiLoTrinh = $${params.length}`;
     }
 
-    query += `
+    sqlText += `
       GROUP BY
         lt.MaLoTrinh,
         lt.ThoiGianBatDau,
@@ -466,8 +445,8 @@ router.get('/by-driver/:driverId', async (req, res) => {
       ORDER BY lt.ThoiGianBatDau DESC, lt.MaLoTrinh DESC
     `;
 
-    const result = await request.query(query);
-    return sendSuccess(res, result.recordset, 'Lấy danh sách chuyến cho tài xế thành công');
+    const result = await query(sqlText, params);
+    return sendSuccess(res, result.rows, 'Lấy danh sách chuyến cho tài xế thành công');
   } catch (err) {
     console.error('Get routes by driver error:', err);
     return sendError(res, 500, 'Lỗi lấy danh sách chuyến cho tài xế', 'SERVER_ERROR', {
@@ -476,7 +455,6 @@ router.get('/by-driver/:driverId', async (req, res) => {
   }
 });
 
-// GET /routes/:id - chi tiết lộ trình + danh sách điểm đón
 router.get('/:id', async (req, res) => {
   const routeId = Number(req.params.id);
 
@@ -485,8 +463,7 @@ router.get('/:id', async (req, res) => {
   }
 
   try {
-    const pool = await getPool();
-    const route = await loadRouteSummary(pool, routeId);
+    const route = await loadRouteSummary(null, routeId);
 
     if (!route) {
       return sendError(res, 404, 'Không tìm thấy lộ trình', 'NOT_FOUND');
@@ -496,8 +473,8 @@ router.get('/:id', async (req, res) => {
       return sendError(res, 403, 'Bạn không có quyền xem lộ trình này', 'FORBIDDEN');
     }
 
-    const stops = await loadRouteStops(pool, routeId);
-    const syncState = await loadRouteSyncForResponse(pool, routeId);
+    const stops = await loadRouteStops(null, routeId);
+    const syncState = await loadRouteSyncForResponse(null, routeId);
 
     return sendSuccess(
       res,
@@ -515,40 +492,38 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// POST /routes/:id/incident - báo cáo sự cố chuyến
 router.get('/:id/sync-events', async (req, res) => {
   const routeId = Number(req.params.id);
   const sinceId = req.query.sinceId;
   const limit = req.query.limit;
 
   if (!Number.isInteger(routeId)) {
-    return sendError(res, 400, 'MÃ£ lá»™ trÃ¬nh khÃ´ng há»£p lá»‡', 'VALIDATION_ERROR');
+    return sendError(res, 400, 'Mã lộ trình không hợp lệ', 'VALIDATION_ERROR');
   }
 
   try {
-    const pool = await getPool();
-    const route = await loadRouteSummary(pool, routeId);
+    const route = await loadRouteSummary(null, routeId);
 
     if (!route) {
-      return sendError(res, 404, 'KhÃ´ng tÃ¬m tháº¥y lá»™ trÃ¬nh', 'NOT_FOUND');
+      return sendError(res, 404, 'Không tìm thấy lộ trình', 'NOT_FOUND');
     }
 
     if (!canAccessRoute(req, route)) {
-      return sendError(res, 403, 'Báº¡n khÃ´ng cÃ³ quyá»n xem cáº­p nháº­t lá»™ trÃ¬nh nÃ y', 'FORBIDDEN');
+      return sendError(res, 403, 'Bạn không có quyền xem cập nhật lộ trình này', 'FORBIDDEN');
     }
 
-    const syncState = await loadRouteSyncForResponse(pool, routeId, { sinceId, limit });
+    const syncState = await loadRouteSyncForResponse(null, routeId, { sinceId, limit });
     return sendSuccess(
       res,
       {
         routeId,
         sync: buildRouteSyncPayload(routeId, syncState)
       },
-      'Láº¥y sá»± kiá»‡n Ä‘á»“ng bá»™ lá»™ trÃ¬nh thÃ nh cÃ´ng'
+      'Lấy sự kiện đồng bộ lộ trình thành công'
     );
   } catch (err) {
     console.error('Get route sync events error:', err);
-    return sendError(res, 500, 'Lá»—i láº¥y sá»± kiá»‡n Ä‘á»“ng bá»™ lá»™ trÃ¬nh', 'SERVER_ERROR', {
+    return sendError(res, 500, 'Lỗi lấy sự kiện đồng bộ lộ trình', 'SERVER_ERROR', {
       detail: err.message
     });
   }
@@ -568,8 +543,7 @@ router.post('/:id/incident', async (req, res) => {
   }
 
   try {
-    const pool = await getPool();
-    const route = await loadRouteSummary(pool, routeId);
+    const route = await loadRouteSummary(null, routeId);
 
     if (!route) {
       return sendError(res, 404, 'Không tìm thấy lộ trình', 'NOT_FOUND');
@@ -579,39 +553,32 @@ router.post('/:id/incident', async (req, res) => {
       return sendError(res, 403, 'Bạn không có quyền báo cáo sự cố cho lộ trình này', 'FORBIDDEN');
     }
 
-    await pool
-      .request()
-      .input('routeId', sql.Int, routeId)
-      .input('TrangThaiLoTrinh', sql.NVarChar(50), 'Đang gặp sự cố')
-      .query(`
+    await query(
+      `
         UPDATE LoTrinhTrungChuyen
-        SET TrangThaiLoTrinh = @TrangThaiLoTrinh
-        WHERE MaLoTrinh = @routeId
-      `);
+        SET TrangThaiLoTrinh = $1
+        WHERE MaLoTrinh = $2
+      `,
+      ['Đang gặp sự cố', routeId]
+    );
 
-    await syncResources(pool, route, 'Đang gặp sự cố');
-    await syncRoutePlanProjection(pool, routeId, {
+    await syncResources(null, route, 'Đang gặp sự cố');
+    await syncRoutePlanProjection(null, routeId, {
       eventType: 'INCIDENT_REPORTED',
       message: String(description).trim(),
       payload: { location: location ? String(location).trim() : null },
       createdBy
     });
 
-    await pool
-      .request()
-      .input('MaLoTrinh', sql.Int, routeId)
-      .input(
-        'ViTriHienTai',
-        sql.NVarChar(255),
-        location ? String(location).trim() : `Sự cố: ${String(description).trim()}`
-      )
-      .input('TrangThai', sql.NVarChar(50), 'Đang gặp sự cố')
-      .query(`
+    await query(
+      `
         INSERT INTO TheoDoiTrangThai (ViTriHienTai, TrangThai, MaLoTrinh)
-        VALUES (@ViTriHienTai, @TrangThai, @MaLoTrinh)
-      `);
+        VALUES ($1, $2, $3)
+      `,
+      [location ? String(location).trim() : `Sự cố: ${String(description).trim()}`, 'Đang gặp sự cố', routeId]
+    );
 
-    const updatedRoute = await loadRouteSummary(pool, routeId);
+    const updatedRoute = await loadRouteSummary(null, routeId);
 
     return sendSuccess(
       res,
@@ -626,7 +593,6 @@ router.post('/:id/incident', async (req, res) => {
   }
 });
 
-// PATCH /routes/:routeId/stops/:stopId/status - cập nhật trạng thái đón/trả khách
 router.patch('/:routeId/stops/:stopId/status', async (req, res) => {
   const routeId = Number(req.params.routeId);
   const stopId = Number(req.params.stopId);
@@ -647,8 +613,7 @@ router.patch('/:routeId/stops/:stopId/status', async (req, res) => {
   }
 
   try {
-    const pool = await getPool();
-    const route = await loadRouteSummary(pool, routeId);
+    const route = await loadRouteSummary(null, routeId);
 
     if (!route) {
       return sendError(res, 404, 'Không tìm thấy lộ trình', 'NOT_FOUND');
@@ -667,32 +632,30 @@ router.patch('/:routeId/stops/:stopId/status', async (req, res) => {
       );
     }
 
-    const stopResult = await pool
-      .request()
-      .input('routeId', sql.Int, routeId)
-      .input('stopId', sql.Int, stopId)
-      .query(`
-        SELECT TOP 1 *
+    const stopResult = await query(
+      `
+        SELECT *
         FROM ChiTietLoTrinh
-        WHERE MaLoTrinh = @routeId AND MaChiTiet = @stopId
-      `);
+        WHERE MaLoTrinh = $1 AND MaChiTiet = $2
+        LIMIT 1
+      `,
+      [routeId, stopId]
+    );
 
-    if (stopResult.recordset.length === 0) {
+    if (stopResult.rows.length === 0) {
       return sendError(res, 404, 'Không tìm thấy điểm đón/trả', 'NOT_FOUND');
     }
 
-    const stop = stopResult.recordset[0];
+    const stop = stopResult.rows[0];
 
-    await pool
-      .request()
-      .input('routeId', sql.Int, routeId)
-      .input('stopId', sql.Int, stopId)
-      .input('TrangThaiKhach', sql.NVarChar(50), status)
-      .query(`
+    await query(
+      `
         UPDATE ChiTietLoTrinh
-        SET TrangThaiKhach = @TrangThaiKhach
-        WHERE MaLoTrinh = @routeId AND MaChiTiet = @stopId
-      `);
+        SET TrangThaiKhach = $1
+        WHERE MaLoTrinh = $2 AND MaChiTiet = $3
+      `,
+      [status, routeId, stopId]
+    );
 
     let ticketStatus = 'Đã có xe trung chuyển';
     if (status === 'Đã đón khách') {
@@ -703,35 +666,33 @@ router.patch('/:routeId/stops/:stopId/status', async (req, res) => {
       ticketStatus = 'Hủy';
     }
 
-    await pool
-      .request()
-      .input('MaVe', sql.Int, stop.MaVe)
-      .input('TrangThaiVe', sql.NVarChar(50), ticketStatus)
-      .query(`
+    await query(
+      `
         UPDATE VeTrungChuyen
-        SET TrangThaiVe = @TrangThaiVe
-        WHERE MaVe = @MaVe
-      `);
+        SET TrangThaiVe = $1
+        WHERE MaVe = $2
+      `,
+      [ticketStatus, stop.MaVe]
+    );
 
-    const allStops = await loadRouteStops(pool, routeId);
+    const allStops = await loadRouteStops(null, routeId);
     const allDone = allStops.length > 0 && allStops.every((row) => DONE_STOP_STATUSES.has(String(row.TrangThaiKhach || '').trim()));
 
     if (allDone) {
-      await pool
-        .request()
-        .input('routeId', sql.Int, routeId)
-        .input('ThoiGianKetThuc', sql.DateTime, new Date())
-        .query(`
+      await query(
+        `
           UPDATE LoTrinhTrungChuyen
-          SET TrangThaiLoTrinh = N'Hoàn thành',
-              ThoiGianKetThuc = @ThoiGianKetThuc
-          WHERE MaLoTrinh = @routeId
-        `);
+          SET TrangThaiLoTrinh = 'Hoàn thành',
+              ThoiGianKetThuc = $1
+          WHERE MaLoTrinh = $2
+        `,
+        [new Date(), routeId]
+      );
 
-      await syncResources(pool, route, 'Hoàn thành');
+      await syncResources(null, route, 'Hoàn thành');
     }
 
-    await syncRoutePlanProjection(pool, routeId, {
+    await syncRoutePlanProjection(null, routeId, {
       eventType: 'STOP_STATUS_UPDATED',
       message: `Cập nhật điểm đón/trả ${stopId}`,
       payload: {
@@ -758,7 +719,6 @@ router.patch('/:routeId/stops/:stopId/status', async (req, res) => {
   }
 });
 
-// POST /routes - lập kế hoạch lộ trình trung chuyển
 router.post('/', async (req, res) => {
   const {
     MaXe,
@@ -798,15 +758,9 @@ router.post('/', async (req, res) => {
   }
 
   try {
-    const pool = await getPool();
-    const transaction = new sql.Transaction(pool);
-
-    await transaction.begin();
-
-    try {
-      const ticketRows = await new sql.Request(transaction)
-        .input('ids', sql.VarChar(sql.MAX), selectedTicketIds.join(','))
-        .query(`
+    const payload = await withTransaction(async (client) => {
+      const ticketRows = await query(
+        `
           SELECT
             v.MaVe,
             v.KhungGioTrungChuyen,
@@ -823,11 +777,14 @@ router.post('/', async (req, res) => {
             k.DiaChiTraLng
           FROM VeTrungChuyen v
           JOIN KhachHang k ON k.MaKhachHang = v.MaKhachHang
-          WHERE v.MaVe IN (SELECT TRY_CAST(value AS INT) FROM STRING_SPLIT(@ids, ','))
+          WHERE v.MaVe = ANY($1::int[])
           ORDER BY k.DiaChiDon, k.DiaChiTra, v.MaVe
-        `);
+        `,
+        [selectedTicketIds],
+        client
+      );
 
-      const selectedTickets = ticketRows.recordset;
+      const selectedTickets = ticketRows.rows;
 
       if (selectedTickets.length !== selectedTicketIds.length) {
         throw Object.assign(new Error('Có vé không tồn tại hoặc đã bị loại khỏi hệ thống'), { status: 400 });
@@ -840,112 +797,117 @@ router.post('/', async (req, res) => {
 
       const totalSeats = selectedTickets.reduce((sum, ticket) => sum + Number(ticket.SoLuongGhe || 0), 0);
 
-      const vehicleResult = await new sql.Request(transaction)
-        .input('MaXe', sql.Int, Number(MaXe))
-        .query('SELECT * FROM XeTrungChuyen WHERE MaXe = @MaXe');
+      const vehicleResult = await query('SELECT * FROM XeTrungChuyen WHERE MaXe = $1 LIMIT 1', [Number(MaXe)], client);
 
-      if (vehicleResult.recordset.length === 0) {
+      if (vehicleResult.rows.length === 0) {
         throw Object.assign(new Error('Xe không tồn tại'), { status: 400 });
       }
 
-      const vehicle = vehicleResult.recordset[0];
+      const vehicle = vehicleResult.rows[0];
       if (totalSeats > Number(vehicle.SoCho)) {
         throw Object.assign(new Error('Hành khách vượt quá sức chứa xe'), { status: 422 });
       }
 
-      const vehicleConflict = await new sql.Request(transaction)
-        .input('MaXe', sql.Int, Number(MaXe))
-        .query(`
-          SELECT TOP 1 MaLoTrinh
+      const vehicleConflict = await query(
+        `
+          SELECT MaLoTrinh
           FROM LoTrinhTrungChuyen
-          WHERE MaXe = @MaXe
-            AND TrangThaiLoTrinh IN (N'Chưa thực hiện', N'Đang thực hiện', N'Đang gặp sự cố')
-        `);
+          WHERE MaXe = $1
+            AND TrangThaiLoTrinh IN ('Chưa thực hiện', 'Đang thực hiện', 'Đang gặp sự cố')
+          LIMIT 1
+        `,
+        [Number(MaXe)],
+        client
+      );
 
-      if (vehicleConflict.recordset.length > 0) {
+      if (vehicleConflict.rows.length > 0) {
         throw Object.assign(new Error('Xe đang được phân công cho lộ trình khác'), { status: 409 });
       }
 
-      const driverResult = await new sql.Request(transaction)
-        .input('MaTaiXe', sql.Int, Number(MaTaiXe))
-        .query('SELECT * FROM TaiXe WHERE MaTaiXe = @MaTaiXe');
+      const driverResult = await query('SELECT * FROM TaiXe WHERE MaTaiXe = $1 LIMIT 1', [Number(MaTaiXe)], client);
 
-      if (driverResult.recordset.length === 0) {
+      if (driverResult.rows.length === 0) {
         throw Object.assign(new Error('Tài xế không tồn tại'), { status: 400 });
       }
 
-      const driver = driverResult.recordset[0];
-      const driverConflict = await new sql.Request(transaction)
-        .input('MaTaiXe', sql.Int, Number(MaTaiXe))
-        .query(`
-          SELECT TOP 1 MaLoTrinh
+      const driver = driverResult.rows[0];
+      const driverConflict = await query(
+        `
+          SELECT MaLoTrinh
           FROM LoTrinhTrungChuyen
-          WHERE MaTaiXe = @MaTaiXe
-            AND TrangThaiLoTrinh IN (N'Chưa thực hiện', N'Đang thực hiện', N'Đang gặp sự cố')
-        `);
+          WHERE MaTaiXe = $1
+            AND TrangThaiLoTrinh IN ('Chưa thực hiện', 'Đang thực hiện', 'Đang gặp sự cố')
+          LIMIT 1
+        `,
+        [Number(MaTaiXe)],
+        client
+      );
 
-      if (driverConflict.recordset.length > 0) {
+      if (driverConflict.rows.length > 0) {
         throw Object.assign(new Error('Tài xế đang được phân công cho lộ trình khác'), { status: 409 });
       }
 
-      const dispatcherResult = await new sql.Request(transaction)
-        .input('MaNhanVien', sql.Int, dispatcherId)
-        .query('SELECT * FROM NhanVienDieuPhoi WHERE MaNhanVien = @MaNhanVien');
+      const dispatcherResult = await query('SELECT * FROM NhanVienDieuPhoi WHERE MaNhanVien = $1 LIMIT 1', [dispatcherId], client);
 
-      if (dispatcherResult.recordset.length === 0) {
+      if (dispatcherResult.rows.length === 0) {
         throw Object.assign(new Error('Nhân viên điều phối không tồn tại'), { status: 400 });
       }
 
       const routePlanText = String(LoTrinhDuKien || '').trim() || buildRoutePlanText(selectedTickets);
-      const routeInsert = await new sql.Request(transaction)
-        .input('ThoiGianBatDau', sql.DateTime, routeStart)
-        .input('ThoiGianKetThuc', sql.DateTime, routeEnd)
-        .input('LoTrinhDuKien', sql.NVarChar(sql.MAX), routePlanText || null)
-        .input('GhiChu', sql.NVarChar(sql.MAX), GhiChu ? String(GhiChu).trim() : null)
-        .input('TrangThaiLoTrinh', sql.NVarChar(30), 'Chưa thực hiện')
-        .input('MaXe', sql.Int, Number(MaXe))
-        .input('MaTaiXe', sql.Int, Number(MaTaiXe))
-        .input('MaNhanVien', sql.Int, dispatcherId)
-        .query(`
+      const routeInsert = await query(
+        `
           INSERT INTO LoTrinhTrungChuyen
             (ThoiGianBatDau, ThoiGianKetThuc, LoTrinhDuKien, GhiChu, TrangThaiLoTrinh, MaXe, MaTaiXe, MaNhanVien)
-          OUTPUT INSERTED.MaLoTrinh
-          VALUES (@ThoiGianBatDau, @ThoiGianKetThuc, @LoTrinhDuKien, @GhiChu, @TrangThaiLoTrinh, @MaXe, @MaTaiXe, @MaNhanVien)
-        `);
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+          RETURNING MaLoTrinh
+        `,
+        [
+          routeStart,
+          routeEnd,
+          routePlanText || null,
+          GhiChu ? String(GhiChu).trim() : null,
+          'Chưa thực hiện',
+          Number(MaXe),
+          Number(MaTaiXe),
+          dispatcherId
+        ],
+        client
+      );
 
-      const routeId = routeInsert.recordset[0].MaLoTrinh;
+      const routeId = routeInsert.rows[0].MaLoTrinh;
 
       for (const [index, ticket] of selectedTickets.entries()) {
         const expectedPickupTime = new Date(routeStart.getTime() + index * 10 * 60 * 1000);
         const pickupCoordinates = resolveCoordinates(ticket.DiaChiDon, ticket.DiaChiDonLat, ticket.DiaChiDonLng);
         const dropoffCoordinates = resolveCoordinates(ticket.DiaChiTra, ticket.DiaChiTraLat, ticket.DiaChiTraLng);
 
-        await new sql.Request(transaction)
-          .input('ThuTuDonTra', sql.Int, index + 1)
-          .input('DiemDon', sql.NVarChar(255), ticket.DiaChiDon)
-          .input('DiemDonLat', sql.Decimal(10, 7), pickupCoordinates?.lat ?? null)
-          .input('DiemDonLng', sql.Decimal(10, 7), pickupCoordinates?.lng ?? null)
-          .input('DiemTra', sql.NVarChar(255), ticket.DiaChiTra)
-          .input('DiemTraLat', sql.Decimal(10, 7), dropoffCoordinates?.lat ?? null)
-          .input('DiemTraLng', sql.Decimal(10, 7), dropoffCoordinates?.lng ?? null)
-          .input('ThoiGianDonDuKien', sql.DateTime, expectedPickupTime)
-          .input('TrangThaiKhach', sql.NVarChar(50), null)
-          .input('MaLoTrinh', sql.Int, routeId)
-          .input('MaVe', sql.Int, ticket.MaVe)
-          .query(`
+        await query(
+          `
             INSERT INTO ChiTietLoTrinh
               (ThuTuDonTra, DiemDon, DiemDonLat, DiemDonLng, DiemTra, DiemTraLat, DiemTraLng, ThoiGianDonDuKien, TrangThaiKhach, MaLoTrinh, MaVe)
-            VALUES (@ThuTuDonTra, @DiemDon, @DiemDonLat, @DiemDonLng, @DiemTra, @DiemTraLat, @DiemTraLng, @ThoiGianDonDuKien, @TrangThaiKhach, @MaLoTrinh, @MaVe)
-          `);
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+          `,
+          [
+            index + 1,
+            ticket.DiaChiDon,
+            pickupCoordinates?.lat ?? null,
+            pickupCoordinates?.lng ?? null,
+            ticket.DiaChiTra,
+            dropoffCoordinates?.lat ?? null,
+            dropoffCoordinates?.lng ?? null,
+            expectedPickupTime,
+            null,
+            routeId,
+            ticket.MaVe
+          ],
+          client
+        );
 
-        await new sql.Request(transaction)
-          .input('MaVe', sql.Int, ticket.MaVe)
-          .input('TrangThaiVe', sql.NVarChar(50), 'Đã có xe trung chuyển')
-          .query(`
-            UPDATE VeTrungChuyen
-            SET TrangThaiVe = @TrangThaiVe
-            WHERE MaVe = @MaVe
-          `);
+        await query(
+          'UPDATE VeTrungChuyen SET TrangThaiVe = $1 WHERE MaVe = $2',
+          ['Đã có xe trung chuyển', ticket.MaVe],
+          client
+        );
       }
 
       const routeForSync = {
@@ -954,33 +916,25 @@ router.post('/', async (req, res) => {
         TrangThaiXe: vehicle.TrangThaiXe,
         TrangThaiTaiXe: driver.TrangThaiTaiXe
       };
-      await syncResources(transaction, routeForSync, 'Chưa thực hiện');
-      await syncRoutePlanProjection(transaction, routeId, {
+      await syncResources(client, routeForSync, 'Chưa thực hiện');
+      await syncRoutePlanProjection(client, routeId, {
         eventType: 'ROUTE_CREATED',
         message: 'Tạo lộ trình từ API /routes',
         payload: { ticketIds: selectedTicketIds },
         createdBy
       });
 
-      await transaction.commit();
+      const route = await loadRouteSummary(client, routeId);
+      const stops = await loadRouteStops(client, routeId);
 
-      const route = await loadRouteSummary(pool, routeId);
-      const stops = await loadRouteStops(pool, routeId);
+      return {
+        route,
+        stops,
+        ticketIds: selectedTicketIds
+      };
+    });
 
-      return sendSuccess(
-        res,
-        {
-          route,
-          stops,
-          ticketIds: selectedTicketIds
-        },
-        'Tạo lộ trình thành công',
-        201
-      );
-    } catch (innerError) {
-      await transaction.rollback();
-      throw innerError;
-    }
+    return sendSuccess(res, payload, 'Tạo lộ trình thành công', 201);
   } catch (err) {
     console.error('Create route error:', err);
     return sendError(
@@ -993,7 +947,6 @@ router.post('/', async (req, res) => {
   }
 });
 
-// PUT /routes/:id - cập nhật thông tin lộ trình
 router.put('/:id', async (req, res) => {
   const routeId = Number(req.params.id);
   const { ThoiGianBatDau, ThoiGianKetThuc, LoTrinhDuKien, TrangThaiLoTrinh, GhiChu } = req.body || {};
@@ -1034,8 +987,7 @@ router.put('/:id', async (req, res) => {
   }
 
   try {
-    const pool = await getPool();
-    const current = await loadRouteSummary(pool, routeId);
+    const current = await loadRouteSummary(null, routeId);
 
     if (!current) {
       return sendError(res, 404, 'Không tìm thấy lộ trình', 'NOT_FOUND');
@@ -1055,7 +1007,7 @@ router.put('/:id', async (req, res) => {
     }
 
     if (requestedStatus === 'Hoàn thành') {
-      const stops = await loadRouteStops(pool, routeId);
+      const stops = await loadRouteStops(null, routeId);
       const allDone = stops.length > 0 && stops.every((row) => DONE_STOP_STATUSES.has(String(row.TrangThaiKhach || '').trim()));
       if (!allDone) {
         return sendError(
@@ -1133,49 +1085,44 @@ router.put('/:id', async (req, res) => {
     const isRunningRouteUpdate =
       current.TrangThaiLoTrinh === 'Đang thực hiện' || nextStatus === 'Đang thực hiện';
 
-    await pool
-      .request()
-      .input('routeId', sql.Int, routeId)
-      .input('ThoiGianBatDau', sql.DateTime, nextStartTime)
-      .input('ThoiGianKetThuc', sql.DateTime, nextEndTime)
-      .input('LoTrinhDuKien', sql.NVarChar(sql.MAX), nextRoutePlan)
-      .input('GhiChu', sql.NVarChar(sql.MAX), nextNote)
-      .input('TrangThaiLoTrinh', sql.NVarChar(50), nextStatus)
-      .query(`
+    await query(
+      `
         UPDATE LoTrinhTrungChuyen
-        SET ThoiGianBatDau = @ThoiGianBatDau,
-            ThoiGianKetThuc = @ThoiGianKetThuc,
-            LoTrinhDuKien = @LoTrinhDuKien,
-            GhiChu = @GhiChu,
-            TrangThaiLoTrinh = @TrangThaiLoTrinh
-        WHERE MaLoTrinh = @routeId
-      `);
+        SET ThoiGianBatDau = $1,
+            ThoiGianKetThuc = $2,
+            LoTrinhDuKien = $3,
+            GhiChu = $4,
+            TrangThaiLoTrinh = $5
+        WHERE MaLoTrinh = $6
+      `,
+      [nextStartTime, nextEndTime, nextRoutePlan, nextNote, nextStatus, routeId]
+    );
 
     if (nextStatus === 'Đang thực hiện' && current.TrangThaiLoTrinh !== 'Đang thực hiện') {
-      await pool
-        .request()
-        .input('routeId', sql.Int, routeId)
-        .query(`
+      await query(
+        `
           UPDATE VeTrungChuyen
-          SET TrangThaiVe = N'Đang trung chuyển'
-          WHERE MaVe IN (SELECT MaVe FROM ChiTietLoTrinh WHERE MaLoTrinh = @routeId)
-        `);
+          SET TrangThaiVe = 'Đang trung chuyển'
+          WHERE MaVe IN (SELECT MaVe FROM ChiTietLoTrinh WHERE MaLoTrinh = $1)
+        `,
+        [routeId]
+      );
     } else if (nextStatus === 'Chưa thực hiện') {
-      await pool
-        .request()
-        .input('routeId', sql.Int, routeId)
-        .query(`
+      await query(
+        `
           UPDATE VeTrungChuyen
-          SET TrangThaiVe = N'Đã có xe trung chuyển'
-          WHERE MaVe IN (SELECT MaVe FROM ChiTietLoTrinh WHERE MaLoTrinh = @routeId)
-            AND TrangThaiVe NOT IN (N'Hoàn tất trung chuyển', N'Hủy')
-        `);
+          SET TrangThaiVe = 'Đã có xe trung chuyển'
+          WHERE MaVe IN (SELECT MaVe FROM ChiTietLoTrinh WHERE MaLoTrinh = $1)
+            AND TrangThaiVe NOT IN ('Hoàn tất trung chuyển', 'Hủy')
+        `,
+        [routeId]
+      );
     } else if (nextStatus === 'Đã hủy' && current.TrangThaiLoTrinh !== 'Đã hủy') {
-      await syncTicketsForCancelledRoute(pool, routeId);
+      await syncTicketsForCancelledRoute(null, routeId);
     }
 
-    await syncResources(pool, current, nextStatus);
-    await syncRoutePlanProjection(pool, routeId, {
+    await syncResources(null, current, nextStatus);
+    await syncRoutePlanProjection(null, routeId, {
       eventType: 'ROUTE_UPDATED',
       message: isRunningRouteUpdate
         ? 'Điều phối viên cập nhật lộ trình đang thực hiện'
@@ -1193,7 +1140,7 @@ router.put('/:id', async (req, res) => {
       createdBy
     });
 
-    const updatedRoute = await loadRouteSummary(pool, routeId);
+    const updatedRoute = await loadRouteSummary(null, routeId);
     return sendSuccess(res, updatedRoute, 'Cập nhật lộ trình thành công');
   } catch (err) {
     console.error('Update route error:', err);

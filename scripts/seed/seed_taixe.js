@@ -22,6 +22,13 @@ async function seed() {
         if (rTX.recordset.length === 0) throw new Error("Chưa có hồ sơ Tài xế liên kết với user taixe1.");
         const maTX = rTX.recordset[0].MaTaiXe;
 
+        // Xóa dữ liệu rác từ các lần chạy trước
+        console.log('Đang dọn dẹp dữ liệu cũ...');
+        await pool.request().query(`DELETE FROM ChiTietLoTrinh WHERE MaVe IN (SELECT MaVe FROM VeTrungChuyen WHERE MaKhachHang IN (SELECT MaKhachHang FROM KhachHang WHERE SoDienThoai LIKE '099888770%'))`);
+        await pool.request().query(`DELETE FROM VeTrungChuyen WHERE MaKhachHang IN (SELECT MaKhachHang FROM KhachHang WHERE SoDienThoai LIKE '099888770%')`);
+        await pool.request().query(`DELETE FROM KhachHang WHERE SoDienThoai LIKE '099888770%'`);
+        await pool.request().query(`DELETE FROM LoTrinhTrungChuyen WHERE GhiChu LIKE 'Mã chuyến: CX0000010%' OR GhiChu LIKE 'Mã chuyển: CX0000010%'`);
+
         // Cập nhật tên tài xế thành Nguyễn Văn A để đồng bộ UI
         await pool.request().input('maTX', sql.Int, maTX).query("UPDATE TaiXe SET HoTen = N'Nguyễn Văn A' WHERE MaTaiXe = @maTX");
 
@@ -29,7 +36,7 @@ async function seed() {
         let maXe;
         const rXe = await pool.request().query("SELECT MaXe FROM XeTrungChuyen WHERE BienSo = '43B-12345'");
         if (rXe.recordset.length === 0) {
-            const rx2 = await pool.request().query("INSERT INTO XeTrungChuyen (BienSo, LoaiXe, SoCho, TrangThaiXe) OUTPUT INSERTED.MaXe VALUES ('43B-12345', N'Xe 16 chỗ', 16, N'Rảnh')");
+            const rx2 = await pool.request().query("INSERT INTO XeTrungChuyen (BienSo, LoaiXe, SoCho, TrangThaiXe) VALUES ('43B-12345', N'Xe 16 chỗ', 16, N'Rảnh') RETURNING MaXe");
             maXe = rx2.recordset[0].MaXe;
         } else {
             maXe = rXe.recordset[0].MaXe;
@@ -37,7 +44,7 @@ async function seed() {
 
         // 3. Truy xuất Điều phối viên để thỏa mãn khóa ngoại
         let maNV = 1;
-        const rNV = await pool.request().query("SELECT TOP 1 MaNhanVien FROM NhanVienDieuPhoi");
+        const rNV = await pool.request().query("SELECT MaNhanVien FROM NhanVienDieuPhoi LIMIT 1");
         if (rNV.recordset.length > 0) maNV = rNV.recordset[0].MaNhanVien;
 
         // ===================================
@@ -74,8 +81,8 @@ async function seed() {
                 .input('maNV', sql.Int, maNV)
                 .query(`
                     INSERT INTO LoTrinhTrungChuyen (ThoiGianBatDau, LoTrinhDuKien, TrangThaiLoTrinh, GhiChu, MaXe, MaTaiXe, MaNhanVien)
-                    OUTPUT INSERTED.MaLoTrinh
                     VALUES (@tgbd, @loTrinh, N'Chưa thực hiện', @ghiChu, @maXe, @maTX, @maNV)
+                    RETURNING MaLoTrinh
                 `);
             const maLT = rInsert.recordset[0].MaLoTrinh;
             
@@ -86,8 +93,8 @@ async function seed() {
                 .input('name', sql.NVarChar, kName).input('phone', sql.VarChar, kPhone).input('tra', sql.NVarChar, diemTra)
                 .query(`
                     INSERT INTO KhachHang (TenKhachHang, SoDienThoai, DiaChiDon, DiaChiTra, TrangThai) 
-                    OUTPUT INSERTED.MaKhachHang 
                     VALUES (@name, @phone, N'Bến xe Trung tâm Đà Nẵng', @tra, N'Hoạt động')
+                    RETURNING MaKhachHang
                 `);
             const mKH = rKH.recordset[0].MaKhachHang;
             const pickupCoordinates = lookupAddressCoordinates('Bến xe Trung tâm Đà Nẵng');
@@ -110,8 +117,8 @@ async function seed() {
 
             const rVe = await pool.request().input('mKH', sql.Int, mKH).query(`
                 INSERT INTO VeTrungChuyen (KhungGioTrungChuyen, SoLuongGhe, TrangThaiVe, MaKhachHang) 
-                OUTPUT INSERTED.MaVe 
                 VALUES (N'Hôm nay', 1, N'Đã có xe', @mKH)
+                RETURNING MaVe
             `);
             const mVe = rVe.recordset[0].MaVe;
 

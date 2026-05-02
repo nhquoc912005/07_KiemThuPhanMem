@@ -16,7 +16,7 @@ const OTP_TEST_BASE_URL = 'http://localhost:5001/api/v1';
 const ACTIVE_ROUTE_STATUSES = ['Chưa thực hiện', 'Đang thực hiện', 'Đang gặp sự cố'];
 
 const dotenv = require(path.join(ROOT_DIR, 'backend', 'node_modules', 'dotenv'));
-const sql = require(path.join(ROOT_DIR, 'backend', 'node_modules', 'mssql'));
+const { sql } = require(path.join(ROOT_DIR, 'backend', 'src', 'db'));
 
 dotenv.config({ path: path.join(ROOT_DIR, 'backend', '.env') });
 
@@ -30,17 +30,7 @@ const summary = {
   highRiskAreas: []
 };
 
-const dbConfig = {
-  server: process.env.SQL_SERVER || 'localhost',
-  port: Number(process.env.SQL_PORT || 1433),
-  database: process.env.SQL_DATABASE,
-  user: process.env.SQL_USER,
-  password: process.env.SQL_PASSWORD,
-  options: {
-    encrypt: process.env.SQL_ENCRYPT === 'true',
-    trustServerCertificate: process.env.SQL_TRUST_SERVER_CERTIFICATE === 'true'
-  }
-};
+const dbConfig = {};
 
 const context = {
   dispatcher: {
@@ -278,8 +268,8 @@ async function seedRouteTestCustomer({ fullName, phone, pickup, dropoff, ticketS
   const customerResult = await dbQuery(
     `
       INSERT INTO KhachHang (TenKhachHang, SoDienThoai, DiaChiDon, DiaChiTra, TrangThai)
-      OUTPUT INSERTED.MaKhachHang
       VALUES (@fullName, @phone, @pickup, @dropoff, N'Hoạt động');
+      RETURNING MaKhachHang;
     `,
     {
       fullName: { type: sql.NVarChar(100), value: fullName },
@@ -304,7 +294,7 @@ async function seedRouteTestCustomer({ fullName, phone, pickup, dropoff, ticketS
         status,
         is_active
       )
-      VALUES (@customerId, @customerCode, @fullName, @phone, @pickup, @dropoff, N'ACTIVE', 1);
+      VALUES (@customerId, @customerCode, @fullName, @phone, @pickup, @dropoff, N'ACTIVE', TRUE);
     `,
     {
       customerId: { type: sql.Int, value: customerId },
@@ -319,8 +309,8 @@ async function seedRouteTestCustomer({ fullName, phone, pickup, dropoff, ticketS
   const ticketResult = await dbQuery(
     `
       INSERT INTO VeTrungChuyen (KhungGioTrungChuyen, SoLuongGhe, TrangThaiVe, MaKhachHang)
-      OUTPUT INSERTED.MaVe
       VALUES (@timeSlot, @ticketSeats, N'Cần trung chuyển', @customerId);
+      RETURNING MaVe;
     `,
     {
       timeSlot: { type: sql.NVarChar(100), value: timeSlot },
@@ -348,8 +338,8 @@ async function getAvailableResources() {
       tk.TenDangNhap
     FROM TaiXe tx
     INNER JOIN TaiKhoanNguoiDung tk ON tk.MaTaiKhoan = tx.MaTaiKhoan
-    WHERE ISNULL(tx.TrangThaiTaiXe, N'') = N'Rảnh'
-      AND ISNULL(tk.TrangThaiTaiKhoan, 0) = 1
+    WHERE COALESCE(tx.TrangThaiTaiXe, N'') = N'Rảnh'
+      AND COALESCE(tk.TrangThaiTaiKhoan, FALSE) = TRUE
       AND NOT EXISTS (
         SELECT 1
         FROM LoTrinhTrungChuyen lt
@@ -366,7 +356,7 @@ async function getAvailableResources() {
       x.SoCho,
       x.TrangThaiXe
     FROM XeTrungChuyen x
-    WHERE ISNULL(x.TrangThaiXe, N'') = N'Rảnh'
+    WHERE COALESCE(x.TrangThaiXe, N'') = N'Rảnh'
       AND NOT EXISTS (
         SELECT 1
         FROM LoTrinhTrungChuyen lt
@@ -1497,10 +1487,11 @@ async function main() {
 
   await runCase(customerDeleteBlockedMeta, async () => {
     const ticketOwner = await dbQuery(`
-      SELECT TOP 1 k.MaKhachHang
+      SELECT k.MaKhachHang
       FROM KhachHang k
       INNER JOIN VeTrungChuyen v ON v.MaKhachHang = k.MaKhachHang
-      ORDER BY k.MaKhachHang ASC;
+      ORDER BY k.MaKhachHang ASC
+      LIMIT 1;
     `);
     const customerId = ticketOwner.recordset[0].MaKhachHang;
     const { response, data } = await apiRequest({
@@ -2482,8 +2473,8 @@ async function main() {
         .input('TrangThai', sql.NVarChar(30), 'Hoạt động')
         .query(`
           INSERT INTO KhachHang (TenKhachHang, SoDienThoai, DiaChiDon, DiaChiTra, TrangThai)
-          OUTPUT INSERTED.MaKhachHang
           VALUES (@TenKhachHang, @SoDienThoai, @DiaChiDon, @DiaChiTra, @TrangThai)
+          RETURNING MaKhachHang
         `);
 
       await new sql.Request(transaction)
@@ -2505,8 +2496,8 @@ async function main() {
         throw error;
       }
       return {
-        actual: 'SQL Server chặn insert vé sai constraint với CK_VeTrungChuyen_SoLuongGhe.',
-        note: 'Database: database/database.sql'
+        actual: 'PostgreSQL chặn insert vé sai constraint với CK_VeTrungChuyen_SoLuongGhe.',
+        note: 'Database: database/supabase-postgres.sql'
       };
     } finally {
       if (transaction && transaction._aborted !== true) {
@@ -2520,7 +2511,7 @@ async function main() {
     feature: 'Database constraints',
     description: 'Constraint chặn route có thời gian kết thúc nhỏ hơn thời gian bắt đầu',
     steps: '1. UPDATE thử một route trong transaction với ThoiGianKetThuc < ThoiGianBatDau',
-    expected: 'SQL Server chặn bởi CK_LoTrinh_TrungChuyen_ThoiGian.'
+    expected: 'PostgreSQL chặn bởi CK_LoTrinh_TrungChuyen_ThoiGian.'
   };
 
   await runCase(dbRouteConstraintMeta, async () => {
@@ -2530,8 +2521,14 @@ async function main() {
       transaction = new sql.Transaction(pool);
       await transaction.begin();
       await new sql.Request(transaction).query(`
-        UPDATE TOP (1) LoTrinhTrungChuyen
-        SET ThoiGianKetThuc = DATEADD(MINUTE, -30, ThoiGianBatDau)
+        UPDATE LoTrinhTrungChuyen
+        SET ThoiGianKetThuc = ThoiGianBatDau - INTERVAL '30 minutes'
+        WHERE MaLoTrinh = (
+          SELECT MaLoTrinh
+          FROM LoTrinhTrungChuyen
+          ORDER BY MaLoTrinh
+          LIMIT 1
+        )
       `);
       throw Object.assign(new Error('UPDATE route sai constraint nhưng không bị chặn'), {
         actual: 'DB cho phép cập nhật route với end < start.',
@@ -2543,8 +2540,8 @@ async function main() {
         throw error;
       }
       return {
-        actual: 'SQL Server chặn cập nhật route sai constraint với CK_LoTrinh_TrungChuyen_ThoiGian.',
-        note: 'Database: database/database.sql'
+        actual: 'PostgreSQL chặn cập nhật route sai constraint với CK_LoTrinh_TrungChuyen_ThoiGian.',
+        note: 'Database: database/supabase-postgres.sql'
       };
     } finally {
       if (transaction && transaction._aborted !== true) {

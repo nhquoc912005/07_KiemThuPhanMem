@@ -1,6 +1,6 @@
 const express = require('express');
 
-const { getPool, sql } = require('../db');
+const { query } = require('../db');
 const { sendError, sendSuccess } = require('../utils/http');
 
 const router = express.Router();
@@ -10,10 +10,9 @@ router.get('/', async (req, res) => {
   const keyword = String(req.query.keyword || '').trim();
 
   try {
-    const pool = await getPool();
-    const request = pool.request();
+    const params = [];
 
-    let query = `
+    let sqlText = `
       SELECT
         v.MaVe,
         v.KhungGioTrungChuyen,
@@ -25,30 +24,30 @@ router.get('/', async (req, res) => {
         k.DiaChiTra
       FROM VeTrungChuyen v
       JOIN KhachHang k ON v.MaKhachHang = k.MaKhachHang
-      WHERE ISNULL(k.TrangThai, N'') <> N'Ngừng hoạt động'
+      WHERE COALESCE(k.TrangThai, '') <> 'Ngừng hoạt động'
     `;
 
     if (status) {
-      query += ' AND v.TrangThaiVe = @status';
-      request.input('status', sql.NVarChar(50), status);
+      params.push(status);
+      sqlText += ` AND v.TrangThaiVe = $${params.length}`;
     }
 
     if (keyword) {
-      query += `
+      params.push(`%${keyword}%`);
+      sqlText += `
         AND (
-          k.TenKhachHang LIKE @kw OR
-          k.SoDienThoai LIKE @kw OR
-          k.DiaChiDon LIKE @kw OR
-          k.DiaChiTra LIKE @kw
+          k.TenKhachHang ILIKE $${params.length} OR
+          k.SoDienThoai ILIKE $${params.length} OR
+          k.DiaChiDon ILIKE $${params.length} OR
+          k.DiaChiTra ILIKE $${params.length}
         )
       `;
-      request.input('kw', sql.NVarChar(100), `%${keyword}%`);
     }
 
-    query += ' ORDER BY v.MaVe DESC';
+    sqlText += ' ORDER BY v.MaVe DESC';
 
-    const result = await request.query(query);
-    return sendSuccess(res, result.recordset, 'Lấy danh sách vé trung chuyển thành công');
+    const result = await query(sqlText, params);
+    return sendSuccess(res, result.rows, 'Lấy danh sách vé trung chuyển thành công');
   } catch (err) {
     console.error('Get tickets error:', err);
     return sendError(res, 500, 'Lỗi lấy danh sách vé trung chuyển', 'SERVER_ERROR');

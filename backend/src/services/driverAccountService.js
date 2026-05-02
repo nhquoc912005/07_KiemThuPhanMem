@@ -1,4 +1,4 @@
-const { sql } = require('../db');
+const { query } = require('../db');
 const { DRIVER_STATUSES } = require('../constants/status');
 const { DRIVER_ROLE, hashPassword } = require('../utils/auth');
 
@@ -33,7 +33,6 @@ function toExternalAvailabilityStatus(driverStatus) {
     case DRIVER_STATUSES.IN_PROGRESS:
       return 'BUSY';
     case DRIVER_STATUSES.UNAVAILABLE:
-      return 'OFF';
     case DRIVER_STATUSES.INACTIVE:
       return 'OFF';
     default:
@@ -42,11 +41,11 @@ function toExternalAvailabilityStatus(driverStatus) {
 }
 
 function toExternalIsActive(driverStatus) {
-  return driverStatus === DRIVER_STATUSES.INACTIVE ? 0 : 1;
+  return driverStatus !== DRIVER_STATUSES.INACTIVE;
 }
 
 function toAccountStatus(driverStatus) {
-  return driverStatus === DRIVER_STATUSES.INACTIVE ? 0 : 1;
+  return driverStatus !== DRIVER_STATUSES.INACTIVE;
 }
 
 function buildGeneratedDriverUsername(legacyId) {
@@ -67,36 +66,38 @@ function getFirstFieldError(fieldErrors) {
   );
 }
 
-async function usernameExists(db, username) {
-  const result = await db
-    .request()
-    .input('username', sql.VarChar(50), username)
-    .query(`
-      SELECT TOP 1 1
+async function usernameExists(client, username) {
+  const result = await query(
+    `
+      SELECT 1
       FROM TaiKhoanNguoiDung
-      WHERE TenDangNhap = @username
-    `);
+      WHERE TenDangNhap = $1
+      LIMIT 1
+    `,
+    [username],
+    client
+  );
 
-  return result.recordset.length > 0;
+  return result.rows.length > 0;
 }
 
-async function buildAutoDriverUsername(db, legacyId) {
+async function buildAutoDriverUsername(client, legacyId) {
   const preferredUsername = buildGeneratedDriverUsername(legacyId);
-  if (!(await usernameExists(db, preferredUsername))) {
+  if (!(await usernameExists(client, preferredUsername))) {
     return preferredUsername;
   }
 
   const fallbackUsername = `${preferredUsername}_${legacyId}`;
-  if (!(await usernameExists(db, fallbackUsername))) {
+  if (!(await usernameExists(client, fallbackUsername))) {
     return fallbackUsername;
   }
 
   throw buildDriverConflict('Không thể tự tạo tên đăng nhập cho tài xế. Vui lòng thử lại.');
 }
 
-async function assertUniqueDriverIdentity(db, { username, employeeCode, phoneNumber, cccd }) {
+async function assertUniqueDriverIdentity(client, { username, employeeCode, phoneNumber, cccd }) {
   if (username) {
-    const duplicatedUsername = await usernameExists(db, username);
+    const duplicatedUsername = await usernameExists(client, username);
     if (duplicatedUsername) {
       throw buildDriverConflict('Tên đăng nhập đã tồn tại', 409, 'CONFLICT', {
         TenDangNhap: 'Tên đăng nhập đã tồn tại'
@@ -104,39 +105,41 @@ async function assertUniqueDriverIdentity(db, { username, employeeCode, phoneNum
     }
   }
 
-  const duplicatedAccountPhone = await db
-    .request()
-    .input('phone', sql.VarChar(15), phoneNumber)
-    .query(`
-      SELECT TOP 1 1
+  const duplicatedAccountPhone = await query(
+    `
+      SELECT 1
       FROM TaiKhoanNguoiDung
-      WHERE SoDienThoai = @phone
-    `);
+      WHERE SoDienThoai = $1
+      LIMIT 1
+    `,
+    [phoneNumber],
+    client
+  );
 
-  if (duplicatedAccountPhone.recordset.length > 0) {
+  if (duplicatedAccountPhone.rows.length > 0) {
     throw buildDriverConflict('Số điện thoại đã tồn tại', 409, 'CONFLICT', {
       SoDienThoai: 'Số điện thoại đã tồn tại'
     });
   }
 
-  const duplicatedDriver = await db
-    .request()
-    .input('employeeCode', sql.VarChar(20), employeeCode || null)
-    .input('phone', sql.VarChar(15), phoneNumber)
-    .input('cccd', sql.VarChar(20), cccd)
-    .query(`
-      SELECT TOP 1 MaNhanVienTaiXe, SoDienThoai, CCCD
+  const duplicatedDriver = await query(
+    `
+      SELECT MaNhanVienTaiXe, SoDienThoai, CCCD
       FROM TaiXe
-      WHERE (@employeeCode IS NOT NULL AND MaNhanVienTaiXe = @employeeCode)
-         OR SoDienThoai = @phone
-         OR CCCD = @cccd
-    `);
+      WHERE ($1::text IS NOT NULL AND MaNhanVienTaiXe = $1)
+         OR SoDienThoai = $2
+         OR CCCD = $3
+      LIMIT 1
+    `,
+    [employeeCode || null, phoneNumber, cccd],
+    client
+  );
 
-  if (duplicatedDriver.recordset.length === 0) {
+  if (duplicatedDriver.rows.length === 0) {
     return;
   }
 
-  const duplicated = duplicatedDriver.recordset[0];
+  const duplicated = duplicatedDriver.rows[0];
   const fieldErrors = {};
 
   if (employeeCode && duplicated.MaNhanVienTaiXe === employeeCode) {
@@ -155,7 +158,7 @@ async function assertUniqueDriverIdentity(db, { username, employeeCode, phoneNum
 }
 
 async function createDriverWithAccount(
-  db,
+  client,
   {
     MaNhanVien = null,
     HoTen,
@@ -176,55 +179,44 @@ async function createDriverWithAccount(
     });
   }
 
-  await assertUniqueDriverIdentity(db, {
+  await assertUniqueDriverIdentity(client, {
     username: TenDangNhap ? String(TenDangNhap).trim() : null,
     employeeCode: normalizedEmployeeCode,
     phoneNumber: SoDienThoai,
     cccd: CCCD
   });
 
-  const legacyInsert = await db
-    .request()
-    .input('MaNhanVienTaiXe', sql.VarChar(20), normalizedEmployeeCode)
-    .input('HoTen', sql.NVarChar(100), HoTen)
-    .input('SoDienThoai', sql.VarChar(15), SoDienThoai)
-    .input('CCCD', sql.VarChar(20), CCCD)
-    .input('LoaiBangLai', sql.NVarChar(50), LoaiBangLai)
-    .input('TrangThaiTaiXe', sql.NVarChar(30), TrangThaiTaiXe)
-    .query(`
+  const legacyInsert = await query(
+    `
       INSERT INTO TaiXe (MaNhanVienTaiXe, HoTen, SoDienThoai, CCCD, LoaiBangLai, TrangThaiTaiXe)
-      OUTPUT INSERTED.MaTaiXe
-      VALUES (@MaNhanVienTaiXe, @HoTen, @SoDienThoai, @CCCD, @LoaiBangLai, @TrangThaiTaiXe)
-    `);
+      VALUES ($1, $2, $3, $4, $5, $6)
+      RETURNING MaTaiXe
+    `,
+    [normalizedEmployeeCode, HoTen, SoDienThoai, CCCD, LoaiBangLai, TrangThaiTaiXe],
+    client
+  );
 
-  const legacyId = legacyInsert.recordset[0].MaTaiXe;
+  const legacyId = legacyInsert.rows[0].MaTaiXe;
   const employeeCode = normalizedEmployeeCode || buildGeneratedEmployeeCode(legacyId);
-  const username = TenDangNhap ? String(TenDangNhap).trim() : await buildAutoDriverUsername(db, legacyId);
+  const username = TenDangNhap ? String(TenDangNhap).trim() : await buildAutoDriverUsername(client, legacyId);
   const generatedPassword = MatKhau ? null : DEFAULT_DRIVER_PASSWORD;
-  const requiresPasswordChange = generatedPassword ? 1 : 0;
+  const requiresPasswordChange = Boolean(generatedPassword);
   const passwordHash = await hashPassword(MatKhau || DEFAULT_DRIVER_PASSWORD);
 
   if (!normalizedEmployeeCode) {
-    await db
-      .request()
-      .input('MaTaiXe', sql.Int, legacyId)
-      .input('MaNhanVienTaiXe', sql.VarChar(20), employeeCode)
-      .query(`
+    await query(
+      `
         UPDATE TaiXe
-        SET MaNhanVienTaiXe = @MaNhanVienTaiXe
-        WHERE MaTaiXe = @MaTaiXe
-      `);
+        SET MaNhanVienTaiXe = $1
+        WHERE MaTaiXe = $2
+      `,
+      [employeeCode, legacyId],
+      client
+    );
   }
 
-  const accountInsert = await db
-    .request()
-    .input('TenDangNhap', sql.VarChar(50), username)
-    .input('MatKhauMaHoa', sql.VarChar(255), passwordHash)
-    .input('SoDienThoai', sql.VarChar(15), SoDienThoai)
-    .input('VaiTro', sql.NVarChar(30), DRIVER_ROLE)
-    .input('TrangThaiTaiKhoan', sql.Bit, toAccountStatus(TrangThaiTaiXe))
-    .input('YeuCauDoiMatKhau', sql.Bit, requiresPasswordChange)
-    .query(`
+  const accountInsert = await query(
+    `
       INSERT INTO TaiKhoanNguoiDung (
         TenDangNhap,
         MatKhauMaHoa,
@@ -233,48 +225,40 @@ async function createDriverWithAccount(
         TrangThaiTaiKhoan,
         YeuCauDoiMatKhau
       )
-      OUTPUT
-        INSERTED.MaTaiKhoan,
-        INSERTED.TenDangNhap,
-        INSERTED.SoDienThoai,
-        INSERTED.VaiTro,
-        INSERTED.TrangThaiTaiKhoan,
-        INSERTED.YeuCauDoiMatKhau
-      VALUES (
-        @TenDangNhap,
-        @MatKhauMaHoa,
-        @SoDienThoai,
-        @VaiTro,
-        @TrangThaiTaiKhoan,
-        @YeuCauDoiMatKhau
-      )
-    `);
+      VALUES ($1, $2, $3, $4, $5, $6)
+      RETURNING
+        MaTaiKhoan,
+        TenDangNhap,
+        SoDienThoai,
+        VaiTro,
+        TrangThaiTaiKhoan,
+        YeuCauDoiMatKhau
+    `,
+    [
+      username,
+      passwordHash,
+      SoDienThoai,
+      DRIVER_ROLE,
+      toAccountStatus(TrangThaiTaiXe),
+      requiresPasswordChange
+    ],
+    client
+  );
 
-  const account = accountInsert.recordset[0];
+  const account = accountInsert.rows[0];
 
-  await db
-    .request()
-    .input('MaTaiXe', sql.Int, legacyId)
-    .input('MaTaiKhoan', sql.Int, account.MaTaiKhoan)
-    .query(`
+  await query(
+    `
       UPDATE TaiXe
-      SET MaTaiKhoan = @MaTaiKhoan
-      WHERE MaTaiXe = @MaTaiXe
-    `);
+      SET MaTaiKhoan = $1
+      WHERE MaTaiXe = $2
+    `,
+    [account.MaTaiKhoan, legacyId],
+    client
+  );
 
-  await db
-    .request()
-    .input('legacyId', sql.Int, legacyId)
-    .input('driverCode', sql.NVarChar(20), buildDriverCode(legacyId))
-    .input('employeeCode', sql.NVarChar(20), employeeCode)
-    .input('fullName', sql.NVarChar(100), HoTen)
-    .input('phone', sql.VarChar(15), SoDienThoai)
-    .input('nationalId', sql.VarChar(20), CCCD)
-    .input('licenseClass', sql.NVarChar(50), LoaiBangLai)
-    .input('workStatus', sql.NVarChar(20), toExternalWorkStatus(TrangThaiTaiXe))
-    .input('availabilityStatus', sql.NVarChar(20), toExternalAvailabilityStatus(TrangThaiTaiXe))
-    .input('isActive', sql.Bit, toExternalIsActive(TrangThaiTaiXe))
-    .query(`
+  await query(
+    `
       INSERT INTO external_drivers (
         legacy_ma_tai_xe,
         driver_code,
@@ -287,19 +271,22 @@ async function createDriverWithAccount(
         availability_status,
         is_active
       )
-      VALUES (
-        @legacyId,
-        @driverCode,
-        @employeeCode,
-        @fullName,
-        @phone,
-        @nationalId,
-        @licenseClass,
-        @workStatus,
-        @availabilityStatus,
-        @isActive
-      )
-    `);
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+    `,
+    [
+      legacyId,
+      buildDriverCode(legacyId),
+      employeeCode,
+      HoTen,
+      SoDienThoai,
+      CCCD,
+      LoaiBangLai,
+      toExternalWorkStatus(TrangThaiTaiXe),
+      toExternalAvailabilityStatus(TrangThaiTaiXe),
+      toExternalIsActive(TrangThaiTaiXe)
+    ],
+    client
+  );
 
   return {
     legacyId,
@@ -316,32 +303,33 @@ async function createDriverWithAccount(
   };
 }
 
-async function syncDriverAccountState(db, { MaTaiXe, SoDienThoai, TrangThaiTaiXe }) {
-  const result = await db
-    .request()
-    .input('id', sql.Int, MaTaiXe)
-    .query(`
-      SELECT TOP 1 tx.MaTaiKhoan
+async function syncDriverAccountState(client, { MaTaiXe, SoDienThoai, TrangThaiTaiXe }) {
+  const result = await query(
+    `
+      SELECT tx.MaTaiKhoan
       FROM TaiXe tx
-      WHERE tx.MaTaiXe = @id
-    `);
+      WHERE tx.MaTaiXe = $1
+      LIMIT 1
+    `,
+    [MaTaiXe],
+    client
+  );
 
-  const accountId = result.recordset[0]?.MaTaiKhoan;
+  const accountId = result.rows[0]?.MaTaiKhoan;
   if (!accountId) {
     return null;
   }
 
-  await db
-    .request()
-    .input('id', sql.Int, accountId)
-    .input('SoDienThoai', sql.VarChar(15), SoDienThoai)
-    .input('TrangThaiTaiKhoan', sql.Bit, toAccountStatus(TrangThaiTaiXe))
-    .query(`
+  await query(
+    `
       UPDATE TaiKhoanNguoiDung
-      SET SoDienThoai = @SoDienThoai,
-          TrangThaiTaiKhoan = @TrangThaiTaiKhoan
-      WHERE MaTaiKhoan = @id
-    `);
+      SET SoDienThoai = $1,
+          TrangThaiTaiKhoan = $2
+      WHERE MaTaiKhoan = $3
+    `,
+    [SoDienThoai, toAccountStatus(TrangThaiTaiXe), accountId],
+    client
+  );
 
   return {
     MaTaiKhoan: accountId,

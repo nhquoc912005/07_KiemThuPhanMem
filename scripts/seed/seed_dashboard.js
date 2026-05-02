@@ -15,11 +15,11 @@ async function seed() {
 
         // Lấy hoặc tạo 1 Nhân viên điều phối
         let maNhanVien = 1;
-        const nv = await pool.request().query('SELECT TOP 1 MaNhanVien FROM NhanVienDieuPhoi');
+        const nv = await pool.request().query('SELECT MaNhanVien FROM NhanVienDieuPhoi LIMIT 1');
         if (nv.recordset.length > 0) {
             maNhanVien = nv.recordset[0].MaNhanVien;
         } else {
-            const newNv = await pool.request().query("INSERT INTO NhanVienDieuPhoi (HoTen, SoDienThoai, TrangThai) OUTPUT INSERTED.MaNhanVien VALUES (N'Nhân viên Dashboard', '0901111111', N'Hoạt động')");
+            const newNv = await pool.request().query("INSERT INTO NhanVienDieuPhoi (HoTen, SoDienThoai, TrangThai) VALUES (N'Nhân viên Dashboard', '0901111111', N'Hoạt động') RETURNING MaNhanVien");
             maNhanVien = newNv.recordset[0].MaNhanVien;
         }
 
@@ -33,15 +33,17 @@ async function seed() {
         for(let i=1; i<=20; i++) {
             const bienSo = i % 2 === 0 ? `43B-200${String(i).padStart(2, '0')}` : `43E-200${String(i).padStart(2, '0')}`;
             await pool.request().input('bienSo', sql.VarChar, bienSo).query(`
-                IF NOT EXISTS (SELECT 1 FROM XeTrungChuyen WHERE BienSo = @bienSo)
-                    INSERT INTO XeTrungChuyen (BienSo, LoaiXe, SoCho, TrangThaiXe) VALUES (@bienSo, N'Xe 16 chỗ', 16, N'Rảnh')
+                INSERT INTO XeTrungChuyen (BienSo, LoaiXe, SoCho, TrangThaiXe)
+                VALUES (@bienSo, N'Xe 16 chỗ', 16, N'Rảnh')
+                ON CONFLICT (BienSo) DO NOTHING
             `);
 
             const sdt = `099111${String(i).padStart(4, '0')}`;
             const cccd = `04820111${String(i).padStart(4, '0')}`;
             await pool.request().input('sdt', sql.VarChar, sdt).input('cccd', sql.VarChar, cccd).query(`
-                IF NOT EXISTS (SELECT 1 FROM TaiXe WHERE SoDienThoai = @sdt)
-                    INSERT INTO TaiXe (HoTen, SoDienThoai, CCCD, LoaiBangLai, TrangThaiTaiXe) VALUES (N'Tài xế rảnh ${i}', @sdt, @cccd, N'D', N'Rảnh')
+                INSERT INTO TaiXe (HoTen, SoDienThoai, CCCD, LoaiBangLai, TrangThaiTaiXe)
+                VALUES (N'Tài xế rảnh ${i}', @sdt, @cccd, N'D', N'Rảnh')
+                ON CONFLICT (SoDienThoai) DO NOTHING
             `);
         }
         console.log('✅ Đã tạo/đảm bảo 20 Xe mang trạng thái "Rảnh" & 20 Tài xế mang trạng thái "Rảnh"');
@@ -64,7 +66,7 @@ async function seed() {
             const khRs = await pool.request()
                 .input('name', sql.NVarChar, c.name).input('phone', sql.VarChar, c.phone)
                 .input('don', sql.NVarChar, c.don).input('tra', sql.NVarChar, c.tra)
-                .query(`INSERT INTO KhachHang (TenKhachHang, SoDienThoai, DiaChiDon, DiaChiTra, TrangThai) OUTPUT INSERTED.MaKhachHang VALUES (@name, @phone, @don, @tra, N'Hoạt động')`);
+                .query(`INSERT INTO KhachHang (TenKhachHang, SoDienThoai, DiaChiDon, DiaChiTra, TrangThai) VALUES (@name, @phone, @don, @tra, N'Hoạt động') RETURNING MaKhachHang`);
             
             const maKH = khRs.recordset[0].MaKhachHang;
             const pickupCoordinates = lookupAddressCoordinates(c.don);
@@ -108,10 +110,13 @@ async function seed() {
             const xeRs = await pool.request()
                 .input('bienSo', sql.VarChar, r.xe)
                 .query(`
-                    IF NOT EXISTS (SELECT 1 FROM XeTrungChuyen WHERE BienSo = @bienSo)
-                        INSERT INTO XeTrungChuyen (BienSo, LoaiXe, SoCho, TrangThaiXe) OUTPUT INSERTED.MaXe VALUES (@bienSo, N'Xe 16 chỗ', 16, N'Đang chạy')
-                    ELSE
-                        SELECT MaXe FROM XeTrungChuyen WHERE BienSo = @bienSo
+                    INSERT INTO XeTrungChuyen (BienSo, LoaiXe, SoCho, TrangThaiXe)
+                    VALUES (@bienSo, N'Xe 16 chỗ', 16, N'Đang chạy')
+                    ON CONFLICT (BienSo) DO UPDATE
+                    SET LoaiXe = EXCLUDED.LoaiXe,
+                        SoCho = EXCLUDED.SoCho,
+                        TrangThaiXe = EXCLUDED.TrangThaiXe
+                    RETURNING MaXe
                 `);
             const maXeBan = xeRs.recordset[0].MaXe;
             await pool.request().input('maXeBan', sql.Int, maXeBan).query("UPDATE XeTrungChuyen SET TrangThaiXe = N'Đang chạy' WHERE MaXe = @maXeBan");
@@ -120,10 +125,13 @@ async function seed() {
             const txRs = await pool.request()
                 .input('hoTen', sql.NVarChar, r.txName).input('sdt', sql.VarChar, r.txPhone)
                 .query(`
-                    IF NOT EXISTS (SELECT 1 FROM TaiXe WHERE SoDienThoai = @sdt)
-                        INSERT INTO TaiXe (HoTen, SoDienThoai, CCCD, LoaiBangLai, TrangThaiTaiXe) OUTPUT INSERTED.MaTaiXe VALUES (@hoTen, @sdt, '04820333000${j}', N'D', N'Đang thực hiện')
-                    ELSE
-                        SELECT MaTaiXe FROM TaiXe WHERE SoDienThoai = @sdt
+                    INSERT INTO TaiXe (HoTen, SoDienThoai, CCCD, LoaiBangLai, TrangThaiTaiXe)
+                    VALUES (@hoTen, @sdt, '04820333000${j}', N'D', N'Đang thực hiện')
+                    ON CONFLICT (SoDienThoai) DO UPDATE
+                    SET HoTen = EXCLUDED.HoTen,
+                        LoaiBangLai = EXCLUDED.LoaiBangLai,
+                        TrangThaiTaiXe = EXCLUDED.TrangThaiTaiXe
+                    RETURNING MaTaiXe
                 `);
             const maTxBan = txRs.recordset[0].MaTaiXe;
             await pool.request().input('maTxBan', sql.Int, maTxBan).query("UPDATE TaiXe SET TrangThaiTaiXe = N'Đang thực hiện' WHERE MaTaiXe = @maTxBan");
@@ -137,8 +145,8 @@ async function seed() {
                 .input('maXe', sql.Int, maXeBan).input('maTX', sql.Int, maTxBan).input('maNV', sql.Int, maNhanVien)
                 .query(`
                     INSERT INTO LoTrinhTrungChuyen (ThoiGianBatDau, LoTrinhDuKien, TrangThaiLoTrinh, GhiChu, MaXe, MaTaiXe, MaNhanVien)
-                    OUTPUT INSERTED.MaLoTrinh
                     VALUES (@tgbd, @loTrinh, N'Đang thực hiện', N'Mã chuyến: CX8888800${j}', @maXe, @maTX, @maNV)
+                    RETURNING MaLoTrinh
                 `);
             const maLoTrinh = ltRs.recordset[0].MaLoTrinh;
 
@@ -147,7 +155,7 @@ async function seed() {
                 const khRs = await pool.request()
                     .input('name', sql.NVarChar, `Hành khách xe ${r.xe} - Ghế ${k}`)
                     .input('phone', sql.VarChar, `0903330${j}${k}`)
-                    .query(`INSERT INTO KhachHang (TenKhachHang, SoDienThoai, DiaChiDon, DiaChiTra, TrangThai) OUTPUT INSERTED.MaKhachHang VALUES (@name, @phone, N'Bến xe Trung tâm Đà Nẵng', N'Dọc đường đi', N'Hoạt động')`);
+                    .query(`INSERT INTO KhachHang (TenKhachHang, SoDienThoai, DiaChiDon, DiaChiTra, TrangThai) VALUES (@name, @phone, N'Bến xe Trung tâm Đà Nẵng', N'Dọc đường đi', N'Hoạt động') RETURNING MaKhachHang`);
                 const kId = khRs.recordset[0].MaKhachHang;
                 const pickupCoordinates = lookupAddressCoordinates('Bến xe Trung tâm Đà Nẵng');
                 const dropoffCoordinates = lookupAddressCoordinates('Dọc đường đi');
@@ -168,7 +176,7 @@ async function seed() {
                     `);
 
                 const veRs = await pool.request().input('kId', sql.Int, kId)
-                    .query(`INSERT INTO VeTrungChuyen (KhungGioTrungChuyen, SoLuongGhe, TrangThaiVe, MaKhachHang) OUTPUT INSERTED.MaVe VALUES (N'Hôm nay', 1, N'Đang trung chuyển', @kId)`);
+                    .query(`INSERT INTO VeTrungChuyen (KhungGioTrungChuyen, SoLuongGhe, TrangThaiVe, MaKhachHang) VALUES (N'Hôm nay', 1, N'Đang trung chuyển', @kId) RETURNING MaVe`);
                 const veId = veRs.recordset[0].MaVe;
 
                 await pool.request().input('maLT', sql.Int, maLoTrinh).input('maVe', sql.Int, veId).input('time', sql.DateTime, timeOffset)

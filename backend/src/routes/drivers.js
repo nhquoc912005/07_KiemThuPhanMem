@@ -1,6 +1,6 @@
 const express = require('express');
 
-const { getPool, sql } = require('../db');
+const { query, withTransaction } = require('../db');
 const { ACTIVE_ROUTE_STATUSES, DRIVER_STATUSES } = require('../constants/status');
 const {
   createDriverWithAccount,
@@ -24,20 +24,18 @@ const DRIVER_SELECT_COLUMNS = `
   d.national_id AS CCCD,
   d.license_class AS LoaiBangLai,
   CASE
-    WHEN d.work_status = N'INACTIVE' OR d.is_active = 0 THEN N'${DRIVER_STATUSES.INACTIVE}'
-    WHEN d.availability_status = N'ASSIGNED' THEN N'${DRIVER_STATUSES.ASSIGNED}'
-    WHEN d.availability_status = N'BUSY' THEN N'${DRIVER_STATUSES.IN_PROGRESS}'
-    WHEN d.availability_status = N'OFF' THEN N'${DRIVER_STATUSES.UNAVAILABLE}'
-    ELSE N'${DRIVER_STATUSES.AVAILABLE}'
+    WHEN d.work_status = 'INACTIVE' OR d.is_active = FALSE THEN '${DRIVER_STATUSES.INACTIVE}'
+    WHEN d.availability_status = 'ASSIGNED' THEN '${DRIVER_STATUSES.ASSIGNED}'
+    WHEN d.availability_status = 'BUSY' THEN '${DRIVER_STATUSES.IN_PROGRESS}'
+    WHEN d.availability_status = 'OFF' THEN '${DRIVER_STATUSES.UNAVAILABLE}'
+    ELSE '${DRIVER_STATUSES.AVAILABLE}'
   END AS TrangThaiTaiXe,
   tx.MaTaiKhoan
 `;
 
 const ALLOWED_DRIVER_STATUSES = new Set(Object.values(DRIVER_STATUSES));
-const ACTIVE_ROUTE_STATUS_SQL = ACTIVE_ROUTE_STATUSES.map((status) => `N'${status}'`).join(', ');
-const ROUTE_PLAN_BUSY_STATUS_SQL = ['CONFIRMED', 'IN_PROGRESS']
-  .map((status) => `N'${status}'`)
-  .join(', ');
+const ACTIVE_ROUTE_STATUS_SQL = ACTIVE_ROUTE_STATUSES.map((status) => `'${status.replace(/'/g, "''")}'`).join(', ');
+const ROUTE_PLAN_BUSY_STATUS_SQL = ['CONFIRMED', 'IN_PROGRESS'].map((status) => `'${status}'`).join(', ');
 
 const REQUIRED_EMPLOYEE_CODE_MESSAGE = 'Vui lòng nhập mã nhân viên';
 const REQUIRED_FULL_NAME_MESSAGE = 'Vui lòng nhập họ tên';
@@ -53,18 +51,20 @@ const INVALID_DRIVER_STATUS_MESSAGE = 'Trạng thái tài xế không hợp lệ
 const DISABLE_BLOCKED_MESSAGE =
   'Tài xế đang được phân công hoặc đang thực hiện chuyến, không thể ngừng hoạt động';
 
-async function loadDriverByLegacyId(db, legacyId) {
-  const result = await db
-    .request()
-    .input('id', sql.Int, legacyId)
-    .query(`
-      SELECT TOP 1 ${DRIVER_SELECT_COLUMNS}
+async function loadDriverByLegacyId(legacyId, client = null) {
+  const result = await query(
+    `
+      SELECT ${DRIVER_SELECT_COLUMNS}
       FROM external_drivers d
       LEFT JOIN TaiXe tx ON tx.MaTaiXe = d.legacy_ma_tai_xe
-      WHERE d.legacy_ma_tai_xe = @id
-    `);
+      WHERE d.legacy_ma_tai_xe = $1
+      LIMIT 1
+    `,
+    [legacyId],
+    client
+  );
 
-  return result.recordset[0] || null;
+  return result.rows[0] || null;
 }
 
 function getDriverPayload(body = {}) {
@@ -145,23 +145,22 @@ function sendDriverValidationError(res, status, message, fieldErrors, errorCode 
 }
 
 function mapDriverSqlConflict(err) {
-  const sqlErrorNumber = Number(err?.number || err?.originalError?.info?.number);
-  if (![2601, 2627].includes(sqlErrorNumber)) {
+  if (err?.code !== '23505') {
     return null;
   }
 
-  const detail = String(err?.message || err?.originalError?.info?.message || '');
+  const detail = `${err.constraint || ''} ${err.detail || ''} ${err.message || ''}`;
   const fieldErrors = {};
 
-  if (/MaNhanVienTaiXe|employee_code|UX_TaiXe_MaNhanVienTaiXe|UX_external_drivers_employee_code/i.test(detail)) {
+  if (/manhanvientaixe|employee_code|taixe.*ma|external_drivers.*employee/i.test(detail)) {
     fieldErrors.MaNhanVien = DUPLICATE_EMPLOYEE_CODE_MESSAGE;
   }
 
-  if (/SoDienThoai|phone|UQ_external_drivers_phone/i.test(detail)) {
+  if (/sodienthoai|phone/i.test(detail)) {
     fieldErrors.SoDienThoai = DUPLICATE_PHONE_MESSAGE;
   }
 
-  if (/CCCD|national_id|UQ_external_drivers_national_id/i.test(detail)) {
+  if (/cccd|national_id/i.test(detail)) {
     fieldErrors.CCCD = DUPLICATE_NATIONAL_ID_MESSAGE;
   }
 
@@ -173,36 +172,34 @@ function mapDriverSqlConflict(err) {
   };
 }
 
-async function findDuplicateDriverIdentity(db, { excludeId = null, accountId = null, driver }) {
-  const driverConflicts = await db
-    .request()
-    .input('excludeId', sql.Int, excludeId)
-    .input('employeeCode', sql.VarChar(20), driver.MaNhanVien)
-    .input('phone', sql.VarChar(15), driver.SoDienThoai)
-    .input('cccd', sql.VarChar(20), driver.CCCD)
-    .query(`
+async function findDuplicateDriverIdentity(client, { excludeId = null, accountId = null, driver }) {
+  const driverConflicts = await query(
+    `
       SELECT
-        SUM(CASE WHEN @employeeCode IS NOT NULL AND MaNhanVienTaiXe = @employeeCode THEN 1 ELSE 0 END) AS EmployeeCodeCount,
-        SUM(CASE WHEN SoDienThoai = @phone THEN 1 ELSE 0 END) AS PhoneCount,
-        SUM(CASE WHEN CCCD = @cccd THEN 1 ELSE 0 END) AS NationalIdCount
+        SUM(CASE WHEN $1::text IS NOT NULL AND MaNhanVienTaiXe = $1 THEN 1 ELSE 0 END) AS EmployeeCodeCount,
+        SUM(CASE WHEN SoDienThoai = $2 THEN 1 ELSE 0 END) AS PhoneCount,
+        SUM(CASE WHEN CCCD = $3 THEN 1 ELSE 0 END) AS NationalIdCount
       FROM TaiXe
-      WHERE ((@employeeCode IS NOT NULL AND MaNhanVienTaiXe = @employeeCode) OR SoDienThoai = @phone OR CCCD = @cccd)
-        AND (@excludeId IS NULL OR MaTaiXe <> @excludeId)
-    `);
+      WHERE (($1::text IS NOT NULL AND MaNhanVienTaiXe = $1) OR SoDienThoai = $2 OR CCCD = $3)
+        AND ($4::integer IS NULL OR MaTaiXe <> $4)
+    `,
+    [driver.MaNhanVien || null, driver.SoDienThoai, driver.CCCD, excludeId],
+    client
+  );
 
-  const accountPhoneConflicts = await db
-    .request()
-    .input('accountId', sql.Int, accountId)
-    .input('phone', sql.VarChar(15), driver.SoDienThoai)
-    .query(`
+  const accountPhoneConflicts = await query(
+    `
       SELECT COUNT(1) AS ConflictCount
       FROM TaiKhoanNguoiDung
-      WHERE SoDienThoai = @phone
-        AND (@accountId IS NULL OR MaTaiKhoan <> @accountId)
-    `);
+      WHERE SoDienThoai = $1
+        AND ($2::integer IS NULL OR MaTaiKhoan <> $2)
+    `,
+    [driver.SoDienThoai, accountId],
+    client
+  );
 
-  const driverRow = driverConflicts.recordset[0] || {};
-  const accountPhoneCount = Number(accountPhoneConflicts.recordset[0]?.ConflictCount || 0);
+  const driverRow = driverConflicts.rows[0] || {};
+  const accountPhoneCount = Number(accountPhoneConflicts.rows[0]?.ConflictCount || 0);
   const fieldErrors = {};
 
   if (Number(driverRow.EmployeeCodeCount || 0) > 0) {
@@ -224,8 +221,8 @@ function isDriverBusyStatus(status) {
   return status === DRIVER_STATUSES.ASSIGNED || status === DRIVER_STATUSES.IN_PROGRESS;
 }
 
-async function assertDriverCanBeDisabled(db, legacyId, existingDriver = null) {
-  const driver = existingDriver || (await loadDriverByLegacyId(db, legacyId));
+async function assertDriverCanBeDisabled(client, legacyId, existingDriver = null) {
+  const driver = existingDriver || (await loadDriverByLegacyId(legacyId, client));
 
   if (!driver) {
     throw Object.assign(new Error('Không tìm thấy tài xế'), {
@@ -241,35 +238,41 @@ async function assertDriverCanBeDisabled(db, legacyId, existingDriver = null) {
     });
   }
 
-  const busyRoutes = await new sql.Request(db)
-    .input('id', sql.Int, legacyId)
-    .query(`
-      SELECT TOP 1 1
+  const busyRoutes = await query(
+    `
+      SELECT 1
       FROM LoTrinhTrungChuyen
-      WHERE MaTaiXe = @id
+      WHERE MaTaiXe = $1
         AND TrangThaiLoTrinh IN (${ACTIVE_ROUTE_STATUS_SQL})
-    `);
+      LIMIT 1
+    `,
+    [legacyId],
+    client
+  );
 
-  if (busyRoutes.recordset.length > 0) {
+  if (busyRoutes.rows.length > 0) {
     throw Object.assign(new Error(DISABLE_BLOCKED_MESSAGE), {
       status: 409,
       code: 'CONFLICT'
     });
   }
 
-  const busyRoutePlans = await new sql.Request(db)
-    .input('id', sql.Int, legacyId)
-    .query(`
-      SELECT TOP 1 1
+  const busyRoutePlans = await query(
+    `
+      SELECT 1
       FROM route_plan_driver_assignments da
       INNER JOIN route_plans rp ON rp.id = da.route_plan_id
       INNER JOIN external_drivers d ON d.id = da.external_driver_id
-      WHERE d.legacy_ma_tai_xe = @id
-        AND da.assignment_status IN (N'SELECTED', N'CONFIRMED')
+      WHERE d.legacy_ma_tai_xe = $1
+        AND da.assignment_status IN ('SELECTED', 'CONFIRMED')
         AND rp.status IN (${ROUTE_PLAN_BUSY_STATUS_SQL})
-    `);
+      LIMIT 1
+    `,
+    [legacyId],
+    client
+  );
 
-  if (busyRoutePlans.recordset.length > 0) {
+  if (busyRoutePlans.rows.length > 0) {
     throw Object.assign(new Error(DISABLE_BLOCKED_MESSAGE), {
       status: 409,
       code: 'CONFLICT'
@@ -279,16 +282,15 @@ async function assertDriverCanBeDisabled(db, legacyId, existingDriver = null) {
 
 router.get('/', async (_req, res) => {
   try {
-    const pool = await getPool();
-    const result = await pool.request().query(`
+    const result = await query(`
       SELECT ${DRIVER_SELECT_COLUMNS}
       FROM external_drivers d
       LEFT JOIN TaiXe tx ON tx.MaTaiXe = d.legacy_ma_tai_xe
-      WHERE d.work_status <> N'INACTIVE' AND d.is_active = 1
+      WHERE d.work_status <> 'INACTIVE' AND d.is_active = TRUE
       ORDER BY d.legacy_ma_tai_xe DESC
     `);
 
-    return sendSuccess(res, result.recordset, 'Lấy danh sách tài xế thành công');
+    return sendSuccess(res, result.rows, 'Lấy danh sách tài xế thành công');
   } catch (err) {
     console.error('Get drivers error:', err);
     return sendError(res, 500, 'Lỗi lấy danh sách tài xế', 'SERVER_ERROR');
@@ -302,8 +304,7 @@ router.get('/:id', async (req, res) => {
   }
 
   try {
-    const pool = await getPool();
-    const driver = await loadDriverByLegacyId(pool, id);
+    const driver = await loadDriverByLegacyId(id);
 
     if (!driver) {
       return sendError(res, 404, 'Không tìm thấy tài xế', 'NOT_FOUND');
@@ -324,40 +325,26 @@ router.post('/', async (req, res) => {
   }
 
   try {
-    const pool = await getPool();
-    const transaction = new sql.Transaction(pool);
+    const createdResult = await withTransaction((client) => createDriverWithAccount(client, {
+      MaNhanVien: driver.MaNhanVien,
+      HoTen: driver.HoTen,
+      SoDienThoai: driver.SoDienThoai,
+      CCCD: driver.CCCD,
+      LoaiBangLai: driver.LoaiBangLai,
+      TrangThaiTaiXe: driver.TrangThaiTaiXe || DRIVER_STATUSES.AVAILABLE,
+      allowAutoEmployeeCode: false
+    }));
 
-    await transaction.begin();
-
-    try {
-      const createdResult = await createDriverWithAccount(transaction, {
-        MaNhanVien: driver.MaNhanVien,
-        HoTen: driver.HoTen,
-        SoDienThoai: driver.SoDienThoai,
-        CCCD: driver.CCCD,
-        LoaiBangLai: driver.LoaiBangLai,
-        TrangThaiTaiXe: driver.TrangThaiTaiXe || DRIVER_STATUSES.AVAILABLE,
-        allowAutoEmployeeCode: false
-      });
-
-      await transaction.commit();
-
-      const createdDriver = await loadDriverByLegacyId(pool, createdResult.legacyId);
-      return sendSuccess(
-        res,
-        {
-          driver: createdDriver,
-          account: createdResult.account
-        },
-        'Tạo tài xế thành công',
-        201
-      );
-    } catch (innerError) {
-      if (transaction._aborted !== true) {
-        await transaction.rollback();
-      }
-      throw innerError;
-    }
+    const createdDriver = await loadDriverByLegacyId(createdResult.legacyId);
+    return sendSuccess(
+      res,
+      {
+        driver: createdDriver,
+        account: createdResult.account
+      },
+      'Tạo tài xế thành công',
+      201
+    );
   } catch (err) {
     console.error('Create driver error:', err);
 
@@ -404,119 +391,99 @@ router.put('/:id', async (req, res) => {
   }
 
   try {
-    const pool = await getPool();
-    const transaction = new sql.Transaction(pool);
-
-    await transaction.begin();
-
-    try {
-      const existing = await loadDriverByLegacyId(transaction, id);
+    const updated = await withTransaction(async (client) => {
+      const existing = await loadDriverByLegacyId(id, client);
 
       if (!existing) {
-        await transaction.rollback();
-        return sendError(res, 404, 'Không tìm thấy tài xế', 'NOT_FOUND');
+        throw Object.assign(new Error('Không tìm thấy tài xế'), { status: 404, code: 'NOT_FOUND' });
       }
 
-      const duplicateFieldErrors = await findDuplicateDriverIdentity(transaction, {
+      const duplicateFieldErrors = await findDuplicateDriverIdentity(client, {
         excludeId: id,
         accountId: existing.MaTaiKhoan || null,
         driver
       });
 
       if (Object.keys(duplicateFieldErrors).length > 0) {
-        await transaction.rollback();
-        return sendDriverValidationError(
-          res,
-          409,
-          getFirstFieldErrorMessage(duplicateFieldErrors),
-          duplicateFieldErrors,
-          'CONFLICT'
-        );
+        throw Object.assign(new Error(getFirstFieldErrorMessage(duplicateFieldErrors)), {
+          status: 409,
+          code: 'CONFLICT',
+          fieldErrors: duplicateFieldErrors
+        });
       }
 
       const nextDriverStatus = driver.TrangThaiTaiXe || existing.TrangThaiTaiXe;
       if (!ALLOWED_DRIVER_STATUSES.has(nextDriverStatus)) {
-        await transaction.rollback();
-        return sendDriverValidationError(
-          res,
-          400,
-          INVALID_DRIVER_STATUS_MESSAGE,
-          { TrangThaiTaiXe: INVALID_DRIVER_STATUS_MESSAGE }
-        );
+        throw Object.assign(new Error(INVALID_DRIVER_STATUS_MESSAGE), {
+          status: 400,
+          code: 'VALIDATION_ERROR',
+          fieldErrors: { TrangThaiTaiXe: INVALID_DRIVER_STATUS_MESSAGE }
+        });
       }
 
       if (nextDriverStatus === DRIVER_STATUSES.INACTIVE) {
-        await assertDriverCanBeDisabled(transaction, id, existing);
+        await assertDriverCanBeDisabled(client, id, existing);
       }
 
-      await new sql.Request(transaction)
-        .input('id', sql.Int, id)
-        .input('MaNhanVienTaiXe', sql.VarChar(20), driver.MaNhanVien)
-        .input('HoTen', sql.NVarChar(100), driver.HoTen)
-        .input('SoDienThoai', sql.VarChar(15), driver.SoDienThoai)
-        .input('CCCD', sql.VarChar(20), driver.CCCD)
-        .input('LoaiBangLai', sql.NVarChar(50), driver.LoaiBangLai)
-        .input('TrangThaiTaiXe', sql.NVarChar(30), nextDriverStatus)
-        .query(`
+      await query(
+        `
           UPDATE TaiXe
-          SET MaNhanVienTaiXe = @MaNhanVienTaiXe,
-              HoTen = @HoTen,
-              SoDienThoai = @SoDienThoai,
-              CCCD = @CCCD,
-              LoaiBangLai = @LoaiBangLai,
-              TrangThaiTaiXe = @TrangThaiTaiXe
-          WHERE MaTaiXe = @id
-        `);
+          SET MaNhanVienTaiXe = $1,
+              HoTen = $2,
+              SoDienThoai = $3,
+              CCCD = $4,
+              LoaiBangLai = $5,
+              TrangThaiTaiXe = $6
+          WHERE MaTaiXe = $7
+        `,
+        [driver.MaNhanVien, driver.HoTen, driver.SoDienThoai, driver.CCCD, driver.LoaiBangLai, nextDriverStatus, id],
+        client
+      );
 
-      await new sql.Request(transaction)
-        .input('id', sql.Int, id)
-        .input('employeeCode', sql.NVarChar(20), driver.MaNhanVien)
-        .input('fullName', sql.NVarChar(100), driver.HoTen)
-        .input('phone', sql.VarChar(15), driver.SoDienThoai)
-        .input('nationalId', sql.VarChar(20), driver.CCCD)
-        .input('licenseClass', sql.NVarChar(50), driver.LoaiBangLai)
-        .input('workStatus', sql.NVarChar(20), nextDriverStatus === DRIVER_STATUSES.INACTIVE ? 'INACTIVE' : 'ACTIVE')
-        .input(
-          'availabilityStatus',
-          sql.NVarChar(20),
+      await query(
+        `
+          UPDATE external_drivers
+          SET employee_code = $1,
+              full_name = $2,
+              phone = $3,
+              national_id = $4,
+              license_class = $5,
+              work_status = $6,
+              availability_status = $7,
+              is_active = $8,
+              updated_at = NOW()
+          WHERE legacy_ma_tai_xe = $9
+        `,
+        [
+          driver.MaNhanVien,
+          driver.HoTen,
+          driver.SoDienThoai,
+          driver.CCCD,
+          driver.LoaiBangLai,
+          nextDriverStatus === DRIVER_STATUSES.INACTIVE ? 'INACTIVE' : 'ACTIVE',
           nextDriverStatus === DRIVER_STATUSES.ASSIGNED
             ? 'ASSIGNED'
             : nextDriverStatus === DRIVER_STATUSES.IN_PROGRESS
               ? 'BUSY'
               : nextDriverStatus === DRIVER_STATUSES.UNAVAILABLE || nextDriverStatus === DRIVER_STATUSES.INACTIVE
                 ? 'OFF'
-                : 'AVAILABLE'
-        )
-        .input('isActive', sql.Bit, nextDriverStatus === DRIVER_STATUSES.INACTIVE ? 0 : 1)
-        .query(`
-          UPDATE external_drivers
-          SET employee_code = @employeeCode,
-              full_name = @fullName,
-              phone = @phone,
-              national_id = @nationalId,
-              license_class = @licenseClass,
-              work_status = @workStatus,
-              availability_status = @availabilityStatus,
-              is_active = @isActive,
-              updated_at = GETDATE()
-          WHERE legacy_ma_tai_xe = @id
-        `);
+                : 'AVAILABLE',
+          nextDriverStatus !== DRIVER_STATUSES.INACTIVE,
+          id
+        ],
+        client
+      );
 
-      await syncDriverAccountState(transaction, {
+      await syncDriverAccountState(client, {
         MaTaiXe: id,
         SoDienThoai: driver.SoDienThoai,
         TrangThaiTaiXe: nextDriverStatus
       });
 
-      await transaction.commit();
-      const updated = await loadDriverByLegacyId(pool, id);
-      return sendSuccess(res, updated, 'Cập nhật tài xế thành công');
-    } catch (innerError) {
-      if (transaction._aborted !== true) {
-        await transaction.rollback();
-      }
-      throw innerError;
-    }
+      return loadDriverByLegacyId(id, client);
+    });
+
+    return sendSuccess(res, updated, 'Cập nhật tài xế thành công');
   } catch (err) {
     console.error('Update driver error:', err);
 
@@ -557,51 +524,43 @@ router.delete('/:id', async (req, res) => {
   }
 
   try {
-    const pool = await getPool();
-    const transaction = new sql.Transaction(pool);
+    const updated = await withTransaction(async (client) => {
+      const existing = await loadDriverByLegacyId(id, client);
+      await assertDriverCanBeDisabled(client, id, existing);
 
-    await transaction.begin();
-
-    try {
-      const existing = await loadDriverByLegacyId(transaction, id);
-      await assertDriverCanBeDisabled(transaction, id, existing);
-
-      await new sql.Request(transaction)
-        .input('id', sql.Int, id)
-        .input('TrangThaiTaiXe', sql.NVarChar(30), DRIVER_STATUSES.INACTIVE)
-        .query(`
+      await query(
+        `
           UPDATE TaiXe
-          SET TrangThaiTaiXe = @TrangThaiTaiXe
-          WHERE MaTaiXe = @id
-        `);
+          SET TrangThaiTaiXe = $1
+          WHERE MaTaiXe = $2
+        `,
+        [DRIVER_STATUSES.INACTIVE, id],
+        client
+      );
 
-      await new sql.Request(transaction)
-        .input('id', sql.Int, id)
-        .query(`
+      await query(
+        `
           UPDATE external_drivers
-          SET work_status = N'INACTIVE',
-              availability_status = N'OFF',
-              is_active = 0,
-              updated_at = GETDATE()
-          WHERE legacy_ma_tai_xe = @id
-        `);
+          SET work_status = 'INACTIVE',
+              availability_status = 'OFF',
+              is_active = FALSE,
+              updated_at = NOW()
+          WHERE legacy_ma_tai_xe = $1
+        `,
+        [id],
+        client
+      );
 
-      await syncDriverAccountState(transaction, {
+      await syncDriverAccountState(client, {
         MaTaiXe: id,
         SoDienThoai: existing.SoDienThoai,
         TrangThaiTaiXe: DRIVER_STATUSES.INACTIVE
       });
 
-      await transaction.commit();
+      return loadDriverByLegacyId(id, client);
+    });
 
-      const updated = await loadDriverByLegacyId(pool, id);
-      return sendSuccess(res, updated, 'Đã chuyển tài xế sang ngừng hoạt động');
-    } catch (innerError) {
-      if (transaction._aborted !== true) {
-        await transaction.rollback();
-      }
-      throw innerError;
-    }
+    return sendSuccess(res, updated, 'Đã chuyển tài xế sang ngừng hoạt động');
   } catch (err) {
     console.error('Delete/disable driver error:', err);
     return sendError(

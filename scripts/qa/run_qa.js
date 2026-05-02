@@ -3,7 +3,7 @@ const path = require('path');
 const { spawn } = require('child_process');
 
 const dotenv = require(path.join(__dirname, '../../backend/node_modules/dotenv'));
-const sql = require(path.join(__dirname, '../../backend/node_modules/mssql'));
+const { sql } = require(path.join(__dirname, '../../backend/src/db'));
 
 const ROOT_DIR = path.resolve(__dirname, '../..');
 const BACKEND_DIR = path.join(ROOT_DIR, 'backend');
@@ -153,27 +153,7 @@ function expectStatus(response, expectedStatus, contextMessage) {
 }
 
 function buildDbConfig() {
-  const toBool = (value, fallback = false) => {
-    if (value == null || value === '') return fallback;
-    return String(value).trim().toLowerCase() === 'true';
-  };
-
-  return {
-    user: process.env.SQL_USER,
-    password: process.env.SQL_PASSWORD,
-    server: process.env.SQL_SERVER || 'localhost',
-    port: Number(process.env.SQL_PORT || 1433),
-    database: process.env.SQL_DATABASE,
-    options: {
-      encrypt: toBool(process.env.SQL_ENCRYPT, false),
-      trustServerCertificate: toBool(process.env.SQL_TRUST_SERVER_CERTIFICATE, true),
-    },
-    pool: {
-      max: 10,
-      min: 0,
-      idleTimeoutMillis: 30000,
-    },
-  };
+  return {};
 }
 
 async function createPool() {
@@ -243,7 +223,7 @@ async function ensureEnvironment(pool) {
 
 async function queryAvailableResources(pool) {
   const vehiclesResult = await pool.request().query(`
-    SELECT TOP 3 MaXe
+    SELECT MaXe
     FROM XeTrungChuyen x
     WHERE x.TrangThaiXe = N'Rảnh'
       AND NOT EXISTS (
@@ -253,10 +233,11 @@ async function queryAvailableResources(pool) {
           AND lt.TrangThaiLoTrinh IN (N'Chưa thực hiện', N'Đang thực hiện', N'Đang gặp sự cố')
       )
     ORDER BY x.MaXe ASC
+    LIMIT 3
   `);
 
   const driversResult = await pool.request().query(`
-    SELECT TOP 3 MaTaiXe
+    SELECT MaTaiXe
     FROM TaiXe d
     WHERE d.TrangThaiTaiXe = N'Rảnh'
       AND NOT EXISTS (
@@ -266,6 +247,7 @@ async function queryAvailableResources(pool) {
           AND lt.TrangThaiLoTrinh IN (N'Chưa thực hiện', N'Đang thực hiện', N'Đang gặp sự cố')
       )
     ORDER BY d.MaTaiXe ASC
+    LIMIT 3
   `);
 
   return {
@@ -279,11 +261,12 @@ async function loadDriverAccountByPhone(pool, phone) {
     .request()
     .input('phone', sql.VarChar(15), phone)
     .query(`
-      SELECT TOP 1 tx.MaTaiXe, tx.MaNhanVienTaiXe, tk.MaTaiKhoan, tk.TenDangNhap, tk.YeuCauDoiMatKhau
+      SELECT tx.MaTaiXe, tx.MaNhanVienTaiXe, tk.MaTaiKhoan, tk.TenDangNhap, tk.YeuCauDoiMatKhau
       FROM TaiXe tx
       JOIN TaiKhoanNguoiDung tk ON tk.MaTaiKhoan = tx.MaTaiKhoan
       WHERE tk.SoDienThoai = @phone
       ORDER BY tx.MaTaiXe DESC
+      LIMIT 1
     `);
 
   return result.recordset[0] || null;
@@ -294,11 +277,12 @@ async function loadDispatcherAccountByPhone(pool, phone) {
     .request()
     .input('phone', sql.VarChar(15), phone)
     .query(`
-      SELECT TOP 1 nv.MaNhanVien, tk.MaTaiKhoan, tk.TenDangNhap
+      SELECT nv.MaNhanVien, tk.MaTaiKhoan, tk.TenDangNhap
       FROM NhanVienDieuPhoi nv
       JOIN TaiKhoanNguoiDung tk ON tk.MaTaiKhoan = nv.MaTaiKhoan
       WHERE tk.SoDienThoai = @phone
       ORDER BY nv.MaNhanVien DESC
+      LIMIT 1
     `);
 
   return result.recordset[0] || null;
@@ -313,8 +297,8 @@ async function insertTicket(pool, { customerId, seatCount = 1, slot = '06:00 - 0
     .input('MaKhachHang', sql.Int, customerId)
     .query(`
       INSERT INTO VeTrungChuyen (KhungGioTrungChuyen, SoLuongGhe, TrangThaiVe, MaKhachHang)
-      OUTPUT INSERTED.MaVe
       VALUES (@KhungGioTrungChuyen, @SoLuongGhe, @TrangThaiVe, @MaKhachHang)
+      RETURNING MaVe
     `);
 
   return Number(result.recordset[0].MaVe);
@@ -356,7 +340,7 @@ async function loadTicketStatus(pool, ticketId) {
   const result = await pool
     .request()
     .input('ticketId', sql.Int, ticketId)
-    .query('SELECT TOP 1 TrangThaiVe FROM VeTrungChuyen WHERE MaVe = @ticketId');
+    .query('SELECT TrangThaiVe FROM VeTrungChuyen WHERE MaVe = @ticketId LIMIT 1');
 
   return result.recordset[0]?.TrangThaiVe || null;
 }
@@ -367,10 +351,11 @@ async function loadRoutePlanByRouteId(pool, routeId) {
     .request()
     .input('marker', sql.NVarChar(50), marker)
     .query(`
-      SELECT TOP 1 id, status, notes
+      SELECT id, status, notes
       FROM route_plans
-      WHERE CHARINDEX(@marker, ISNULL(notes, N'')) > 0
+      WHERE COALESCE(notes, '') LIKE '%' || @marker || '%'
       ORDER BY id DESC
+      LIMIT 1
     `);
 
   return result.recordset[0] || null;
@@ -528,7 +513,7 @@ async function safeCleanup(pool, state) {
         .query(`
           SELECT id
           FROM route_plans
-          WHERE CHARINDEX(@marker, ISNULL(notes, N'')) > 0
+          WHERE COALESCE(notes, '') LIKE '%' || @marker || '%'
         `);
 
       const planIds = planLookup.recordset.map((row) => Number(row.id)).filter(Number.isInteger);
@@ -1792,10 +1777,10 @@ async function main() {
           .input('id', sql.Int, state.routeCustomer.id)
           .query(`
             SELECT
-              (SELECT TOP 1 TenKhachHang FROM KhachHang WHERE MaKhachHang = @id) AS LegacyName,
-              (SELECT TOP 1 full_name FROM external_customers WHERE legacy_ma_khach_hang = @id) AS ExternalName,
-              (SELECT TOP 1 SoDienThoai FROM KhachHang WHERE MaKhachHang = @id) AS LegacyPhone,
-              (SELECT TOP 1 phone FROM external_customers WHERE legacy_ma_khach_hang = @id) AS ExternalPhone
+              (SELECT TenKhachHang FROM KhachHang WHERE MaKhachHang = @id LIMIT 1) AS LegacyName,
+              (SELECT full_name FROM external_customers WHERE legacy_ma_khach_hang = @id LIMIT 1) AS ExternalName,
+              (SELECT SoDienThoai FROM KhachHang WHERE MaKhachHang = @id LIMIT 1) AS LegacyPhone,
+              (SELECT phone FROM external_customers WHERE legacy_ma_khach_hang = @id LIMIT 1) AS ExternalPhone
           `);
         const row = result.recordset[0];
         if (!row.LegacyName || !row.ExternalName || row.LegacyPhone !== row.ExternalPhone) {

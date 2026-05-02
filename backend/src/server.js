@@ -1,13 +1,13 @@
 require('dotenv').config();
 
-const { getPool } = require('./db');
+const { testConnection } = require('./db');
 const { ensurePasswordHashes } = require('./utils/auth');
 const { createApp } = require('./app');
 
 const PORT = process.env.APP_PORT || 3000;
 const app = createApp();
 
-getPool()
+testConnection()
   .then(async () => {
     const migratedCount = await ensurePasswordHashes();
     if (migratedCount > 0) {

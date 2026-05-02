@@ -2,7 +2,7 @@ const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 
-const { getPool, sql } = require('../db');
+const { query } = require('../db');
 
 const DRIVER_ROLE = 'Tài xế';
 const DISPATCHER_ROLE = 'Nhân viên điều phối';
@@ -87,29 +87,29 @@ function hashOtpCode(phoneNumber, otp) {
 }
 
 async function ensurePasswordHashes() {
-  const pool = await getPool();
-  const result = await pool.request().query(`
-    SELECT MaTaiKhoan, MatKhauMaHoa
-    FROM TaiKhoanNguoiDung
+  const result = await query(`
+    SELECT
+      mataikhoan AS "MaTaiKhoan",
+      matkhaumahoa AS "MatKhauMaHoa"
+    FROM taikhoannguoidung
   `);
 
   let updatedCount = 0;
-  for (const row of result.recordset) {
+  for (const row of result.rows) {
     const storedPassword = String(row.MatKhauMaHoa || '');
     if (!storedPassword || looksLikeBcryptHash(storedPassword)) {
       continue;
     }
 
     const hashedPassword = await hashPassword(storedPassword);
-    await pool
-      .request()
-      .input('MaTaiKhoan', sql.Int, row.MaTaiKhoan)
-      .input('MatKhauMaHoa', sql.VarChar(255), hashedPassword)
-      .query(`
-        UPDATE TaiKhoanNguoiDung
-        SET MatKhauMaHoa = @MatKhauMaHoa
-        WHERE MaTaiKhoan = @MaTaiKhoan
-      `);
+    await query(
+      `
+        UPDATE taikhoannguoidung
+        SET matkhaumahoa = $1
+        WHERE mataikhoan = $2
+      `,
+      [hashedPassword, row.MaTaiKhoan]
+    );
 
     updatedCount += 1;
   }

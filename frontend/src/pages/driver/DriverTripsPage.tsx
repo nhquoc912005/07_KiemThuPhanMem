@@ -69,7 +69,8 @@ export const DriverTripsPage: React.FC = () => {
         filtered = data.filter((t) => !['Đã hủy', 'Hoàn thành'].includes(t.TrangThaiLoTrinh));
       }
       setTrips(filtered);
-    } catch (error: unknown) { const err = error as { response?: { data?: { message?: string } }, message?: string };
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } }, message?: string };
       setError(err?.response?.data?.message ?? 'Không tải được danh sách chuyến.');
     } finally {
       setLoading(false);
@@ -89,7 +90,7 @@ export const DriverTripsPage: React.FC = () => {
     const label = status === 'Chưa thực hiện' ? 'Chưa bắt đầu' : status;
     let bg = '#F3F4F6';
     let color = '#374151';
-    
+
     if (status.includes('Hoàn thành')) {
       bg = '#DCFCE7';
       color = '#16A34A';
@@ -106,7 +107,7 @@ export const DriverTripsPage: React.FC = () => {
       bg = '#F3F4F6';
       color = '#4B5563';
     }
-    
+
     return (
       <span
         style={{
@@ -176,7 +177,8 @@ export const DriverTripsPage: React.FC = () => {
       setRejectTripId(null);
       setRejectReason('');
       await loadTrips();
-    } catch (error: unknown) { const err = error as { response?: { data?: { message?: string } }, message?: string };
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } }, message?: string };
       setRejectError(err?.response?.data?.message ?? 'Không thể từ chối chuyến, vui lòng thử lại.');
     } finally {
       setRejectSaving(false);
@@ -187,7 +189,7 @@ export const DriverTripsPage: React.FC = () => {
     <DriverLayout>
       {showGpsBanner && (
         <div style={{ background: '#FEF2F2', border: '1px solid #F87171', color: '#B91C1C', padding: '12px 16px', borderRadius: 8, marginBottom: 20, display: 'flex', alignItems: 'center', gap: 12 }}>
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>
           <div>
             <strong>Cảnh báo:</strong> Trình duyệt chưa được cấp quyền vị trí. Trang chi tiết chuyến sẽ không thể tự động vẽ tuyến đường real-time từ GPS hiện tại của tài xế.
           </div>
@@ -195,11 +197,11 @@ export const DriverTripsPage: React.FC = () => {
       )}
 
       {/* Thẻ thống kê tổng quan */}
-      <div 
-        style={{ 
-          display: 'grid', 
-          gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', 
-          gap: 24, 
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+          gap: 24,
           marginBottom: 32,
           position: 'relative',
           zIndex: 10
@@ -260,11 +262,11 @@ export const DriverTripsPage: React.FC = () => {
         </div>
       </div>
 
-      <div 
-        style={{ 
-          background: '#FFFFFF', 
-          borderRadius: 12, 
-          boxShadow: '0 4px 20px rgba(0,0,0,0.08)', 
+      <div
+        style={{
+          background: '#FFFFFF',
+          borderRadius: 12,
+          boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
           overflow: 'hidden',
           position: 'relative',
           zIndex: 10,
@@ -291,161 +293,161 @@ export const DriverTripsPage: React.FC = () => {
           <div style={{ width: '100%', overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 15, textAlign: 'center' }}>
               <thead>
-              <tr style={{ background: '#E0F2FE', color: '#111827' }}>
-                <th style={{ padding: '16px 24px', fontWeight: 600 }}>STT</th>
-                <th style={{ padding: '16px 24px', fontWeight: 600 }}>Mã chuyến</th>
-                <th style={{ padding: '16px 24px', fontWeight: 600 }}>Biển số</th>
-                <th style={{ padding: '16px 24px', fontWeight: 600 }}>Thời gian bắt đầu</th>
-                <th style={{ padding: '16px 24px', fontWeight: 600 }}>Thời gian kết thúc</th>
-                <th style={{ padding: '16px 24px', fontWeight: 600 }}>Trạng thái</th>
-                <th style={{ padding: '16px 24px', fontWeight: 600 }}>Hành động</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredTrips.map((t, index) => (
-                <tr key={t.MaLoTrinh} style={{ borderTop: '1px solid #E5E7EB', height: 72 }}>
-                  <td style={{ padding: 16, fontWeight: 600, color: '#111827' }}>{index + 1}</td>
-                  <td style={{ padding: 16, color: '#374151' }}>
-                    {`CX${t.MaLoTrinh.toString().padStart(8, '0')}`}
-                  </td>
-                  <td style={{ padding: 16, color: '#374151' }}>{t.BienSo || '--'}</td>
-                  <td style={{ padding: 16, color: '#374151' }}>
-                    {new Date(t.ThoiGianBatDau).toLocaleString('vi-VN', {hour: '2-digit', minute:'2-digit', day:'2-digit', month:'2-digit', year:'numeric'})}
-                  </td>
-                  <td style={{ padding: 16, color: '#374151' }}>
-                    {t.ThoiGianKetThuc
-                      ? new Date(t.ThoiGianKetThuc).toLocaleString('vi-VN', {hour: '2-digit', minute:'2-digit', day:'2-digit', month:'2-digit', year:'numeric'})
-                      : '--'}
-                  </td>
-                  <td style={{ padding: 16 }}>{renderStatusBadge(t.TrangThaiLoTrinh)}</td>
-                  <td style={{ padding: 16, position: 'relative' }}>
-                    <div
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: 8
-                      }}
-                    >
-                      {t.TrangThaiLoTrinh === 'Đã hủy' ? (
-                        <div
-                          style={{
-                            padding: '8px 16px',
-                            borderRadius: 6,
-                            background: '#D1D5DB',
-                            color: '#6B7280',
-                            fontSize: 14,
-                            fontWeight: 600,
-                            whiteSpace: 'nowrap'
-                          }}
-                        >
-                          Đã từ chối
-                        </div>
-                      ) : (
-                        <button
-                          onClick={() => handleView(t.MaLoTrinh)}
-                          style={{
-                            padding: '8px 16px',
-                            borderRadius: 6,
-                            border: 'none',
-                            background: '#16A34A',
-                            color: '#FFFFFF',
-                            fontSize: 14,
-                            fontWeight: 600,
-                            cursor: 'pointer',
-                            whiteSpace: 'nowrap'
-                          }}
-                        >
-                          Xem lộ trình
-                        </button>
-                      )}
-                      
-                      <button
-                        type="button"
-                        onClick={() => openMenu(t.MaLoTrinh)}
+                <tr style={{ background: '#E0F2FE', color: '#111827' }}>
+                  <th style={{ padding: '16px 24px', fontWeight: 600 }}>STT</th>
+                  <th style={{ padding: '16px 24px', fontWeight: 600 }}>Mã chuyến</th>
+                  <th style={{ padding: '16px 24px', fontWeight: 600 }}>Biển số</th>
+                  <th style={{ padding: '16px 24px', fontWeight: 600 }}>Thời gian bắt đầu</th>
+                  <th style={{ padding: '16px 24px', fontWeight: 600 }}>Thời gian kết thúc</th>
+                  <th style={{ padding: '16px 24px', fontWeight: 600 }}>Trạng thái</th>
+                  <th style={{ padding: '16px 24px', fontWeight: 600 }}>Hành động</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredTrips.map((t, index) => (
+                  <tr key={t.MaLoTrinh} style={{ borderTop: '1px solid #E5E7EB', height: 72 }}>
+                    <td style={{ padding: 16, fontWeight: 600, color: '#111827' }}>{index + 1}</td>
+                    <td style={{ padding: 16, color: '#374151' }}>
+                      {`CX${t.MaLoTrinh.toString().padStart(8, '0')}`}
+                    </td>
+                    <td style={{ padding: 16, color: '#374151' }}>{t.BienSo || '--'}</td>
+                    <td style={{ padding: 16, color: '#374151' }}>
+                      {new Date(t.ThoiGianBatDau).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' })}
+                    </td>
+                    <td style={{ padding: 16, color: '#374151' }}>
+                      {t.ThoiGianKetThuc
+                        ? new Date(t.ThoiGianKetThuc).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' })
+                        : '--'}
+                    </td>
+                    <td style={{ padding: 16 }}>{renderStatusBadge(t.TrangThaiLoTrinh)}</td>
+                    <td style={{ padding: 16, position: 'relative' }}>
+                      <div
                         style={{
-                          width: 32,
-                          height: 32,
-                          borderRadius: 6,
-                          border: 'none',
-                          background: 'transparent',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          cursor: 'pointer',
-                          color: '#4B5563'
+                          gap: 8
                         }}
                       >
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>
-                      </button>
-                    </div>
+                        {t.TrangThaiLoTrinh === 'Đã hủy' ? (
+                          <div
+                            style={{
+                              padding: '8px 16px',
+                              borderRadius: 6,
+                              background: '#D1D5DB',
+                              color: '#6B7280',
+                              fontSize: 14,
+                              fontWeight: 600,
+                              whiteSpace: 'nowrap'
+                            }}
+                          >
+                            Đã từ chối
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => handleView(t.MaLoTrinh)}
+                            style={{
+                              padding: '8px 16px',
+                              borderRadius: 6,
+                              border: 'none',
+                              background: '#16A34A',
+                              color: '#FFFFFF',
+                              fontSize: 14,
+                              fontWeight: 600,
+                              cursor: 'pointer',
+                              whiteSpace: 'nowrap'
+                            }}
+                          >
+                            Xem lộ trình
+                          </button>
+                        )}
 
-                    {menuTripId === t.MaLoTrinh && (
-                      <div
-                        style={{
-                          position: 'absolute',
-                          top: 40,
-                          right: 0,
-                          width: 210,
-                          background: '#FFFFFF',
-                          borderRadius: 10,
-                          boxShadow: '0px 2px 4px rgba(0,0,0,0.25)',
-                          border: '1px solid #E6E6E6',
-                          zIndex: 10,
-                          overflow: 'hidden'
-                        }}
-                      >
-                        {!['Hoàn thành', 'Đã hủy'].includes(t.TrangThaiLoTrinh) ? (
+                        <button
+                          type="button"
+                          onClick={() => openMenu(t.MaLoTrinh)}
+                          style={{
+                            width: 32,
+                            height: 32,
+                            borderRadius: 6,
+                            border: 'none',
+                            background: 'transparent',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            cursor: 'pointer',
+                            color: '#4B5563'
+                          }}
+                        >
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1" /><circle cx="12" cy="5" r="1" /><circle cx="12" cy="19" r="1" /></svg>
+                        </button>
+                      </div>
+
+                      {menuTripId === t.MaLoTrinh && (
+                        <div
+                          style={{
+                            position: 'absolute',
+                            top: 40,
+                            right: 0,
+                            width: 210,
+                            background: '#FFFFFF',
+                            borderRadius: 10,
+                            boxShadow: '0px 2px 4px rgba(0,0,0,0.25)',
+                            border: '1px solid #E6E6E6',
+                            zIndex: 10,
+                            overflow: 'hidden'
+                          }}
+                        >
+                          {!['Hoàn thành', 'Đã hủy'].includes(t.TrangThaiLoTrinh) ? (
+                            <button
+                              type="button"
+                              onClick={() => handleRejectClick(t.MaLoTrinh)}
+                              style={{
+                                width: '100%',
+                                padding: '10px 16px',
+                                border: 'none',
+                                borderBottom: '1px solid #E5E7EB',
+                                background: '#FFFFFF',
+                                textAlign: 'left',
+                                cursor: 'pointer',
+                                fontSize: 15
+                              }}
+                            >
+                              Từ chối chuyến
+                            </button>
+                          ) : (
+                            <div
+                              style={{
+                                width: '100%',
+                                padding: '10px 16px',
+                                borderBottom: '1px solid #E5E7EB',
+                                color: '#9CA3AF',
+                                fontSize: 15
+                              }}
+                            >
+                              Từ chối chuyến
+                            </div>
+                          )}
                           <button
                             type="button"
-                            onClick={() => handleRejectClick(t.MaLoTrinh)}
+                            onClick={() => handleViewCustomers(t.MaLoTrinh)}
                             style={{
                               width: '100%',
                               padding: '10px 16px',
                               border: 'none',
-                              borderBottom: '1px solid #E5E7EB',
                               background: '#FFFFFF',
                               textAlign: 'left',
                               cursor: 'pointer',
                               fontSize: 15
                             }}
                           >
-                            Từ chối chuyến
+                            Danh sách khách hàng
                           </button>
-                        ) : (
-                          <div
-                            style={{
-                              width: '100%',
-                              padding: '10px 16px',
-                              borderBottom: '1px solid #E5E7EB',
-                              color: '#9CA3AF',
-                              fontSize: 15
-                            }}
-                          >
-                            Từ chối chuyến
-                          </div>
-                        )}
-                        <button
-                          type="button"
-                          onClick={() => handleViewCustomers(t.MaLoTrinh)}
-                          style={{
-                            width: '100%',
-                            padding: '10px 16px',
-                            border: 'none',
-                            background: '#FFFFFF',
-                            textAlign: 'left',
-                            cursor: 'pointer',
-                            fontSize: 15
-                          }}
-                        >
-                          Danh sách khách hàng
-                        </button>
-                      </div>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
             </table>
           </div>
         )}
@@ -498,7 +500,7 @@ export const DriverTripsPage: React.FC = () => {
                 <span style={{ color: '#0A3B73', fontSize: 28, fontWeight: 700 }}>?</span>
               </div>
             </div>
-            <div style={{ paddingBottom: 8, alignSelf: 'stretch' }}>
+            <div style={{ paddingBottom: 8, alignSelf: 'stretch', textAlign: 'center' }}>
               <div
                 style={{
                   color: '#1E2939',
