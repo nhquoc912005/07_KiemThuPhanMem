@@ -22,6 +22,13 @@ async function seed() {
         if (rTX.recordset.length === 0) throw new Error("Chưa có hồ sơ Tài xế liên kết với user taixe1.");
         const maTX = rTX.recordset[0].MaTaiXe;
 
+        // Xóa dữ liệu rác từ các lần chạy trước
+        console.log('Đang dọn dẹp dữ liệu cũ...');
+        await pool.request().query(`DELETE FROM ChiTietLoTrinh WHERE MaVe IN (SELECT MaVe FROM VeTrungChuyen WHERE MaKhachHang IN (SELECT MaKhachHang FROM KhachHang WHERE SoDienThoai LIKE '099888770%'))`);
+        await pool.request().query(`DELETE FROM VeTrungChuyen WHERE MaKhachHang IN (SELECT MaKhachHang FROM KhachHang WHERE SoDienThoai LIKE '099888770%')`);
+        await pool.request().query(`DELETE FROM KhachHang WHERE SoDienThoai LIKE '099888770%'`);
+        await pool.request().query(`DELETE FROM LoTrinhTrungChuyen WHERE GhiChu LIKE 'Mã chuyến: CX0000010%' OR GhiChu LIKE 'Mã chuyển: CX0000010%'`);
+
         // Cập nhật tên tài xế thành Nguyễn Văn A để đồng bộ UI
         await pool.request().input('maTX', sql.Int, maTX).query("UPDATE TaiXe SET HoTen = N'Nguyễn Văn A' WHERE MaTaiXe = @maTX");
 

@@ -1,0 +1,243 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testng-results ignored="0" total="10" passed="10" failed="0" skipped="0">
+  <reporter-output>
+  </reporter-output>
+  <suite started-at="2026-05-02T16:29:44 GMT+07:00" name="Surefire suite" finished-at="2026-05-02T16:33:05 GMT+07:00" duration-ms="201400">
+    <groups>
+    </groups>
+    <test started-at="2026-05-02T16:29:44 GMT+07:00" name="Surefire test" finished-at="2026-05-02T16:33:05 GMT+07:00" duration-ms="201400">
+      <class name="tests.UC07_2_CustomerListTest">
+        <test-method is-config="true" signature="setUp()[pri:0, instance:tests.UC07_2_CustomerListTest@3b2c72c2]" started-at="2026-05-02T16:29:44 GMT+07:00" name="setUp" finished-at="2026-05-02T16:29:45 GMT+07:00" duration-ms="1795" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- setUp -->
+        <test-method is-config="true" signature="setupPages()[pri:0, instance:tests.UC07_2_CustomerListTest@3b2c72c2]" started-at="2026-05-02T16:29:45 GMT+07:00" name="setupPages" finished-at="2026-05-02T16:29:45 GMT+07:00" duration-ms="7" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- setupPages -->
+        <test-method signature="testViewCustomerList()[pri:1, instance:tests.UC07_2_CustomerListTest@3b2c72c2]" started-at="2026-05-02T16:29:45 GMT+07:00" name="testViewCustomerList" description="TC_UC07.2_01: Xem danh sách khách hàng đón/trả" finished-at="2026-05-02T16:30:00 GMT+07:00" duration-ms="14833" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- testViewCustomerList -->
+        <test-method is-config="true" signature="tearDown(org.testng.ITestResult)[pri:0, instance:tests.UC07_2_CustomerListTest@3b2c72c2]" started-at="2026-05-02T16:30:00 GMT+07:00" name="tearDown" finished-at="2026-05-02T16:30:01 GMT+07:00" duration-ms="347" status="PASS">
+          <params>
+            <param index="0">
+              <value>
+                <![CDATA[[TestResult name=testViewCustomerList status=SUCCESS method=UC07_2_CustomerListTest.testViewCustomerList()[pri:1, instance:tests.UC07_2_CustomerListTest@3b2c72c2] output={null}]]]>
+              </value>
+            </param>
+          </params>
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- tearDown -->
+        <test-method is-config="true" signature="setUp()[pri:0, instance:tests.UC07_2_CustomerListTest@3b2c72c2]" started-at="2026-05-02T16:30:01 GMT+07:00" name="setUp" finished-at="2026-05-02T16:30:01 GMT+07:00" duration-ms="916" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- setUp -->
+        <test-method is-config="true" signature="setupPages()[pri:0, instance:tests.UC07_2_CustomerListTest@3b2c72c2]" started-at="2026-05-02T16:30:01 GMT+07:00" name="setupPages" finished-at="2026-05-02T16:30:01 GMT+07:00" duration-ms="2" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- setupPages -->
+        <test-method signature="testCustomerInfoFields()[pri:2, instance:tests.UC07_2_CustomerListTest@3b2c72c2]" started-at="2026-05-02T16:30:01 GMT+07:00" name="testCustomerInfoFields" description="TC_UC07.2_02: Hiển thị đầy đủ thông tin khách hàng" finished-at="2026-05-02T16:31:46 GMT+07:00" duration-ms="104915" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- testCustomerInfoFields -->
+        <test-method is-config="true" signature="tearDown(org.testng.ITestResult)[pri:0, instance:tests.UC07_2_CustomerListTest@3b2c72c2]" started-at="2026-05-02T16:31:46 GMT+07:00" name="tearDown" finished-at="2026-05-02T16:31:47 GMT+07:00" duration-ms="364" status="PASS">
+          <params>
+            <param index="0">
+              <value>
+                <![CDATA[[TestResult name=testCustomerInfoFields status=SUCCESS method=UC07_2_CustomerListTest.testCustomerInfoFields()[pri:2, instance:tests.UC07_2_CustomerListTest@3b2c72c2] output={null}]]]>
+              </value>
+            </param>
+          </params>
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- tearDown -->
+        <test-method is-config="true" signature="setUp()[pri:0, instance:tests.UC07_2_CustomerListTest@3b2c72c2]" started-at="2026-05-02T16:31:47 GMT+07:00" name="setUp" finished-at="2026-05-02T16:31:48 GMT+07:00" duration-ms="925" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- setUp -->
+        <test-method is-config="true" signature="setupPages()[pri:0, instance:tests.UC07_2_CustomerListTest@3b2c72c2]" started-at="2026-05-02T16:31:48 GMT+07:00" name="setupPages" finished-at="2026-05-02T16:31:48 GMT+07:00" duration-ms="1" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- setupPages -->
+        <test-method signature="testCustomerOrder()[pri:3, instance:tests.UC07_2_CustomerListTest@3b2c72c2]" started-at="2026-05-02T16:31:48 GMT+07:00" name="testCustomerOrder" description="TC_UC07.2_03: Hiển thị đúng thứ tự khách hàng" finished-at="2026-05-02T16:32:03 GMT+07:00" duration-ms="15114" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- testCustomerOrder -->
+        <test-method is-config="true" signature="tearDown(org.testng.ITestResult)[pri:0, instance:tests.UC07_2_CustomerListTest@3b2c72c2]" started-at="2026-05-02T16:32:03 GMT+07:00" name="tearDown" finished-at="2026-05-02T16:32:03 GMT+07:00" duration-ms="314" status="PASS">
+          <params>
+            <param index="0">
+              <value>
+                <![CDATA[[TestResult name=testCustomerOrder status=SUCCESS method=UC07_2_CustomerListTest.testCustomerOrder()[pri:3, instance:tests.UC07_2_CustomerListTest@3b2c72c2] output={null}]]]>
+              </value>
+            </param>
+          </params>
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- tearDown -->
+        <test-method is-config="true" signature="setUp()[pri:0, instance:tests.UC07_2_CustomerListTest@3b2c72c2]" started-at="2026-05-02T16:32:03 GMT+07:00" name="setUp" finished-at="2026-05-02T16:32:04 GMT+07:00" duration-ms="856" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- setUp -->
+        <test-method is-config="true" signature="setupPages()[pri:0, instance:tests.UC07_2_CustomerListTest@3b2c72c2]" started-at="2026-05-02T16:32:04 GMT+07:00" name="setupPages" finished-at="2026-05-02T16:32:04 GMT+07:00" duration-ms="1" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- setupPages -->
+        <test-method signature="testSyncWithRouteMap()[pri:4, instance:tests.UC07_2_CustomerListTest@3b2c72c2]" started-at="2026-05-02T16:32:04 GMT+07:00" name="testSyncWithRouteMap" description="TC_UC07.2_04: Đồng bộ với bản đồ lộ trình" finished-at="2026-05-02T16:32:09 GMT+07:00" duration-ms="4579" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- testSyncWithRouteMap -->
+        <test-method is-config="true" signature="tearDown(org.testng.ITestResult)[pri:0, instance:tests.UC07_2_CustomerListTest@3b2c72c2]" started-at="2026-05-02T16:32:09 GMT+07:00" name="tearDown" finished-at="2026-05-02T16:32:09 GMT+07:00" duration-ms="224" status="PASS">
+          <params>
+            <param index="0">
+              <value>
+                <![CDATA[[TestResult name=testSyncWithRouteMap status=SUCCESS method=UC07_2_CustomerListTest.testSyncWithRouteMap()[pri:4, instance:tests.UC07_2_CustomerListTest@3b2c72c2] output={null}]]]>
+              </value>
+            </param>
+          </params>
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- tearDown -->
+        <test-method is-config="true" signature="setUp()[pri:0, instance:tests.UC07_2_CustomerListTest@3b2c72c2]" started-at="2026-05-02T16:32:09 GMT+07:00" name="setUp" finished-at="2026-05-02T16:32:10 GMT+07:00" duration-ms="863" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- setUp -->
+        <test-method is-config="true" signature="setupPages()[pri:0, instance:tests.UC07_2_CustomerListTest@3b2c72c2]" started-at="2026-05-02T16:32:10 GMT+07:00" name="setupPages" finished-at="2026-05-02T16:32:10 GMT+07:00" duration-ms="1" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- setupPages -->
+        <test-method signature="testHighlightOnMapInteraction()[pri:5, instance:tests.UC07_2_CustomerListTest@3b2c72c2]" started-at="2026-05-02T16:32:10 GMT+07:00" name="testHighlightOnMapInteraction" description="TC_UC07.2_05: Highlight khách hàng khi chọn trên bản đồ" finished-at="2026-05-02T16:32:14 GMT+07:00" duration-ms="4859" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- testHighlightOnMapInteraction -->
+        <test-method is-config="true" signature="tearDown(org.testng.ITestResult)[pri:0, instance:tests.UC07_2_CustomerListTest@3b2c72c2]" started-at="2026-05-02T16:32:14 GMT+07:00" name="tearDown" finished-at="2026-05-02T16:32:15 GMT+07:00" duration-ms="259" status="PASS">
+          <params>
+            <param index="0">
+              <value>
+                <![CDATA[[TestResult name=testHighlightOnMapInteraction status=SUCCESS method=UC07_2_CustomerListTest.testHighlightOnMapInteraction()[pri:5, instance:tests.UC07_2_CustomerListTest@3b2c72c2] output={null}]]]>
+              </value>
+            </param>
+          </params>
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- tearDown -->
+        <test-method is-config="true" signature="setUp()[pri:0, instance:tests.UC07_2_CustomerListTest@3b2c72c2]" started-at="2026-05-02T16:32:15 GMT+07:00" name="setUp" finished-at="2026-05-02T16:32:16 GMT+07:00" duration-ms="873" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- setUp -->
+        <test-method is-config="true" signature="setupPages()[pri:0, instance:tests.UC07_2_CustomerListTest@3b2c72c2]" started-at="2026-05-02T16:32:16 GMT+07:00" name="setupPages" finished-at="2026-05-02T16:32:16 GMT+07:00" duration-ms="0" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- setupPages -->
+        <test-method signature="testNoAssignedTrip()[pri:6, instance:tests.UC07_2_CustomerListTest@3b2c72c2]" started-at="2026-05-02T16:32:16 GMT+07:00" name="testNoAssignedTrip" description="TC_UC07.2_06: Không có chuyến được phân công" finished-at="2026-05-02T16:32:16 GMT+07:00" duration-ms="0" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- testNoAssignedTrip -->
+        <test-method is-config="true" signature="tearDown(org.testng.ITestResult)[pri:0, instance:tests.UC07_2_CustomerListTest@3b2c72c2]" started-at="2026-05-02T16:32:16 GMT+07:00" name="tearDown" finished-at="2026-05-02T16:32:16 GMT+07:00" duration-ms="158" status="PASS">
+          <params>
+            <param index="0">
+              <value>
+                <![CDATA[[TestResult name=testNoAssignedTrip status=SUCCESS method=UC07_2_CustomerListTest.testNoAssignedTrip()[pri:6, instance:tests.UC07_2_CustomerListTest@3b2c72c2] output={null}]]]>
+              </value>
+            </param>
+          </params>
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- tearDown -->
+        <test-method is-config="true" signature="setUp()[pri:0, instance:tests.UC07_2_CustomerListTest@3b2c72c2]" started-at="2026-05-02T16:32:16 GMT+07:00" name="setUp" finished-at="2026-05-02T16:32:17 GMT+07:00" duration-ms="826" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- setUp -->
+        <test-method is-config="true" signature="setupPages()[pri:0, instance:tests.UC07_2_CustomerListTest@3b2c72c2]" started-at="2026-05-02T16:32:17 GMT+07:00" name="setupPages" finished-at="2026-05-02T16:32:17 GMT+07:00" duration-ms="2" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- setupPages -->
+        <test-method signature="testAutoUpdateOnDataChange()[pri:7, instance:tests.UC07_2_CustomerListTest@3b2c72c2]" started-at="2026-05-02T16:32:17 GMT+07:00" name="testAutoUpdateOnDataChange" description="TC_UC07.2_07: Cập nhật danh sách khi có thay đổi" finished-at="2026-05-02T16:32:30 GMT+07:00" duration-ms="13698" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- testAutoUpdateOnDataChange -->
+        <test-method is-config="true" signature="tearDown(org.testng.ITestResult)[pri:0, instance:tests.UC07_2_CustomerListTest@3b2c72c2]" started-at="2026-05-02T16:32:30 GMT+07:00" name="tearDown" finished-at="2026-05-02T16:32:32 GMT+07:00" duration-ms="1905" status="PASS">
+          <params>
+            <param index="0">
+              <value>
+                <![CDATA[[TestResult name=testAutoUpdateOnDataChange status=SUCCESS method=UC07_2_CustomerListTest.testAutoUpdateOnDataChange()[pri:7, instance:tests.UC07_2_CustomerListTest@3b2c72c2] output={null}]]]>
+              </value>
+            </param>
+          </params>
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- tearDown -->
+        <test-method is-config="true" signature="setUp()[pri:0, instance:tests.UC07_2_CustomerListTest@3b2c72c2]" started-at="2026-05-02T16:32:32 GMT+07:00" name="setUp" finished-at="2026-05-02T16:32:33 GMT+07:00" duration-ms="902" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- setUp -->
+        <test-method is-config="true" signature="setupPages()[pri:0, instance:tests.UC07_2_CustomerListTest@3b2c72c2]" started-at="2026-05-02T16:32:33 GMT+07:00" name="setupPages" finished-at="2026-05-02T16:32:33 GMT+07:00" duration-ms="1" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- setupPages -->
+        <test-method signature="testErrorLoadingCustomerList()[pri:8, instance:tests.UC07_2_CustomerListTest@3b2c72c2]" started-at="2026-05-02T16:32:33 GMT+07:00" name="testErrorLoadingCustomerList" description="TC_UC07.2_08: Lỗi tải danh sách khách hàng" finished-at="2026-05-02T16:32:36 GMT+07:00" duration-ms="2761" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- testErrorLoadingCustomerList -->
+        <test-method is-config="true" signature="tearDown(org.testng.ITestResult)[pri:0, instance:tests.UC07_2_CustomerListTest@3b2c72c2]" started-at="2026-05-02T16:32:36 GMT+07:00" name="tearDown" finished-at="2026-05-02T16:32:36 GMT+07:00" duration-ms="234" status="PASS">
+          <params>
+            <param index="0">
+              <value>
+                <![CDATA[[TestResult name=testErrorLoadingCustomerList status=SUCCESS method=UC07_2_CustomerListTest.testErrorLoadingCustomerList()[pri:8, instance:tests.UC07_2_CustomerListTest@3b2c72c2] output={null}]]]>
+              </value>
+            </param>
+          </params>
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- tearDown -->
+        <test-method is-config="true" signature="setUp()[pri:0, instance:tests.UC07_2_CustomerListTest@3b2c72c2]" started-at="2026-05-02T16:32:36 GMT+07:00" name="setUp" finished-at="2026-05-02T16:32:37 GMT+07:00" duration-ms="901" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- setUp -->
+        <test-method is-config="true" signature="setupPages()[pri:0, instance:tests.UC07_2_CustomerListTest@3b2c72c2]" started-at="2026-05-02T16:32:37 GMT+07:00" name="setupPages" finished-at="2026-05-02T16:32:37 GMT+07:00" duration-ms="3" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- setupPages -->
+        <test-method signature="testReadOnlyCustomerList()[pri:9, instance:tests.UC07_2_CustomerListTest@3b2c72c2]" started-at="2026-05-02T16:32:37 GMT+07:00" name="testReadOnlyCustomerList" description="TC_UC07.2_09: Không cho phép chỉnh sửa khách hàng" finished-at="2026-05-02T16:32:50 GMT+07:00" duration-ms="12793" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- testReadOnlyCustomerList -->
+        <test-method is-config="true" signature="tearDown(org.testng.ITestResult)[pri:0, instance:tests.UC07_2_CustomerListTest@3b2c72c2]" started-at="2026-05-02T16:32:50 GMT+07:00" name="tearDown" finished-at="2026-05-02T16:32:50 GMT+07:00" duration-ms="281" status="PASS">
+          <params>
+            <param index="0">
+              <value>
+                <![CDATA[[TestResult name=testReadOnlyCustomerList status=SUCCESS method=UC07_2_CustomerListTest.testReadOnlyCustomerList()[pri:9, instance:tests.UC07_2_CustomerListTest@3b2c72c2] output={null}]]]>
+              </value>
+            </param>
+          </params>
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- tearDown -->
+        <test-method is-config="true" signature="setUp()[pri:0, instance:tests.UC07_2_CustomerListTest@3b2c72c2]" started-at="2026-05-02T16:32:50 GMT+07:00" name="setUp" finished-at="2026-05-02T16:32:51 GMT+07:00" duration-ms="882" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- setUp -->
+        <test-method is-config="true" signature="setupPages()[pri:0, instance:tests.UC07_2_CustomerListTest@3b2c72c2]" started-at="2026-05-02T16:32:51 GMT+07:00" name="setupPages" finished-at="2026-05-02T16:32:51 GMT+07:00" duration-ms="1" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- setupPages -->
+        <test-method signature="testCustomerStatusIndicators()[pri:10, instance:tests.UC07_2_CustomerListTest@3b2c72c2]" started-at="2026-05-02T16:32:51 GMT+07:00" name="testCustomerStatusIndicators" description="TC_UC07.2_10: Kiểm tra cập nhật trạng thái khách hàng" finished-at="2026-05-02T16:33:05 GMT+07:00" duration-ms="13666" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- testCustomerStatusIndicators -->
+        <test-method is-config="true" signature="tearDown(org.testng.ITestResult)[pri:0, instance:tests.UC07_2_CustomerListTest@3b2c72c2]" started-at="2026-05-02T16:33:05 GMT+07:00" name="tearDown" finished-at="2026-05-02T16:33:05 GMT+07:00" duration-ms="267" status="PASS">
+          <params>
+            <param index="0">
+              <value>
+                <![CDATA[[TestResult name=testCustomerStatusIndicators status=SUCCESS method=UC07_2_CustomerListTest.testCustomerStatusIndicators()[pri:10, instance:tests.UC07_2_CustomerListTest@3b2c72c2] output={null}]]]>
+              </value>
+            </param>
+          </params>
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- tearDown -->
+      </class> <!-- tests.UC07_2_CustomerListTest -->
+    </test> <!-- Surefire test -->
+  </suite> <!-- Surefire suite -->
+</testng-results>
