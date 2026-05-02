@@ -1,4 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<testng-results ignored="0" total="1" passed="1" failed="0" skipped="0">
+  <reporter-output>
+  </reporter-output>
+  <suite started-at="2026-05-02T15:10:36 GMT+07:00" name="Surefire suite" finished-at="2026-05-02T15:10:46 GMT+07:00" duration-ms="9886">
+    <groups>
+    </groups>
+    <test started-at="2026-05-02T15:10:36 GMT+07:00" name="Surefire test" finished-at="2026-05-02T15:10:46 GMT+07:00" duration-ms="9886">
+      <class name="TC_UC07_1_03">
+        <test-method is-config="true" signature="setUp()[pri:0, instance:TC_UC07_1_03@176d53b2]" started-at="2026-05-02T15:10:36 GMT+07:00" name="setUp" finished-at="2026-05-02T15:10:38 GMT+07:00" duration-ms="1820" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- setUp -->
+        <test-method signature="testShowStops()[pri:0, instance:TC_UC07_1_03@176d53b2]" started-at="2026-05-02T15:10:38 GMT+07:00" name="testShowStops" description="UC07.1.03 - Hiển thị các điểm đón trả" finished-at="2026-05-02T15:10:46 GMT+07:00" duration-ms="7777" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- testShowStops -->
+        <test-method is-config="true" signature="tearDown()[pri:0, instance:TC_UC07_1_03@176d53b2]" started-at="2026-05-02T15:10:46 GMT+07:00" name="tearDown" finished-at="2026-05-02T15:10:46 GMT+07:00" duration-ms="256" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- tearDown -->
+      </class> <!-- TC_UC07_1_03 -->
 <testng-results ignored="0" total="10" passed="10" failed="0" skipped="0">
   <reporter-output>
   </reporter-output>

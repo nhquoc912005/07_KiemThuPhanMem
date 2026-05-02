@@ -103,6 +103,7 @@
                     <div class="method-list-content passed suite-Surefire_suite">
                       <span>
                         <img src="passed.png" width="3%"/>
+                        <a href="#" panel-name="suite-Surefire_suite" title="TC_UC07_1_03" class="method navigator-link" hash-for-method="testShowStops">testShowStops</a> <!-- method navigator-link -->
                         <a href="#" panel-name="suite-Surefire_suite" title="tests.UC07_2_CustomerListTest" class="method navigator-link" hash-for-method="testAutoUpdateOnDataChange">testAutoUpdateOnDataChange</a> <!-- method navigator-link -->
                       </span>
                       <br/>
@@ -166,11 +167,17 @@
           <div class="suite-Surefire_suite-class-passed">
             <div class="main-panel-header rounded-window-top">
               <img src="passed.png"/>
+              <span class="class-name">TC_UC07_1_03</span>
               <span class="class-name">tests.UC07_2_CustomerListTest</span>
             </div> <!-- main-panel-header rounded-window-top -->
             <div class="main-panel-content rounded-window-bottom">
               <div class="method">
                 <div class="method-content">
+                  <a name="testShowStops">
+                  </a> <!-- testShowStops -->
+                  <span class="method-name">testShowStops</span>
+                  <em>
+(UC07.1.03 - Hiển thị các điểm đón trả)                  </em>
                   <a name="testAutoUpdateOnDataChange">
                   </a> <!-- testAutoUpdateOnDataChange -->
                   <span class="method-name">testAutoUpdateOnDataChange</span>
@@ -272,6 +279,7 @@
 &lt;suite name=&quot;Surefire suite&quot; verbose=&quot;0&quot;&gt;
   &lt;test thread-count=&quot;5&quot; name=&quot;Surefire test&quot; verbose=&quot;0&quot;&gt;
     &lt;classes&gt;
+      &lt;class name=&quot;TC_UC07_1_03&quot;/&gt;
       &lt;class name=&quot;tests.UC07_2_CustomerListTest&quot;/&gt;
     &lt;/classes&gt;
   &lt;/test&gt; &lt;!-- Surefire test --&gt;
@@ -312,6 +320,11 @@ data.addColumn('number', 'Number');
 data.addColumn('string', 'Method');
 data.addColumn('string', 'Class');
 data.addColumn('number', 'Time (ms)');
+data.addRows(1);
+data.setCell(0, 0, 0)
+data.setCell(0, 1, 'testShowStops')
+data.setCell(0, 2, 'TC_UC07_1_03')
+data.setCell(0, 3, 7777);
 data.addRows(10);
 data.setCell(0, 0, 0)
 data.setCell(0, 1, 'testCustomerInfoFields')
@@ -357,6 +370,7 @@ window.suiteTableData['Surefire_suite']= { tableData: data, tableDiv: 'times-div
 return data;
 }
               </script>
+              <span class="suite-total-time">Total running time: 7 seconds</span>
               <span class="suite-total-time">Total running time: 3 minutes</span>
               <div id="times-div-Surefire_suite">
               </div> <!-- times-div-Surefire_suite -->
@@ -383,11 +397,19 @@ return data;
           </div> <!-- main-panel-header rounded-window-top -->
           <div class="main-panel-content rounded-window-bottom">
             <div class="chronological-class">
+              <div class="chronological-class-name">TC_UC07_1_03</div> <!-- chronological-class-name -->
               <div class="chronological-class-name">tests.UC07_2_CustomerListTest</div> <!-- chronological-class-name -->
               <div class="configuration-method before">
                 <span class="method-name">setUp</span>
                 <span class="method-start">0 ms</span>
               </div> <!-- configuration-method before -->
+              <div class="test-method">
+                <span class="method-name">testShowStops</span>
+                <span class="method-start">1821 ms</span>
+              </div> <!-- test-method -->
+              <div class="configuration-method after">
+                <span class="method-name">tearDown</span>
+                <span class="method-start">9599 ms</span>
               <div class="configuration-method before">
                 <span class="method-name">setupPages</span>
                 <span class="method-start">1797 ms</span>

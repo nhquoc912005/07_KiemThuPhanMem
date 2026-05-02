@@ -5,6 +5,12 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.shuttle</groupId>
+    <artifactId>selenium-java-tests</artifactId>
+    <version>1.0-SNAPSHOT</version>
+
+    <properties>
+        <maven.compiler.source>11</maven.compiler.source>
+        <maven.compiler.target>11</maven.compiler.target>
     <artifactId>selenium-tests</artifactId>
     <version>1.0-SNAPSHOT</version>
 
@@ -15,6 +21,14 @@
     </properties>
 
     <dependencies>
+        <!-- Selenium Java -->
+        <dependency>
+            <groupId>org.seleniumhq.selenium</groupId>
+            <artifactId>selenium-java</artifactId>
+            <version>4.18.1</version>
+        </dependency>
+
+        <!-- TestNG -->
         <!-- Selenium WebDriver -->
         <!-- Source: https://mvnrepository.com/artifact/org.seleniumhq.selenium/selenium-java -->
         <dependency>
@@ -33,6 +47,7 @@
             <scope>test</scope>
         </dependency>
 
+        <!-- WebDriver Manager -->
         <!-- WebDriverManager -->
         <dependency>
             <groupId>io.github.bonigarcia</groupId>
