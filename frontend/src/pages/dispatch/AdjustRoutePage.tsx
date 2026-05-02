@@ -231,6 +231,11 @@ export const AdjustRoutePage: React.FC = () => {
       return;
     }
 
+    if (currentRoute.TrangThaiLoTrinh === 'Hoàn thành') {
+      setError('Không thể chỉnh sửa lộ trình đã hoàn thành');
+      return;
+    }
+
     if (hasPastStartTimeChange(startTime, originalFormValues.startTime)) {
       setError('Thời gian không hợp lệ');
       return;

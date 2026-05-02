@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+<suite name="Shuttle Selenium Suite">
+    <test name="UI Automation Tests">
+        <classes>
+            <class name="tests.DieuChinhLoTrinhTest"/>
+            <class name="tests.TheoDoiTrangThaiTrungChuyenTest"/>
+            <class name="tests.TripStatusTest"/>
+        </classes>
+    </test>
+</suite>

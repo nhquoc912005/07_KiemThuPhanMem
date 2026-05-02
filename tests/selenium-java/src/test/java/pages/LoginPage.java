@@ -28,6 +28,6 @@ public class LoginPage {
         
         // Đợi chuyển trang thành công (Tùy thuộc vào user là tài xế hay điều phối mà url sẽ khác nhau)
         // Ví dụ tạm thời:
-        wait.until(ExpectedConditions.urlContains("/"));
+        wait.until(ExpectedConditions.not(ExpectedConditions.urlContains("/login")));
     }
 }
