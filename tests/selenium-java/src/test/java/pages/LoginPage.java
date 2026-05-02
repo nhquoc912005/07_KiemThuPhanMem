@@ -25,8 +25,9 @@ public class LoginPage {
         wait.until(ExpectedConditions.visibilityOfElementLocated(inputUsername)).sendKeys(username);
         driver.findElement(inputPassword).sendKeys(password);
         driver.findElement(btnLogin).click();
-
-        // Đợi chuyển trang điều phối được tải xong
-        wait.until(ExpectedConditions.urlContains("/dispatch"));
+        
+        // Đợi chuyển trang thành công (Tùy thuộc vào user là tài xế hay điều phối mà url sẽ khác nhau)
+        // Ví dụ tạm thời:
+        wait.until(ExpectedConditions.not(ExpectedConditions.urlContains("/login")));
     }
 }
