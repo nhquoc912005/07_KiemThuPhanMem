@@ -173,7 +173,7 @@ public class DieuChinhLoTrinhTest extends BaseTest {
         Assert.fail("Theo thiết kế phần mềm hiện tại, chức năng thay đổi tài xế không được hỗ trợ tại trang Điều chỉnh lộ trình (Input bị readOnly). Test case failed theo requirement.");
     }
 
-    @Test(priority = 9, description = "TC_UC05.1_09: Thay đổi thời gian bắt đầu ở quá khứ hoặc trùng lịch tài xế ở trạng thái 'Chưa thực hiện'")
+    @Test(priority = 9, description = "TC_UC05.1_09: Thay đổi thời gian bắt đầu ở quá khứ ở trạng thái 'Chưa thực hiện'")
     public void testPastTimePendingRoute() {
         loginAndNavigateToAdjustRoute();
         selectRouteByStatusOrSkip("Chưa thực hiện");
@@ -184,6 +184,7 @@ public class DieuChinhLoTrinhTest extends BaseTest {
         Assert.assertTrue(adjustRoutePage.isErrorMessageDisplayed("Thời gian không hợp lệ"), 
             "Không hiển thị lỗi 'Thời gian không hợp lệ'!");
     }
+
 
     @Test(priority = 10, description = "TC_UC05.1_10: Thay đổi thời gian bắt đầu hợp lệ ở trạng thái đang thực hiện")
     public void testValidTimeInProgressRoute() {

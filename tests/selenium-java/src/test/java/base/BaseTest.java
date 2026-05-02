@@ -16,10 +16,16 @@ public class BaseTest {
 
     @BeforeMethod
     public void setUp() {
+        // Tắt các cảnh báo (WARNING) rác từ Selenium (đặc biệt là lỗi CDP với Chrome bản mới)
+        java.util.logging.Logger.getLogger("org.openqa.selenium").setLevel(java.util.logging.Level.SEVERE);
+
         WebDriverManager.chromedriver().setup();
         ChromeOptions options = new ChromeOptions();
         // options.addArguments("--headless"); // Mở comment nếu muốn chạy ngầm
         options.addArguments("--remote-allow-origins=*");
+        options.addArguments("--no-sandbox");
+        options.addArguments("--disable-dev-shm-usage");
+        options.addArguments("--disable-search-engine-choice-screen");
         driver = new ChromeDriver(options);
         driver.manage().window().maximize();
         driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(10));

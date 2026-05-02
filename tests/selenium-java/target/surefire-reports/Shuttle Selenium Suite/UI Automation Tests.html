@@ -1,0 +1,1250 @@
+<html>
+<head>
+<title>TestNG:  UI Automation Tests</title>
+<link href="../testng.css" rel="stylesheet" type="text/css" />
+<link href="../my-testng.css" rel="stylesheet" type="text/css" />
+
+<style type="text/css">
+.log { display: none;} 
+.stack-trace { display: none;} 
+</style>
+<script type="text/javascript">
+<!--
+function flip(e) {
+  current = e.style.display;
+  if (current == 'block') {
+    e.style.display = 'none';
+    return 0;
+  }
+  else {
+    e.style.display = 'block';
+    return 1;
+  }
+}
+
+function toggleBox(szDivId, elem, msg1, msg2)
+{
+  var res = -1;  if (document.getElementById) {
+    res = flip(document.getElementById(szDivId));
+  }
+  else if (document.all) {
+    // this is the way old msie versions work
+    res = flip(document.all[szDivId]);
+  }
+  if(elem) {
+    if(res == 0) elem.innerHTML = msg1; else elem.innerHTML = msg2;
+  }
+
+}
+
+function toggleAllBoxes() {
+  if (document.getElementsByTagName) {
+    d = document.getElementsByTagName('div');
+    for (i = 0; i < d.length; i++) {
+      if (d[i].className == 'log') {
+        flip(d[i]);
+      }
+    }
+  }
+}
+
+// -->
+</script>
+
+</head>
+<body>
+<h2 align='center'>UI Automation Tests</h2><table border='1' align="center">
+<tr>
+<td>Tests passed/Failed/Skipped:</td><td>36/13/6</td>
+</tr><tr>
+<td>Started on:</td><td>Sat May 02 21:28:01 GMT+07:00 2026</td>
+</tr>
+<tr><td>Total time:</td><td>535 seconds (535748 ms)</td>
+</tr><tr>
+<td>Included groups:</td><td></td>
+</tr><tr>
+<td>Excluded groups:</td><td></td>
+</tr>
+</table><p/>
+<small><i>(Hover the method name to see the test class name)</i></small><p/>
+<table width='100%' border='1' class='invocation-failed'>
+<tr><td colspan='4' align='center'><b>FAILED TESTS</b></td></tr>
+<tr><td><b>Test method</b></td>
+<td><b>Attribute(s)</b></td>
+<td width="30%"><b>Exception</b></td>
+<td width="10%"><b>Time (seconds)</b></td>
+<td><b>Instance</b></td>
+</tr>
+<tr>
+<td title='tests.TheoDoiTrangThaiTrungChuyenTest.testTrackCompletedRoute()'><b>testTrackCompletedRoute</b><br>Test class: tests.TheoDoiTrangThaiTrungChuyenTest<br>Test method: TC_UC05.3_05: Theo dõi lộ trình 'Hoàn thành'</td>
+<td><div><pre>java.lang.AssertionError: Lỗi UI: Lộ trình đã hoàn thành nhưng không hiển thị vị trí cuối cùng là &apos;Đã trả khách&apos;! expected [true] but found [false]
+	at tests.TheoDoiTrangThaiTrungChuyenTest.testTrackCompletedRoute(TheoDoiTrangThaiTrungChuyenTest.java:108)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+... Removed 32 stack frames</pre></div><a href='#' onClick='toggleBox("stack-trace719635492", this, "Click to show all stack frames", "Click to hide stack frames")'>Click to show all stack frames</a>
+<div class='stack-trace' id='stack-trace719635492'><pre>java.lang.AssertionError: Lỗi UI: Lộ trình đã hoàn thành nhưng không hiển thị vị trí cuối cùng là &apos;Đã trả khách&apos;! expected [true] but found [false]
+	at org.testng.Assert.fail(Assert.java:111)
+	at org.testng.Assert.failNotEquals(Assert.java:1578)
+	at org.testng.Assert.assertTrue(Assert.java:57)
+	at tests.TheoDoiTrangThaiTrungChuyenTest.testTrackCompletedRoute(TheoDoiTrangThaiTrungChuyenTest.java:108)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:565)
+	at org.testng.internal.invokers.MethodInvocationHelper.invokeMethod(MethodInvocationHelper.java:139)
+	at org.testng.internal.invokers.TestInvoker.invokeMethod(TestInvoker.java:664)
+	at org.testng.internal.invokers.TestInvoker.invokeTestMethod(TestInvoker.java:228)
+	at org.testng.internal.invokers.MethodRunner.runInSequence(MethodRunner.java:63)
+	at org.testng.internal.invokers.TestInvoker$MethodInvocationAgent.invoke(TestInvoker.java:961)
+	at org.testng.internal.invokers.TestInvoker.invokeTestMethods(TestInvoker.java:201)
+	at org.testng.internal.invokers.TestMethodWorker.invokeTestMethods(TestMethodWorker.java:148)
+	at org.testng.internal.invokers.TestMethodWorker.run(TestMethodWorker.java:128)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+	at org.testng.TestRunner.privateRun(TestRunner.java:819)
+	at org.testng.TestRunner.run(TestRunner.java:619)
+	at org.testng.SuiteRunner.runTest(SuiteRunner.java:443)
+	at org.testng.SuiteRunner.runSequentially(SuiteRunner.java:437)
+	at org.testng.SuiteRunner.privateRun(SuiteRunner.java:397)
+	at org.testng.SuiteRunner.run(SuiteRunner.java:336)
+	at org.testng.SuiteRunnerWorker.runSuite(SuiteRunnerWorker.java:52)
+	at org.testng.SuiteRunnerWorker.run(SuiteRunnerWorker.java:95)
+	at org.testng.TestNG.runSuitesSequentially(TestNG.java:1301)
+	at org.testng.TestNG.runSuitesLocally(TestNG.java:1228)
+	at org.testng.TestNG.runSuites(TestNG.java:1134)
+	at org.testng.TestNG.run(TestNG.java:1101)
+	at org.apache.maven.surefire.testng.TestNGExecutor.run(TestNGExecutor.java:308)
+	at org.apache.maven.surefire.testng.TestNGXmlTestSuite.execute(TestNGXmlTestSuite.java:71)
+	at org.apache.maven.surefire.testng.TestNGProvider.invoke(TestNGProvider.java:113)
+	at org.apache.maven.surefire.booter.ForkedBooter.runSuitesInProcess(ForkedBooter.java:385)
+	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162)
+	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507)
+	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495)
+</pre></div></td>
+<td>23</td>
+<td>tests.TheoDoiTrangThaiTrungChuyenTest@3c130745</td></tr>
+<tr>
+<td title='tests.TripStatusTest.testCustomerCancelled()'><b>testCustomerCancelled</b><br>Test class: tests.TripStatusTest<br>Test method: TC_UC07.3_07: Cập nhật trạng thái Khách hủy</td>
+<td><div><pre>org.openqa.selenium.NoSuchElementException: Cannot locate option with text: Hủy
+For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors#no-such-element-exception
+Build info: version: &apos;4.29.0&apos;, revision: &apos;5fc1ec94cb&apos;
+System info: os.name: &apos;Windows 11&apos;, os.arch: &apos;amd64&apos;, os.version: &apos;10.0&apos;, java.version: &apos;25.0.2&apos;
+Driver info: driver.version: unknown
+	at org.openqa.selenium.support.ui.Select.selectByVisibleText(Select.java:167)
+	at pages.DriverTripDetailPage.updateCustomerStatus(DriverTripDetailPage.java:70)
+	at tests.TripStatusTest.testCustomerCancelled(TripStatusTest.java:132)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+... Removed 29 stack frames</pre></div><a href='#' onClick='toggleBox("stack-trace369042555", this, "Click to show all stack frames", "Click to hide stack frames")'>Click to show all stack frames</a>
+<div class='stack-trace' id='stack-trace369042555'><pre>org.openqa.selenium.NoSuchElementException: Cannot locate option with text: Hủy
+For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors#no-such-element-exception
+Build info: version: &apos;4.29.0&apos;, revision: &apos;5fc1ec94cb&apos;
+System info: os.name: &apos;Windows 11&apos;, os.arch: &apos;amd64&apos;, os.version: &apos;10.0&apos;, java.version: &apos;25.0.2&apos;
+Driver info: driver.version: unknown
+	at org.openqa.selenium.support.ui.Select.selectByVisibleText(Select.java:167)
+	at pages.DriverTripDetailPage.updateCustomerStatus(DriverTripDetailPage.java:70)
+	at tests.TripStatusTest.testCustomerCancelled(TripStatusTest.java:132)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:565)
+	at org.testng.internal.invokers.MethodInvocationHelper.invokeMethod(MethodInvocationHelper.java:139)
+	at org.testng.internal.invokers.TestInvoker.invokeMethod(TestInvoker.java:664)
+	at org.testng.internal.invokers.TestInvoker.invokeTestMethod(TestInvoker.java:228)
+	at org.testng.internal.invokers.MethodRunner.runInSequence(MethodRunner.java:63)
+	at org.testng.internal.invokers.TestInvoker$MethodInvocationAgent.invoke(TestInvoker.java:961)
+	at org.testng.internal.invokers.TestInvoker.invokeTestMethods(TestInvoker.java:201)
+	at org.testng.internal.invokers.TestMethodWorker.invokeTestMethods(TestMethodWorker.java:148)
+	at org.testng.internal.invokers.TestMethodWorker.run(TestMethodWorker.java:128)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+	at org.testng.TestRunner.privateRun(TestRunner.java:819)
+	at org.testng.TestRunner.run(TestRunner.java:619)
+	at org.testng.SuiteRunner.runTest(SuiteRunner.java:443)
+	at org.testng.SuiteRunner.runSequentially(SuiteRunner.java:437)
+	at org.testng.SuiteRunner.privateRun(SuiteRunner.java:397)
+	at org.testng.SuiteRunner.run(SuiteRunner.java:336)
+	at org.testng.SuiteRunnerWorker.runSuite(SuiteRunnerWorker.java:52)
+	at org.testng.SuiteRunnerWorker.run(SuiteRunnerWorker.java:95)
+	at org.testng.TestNG.runSuitesSequentially(TestNG.java:1301)
+	at org.testng.TestNG.runSuitesLocally(TestNG.java:1228)
+	at org.testng.TestNG.runSuites(TestNG.java:1134)
+	at org.testng.TestNG.run(TestNG.java:1101)
+	at org.apache.maven.surefire.testng.TestNGExecutor.run(TestNGExecutor.java:308)
+	at org.apache.maven.surefire.testng.TestNGXmlTestSuite.execute(TestNGXmlTestSuite.java:71)
+	at org.apache.maven.surefire.testng.TestNGProvider.invoke(TestNGProvider.java:113)
+	at org.apache.maven.surefire.booter.ForkedBooter.runSuitesInProcess(ForkedBooter.java:385)
+	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162)
+	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507)
+	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495)
+</pre></div></td>
+<td>12</td>
+<td>tests.TripStatusTest@cd3fee8</td></tr>
+<tr>
+<td title='tests.UC07_2_CustomerListTest.testCustomerInfoFields()'><b>testCustomerInfoFields</b><br>Test class: tests.UC07_2_CustomerListTest<br>Test method: TC_UC07.2_02: Hiển thị đầy đủ thông tin khách hàng</td>
+<td><div><pre>org.openqa.selenium.StaleElementReferenceException: stale element reference: stale element not found in the current frame
+  (Session info: chrome=147.0.7727.138)
+For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors#stale-element-reference-exception
+Build info: version: &apos;4.29.0&apos;, revision: &apos;5fc1ec94cb&apos;
+System info: os.name: &apos;Windows 11&apos;, os.arch: &apos;amd64&apos;, os.version: &apos;10.0&apos;, java.version: &apos;25.0.2&apos;
+Driver info: org.openqa.selenium.chrome.ChromeDriver
+Command: [8828f2c3997e8480c1828ab91c9ab41f, findChildElements {using=css selector, value=td[colspan], id=f.A88C72C3F1C754FDFBDF789DC2FDFC94.d.47ED0C03AA7345E80747CBCCFC591716.e.43}]
+Capabilities {acceptInsecureCerts: false, browserName: chrome, browserVersion: 147.0.7727.138, chrome: {chromedriverVersion: 147.0.7727.117 (474cc805edd..., userDataDir: C:\Users\admin\AppData\Loca...}, fedcm:accounts: true, goog:chromeOptions: {debuggerAddress: localhost:62210}, goog:processID: 20780, networkConnectionEnabled: false, pageLoadStrategy: normal, platformName: windows, proxy: Proxy(), se:cdp: ws://localhost:62210/devtoo..., se:cdpVersion: 147.0.7727.138, setWindowRect: true, strictFileInteractability: false, timeouts: {implicit: 0, pageLoad: 300000, script: 30000}, unhandledPromptBehavior: dismiss and notify, webauthn:extension:credBlob: true, webauthn:extension:largeBlob: true, webauthn:extension:minPinLength: true, webauthn:extension:prf: true, webauthn:virtualAuthenticators: true}
+Session ID: 8828f2c3997e8480c1828ab91c9ab41f
+	at org.openqa.selenium.remote.ErrorCodec.decode(ErrorCodec.java:167)
+	at org.openqa.selenium.remote.codec.w3c.W3CHttpResponseCodec.decode(W3CHttpResponseCodec.java:138)
+	at org.openqa.selenium.remote.codec.w3c.W3CHttpResponseCodec.decode(W3CHttpResponseCodec.java:50)
+	at org.openqa.selenium.remote.HttpCommandExecutor.execute(HttpCommandExecutor.java:215)
+	at org.openqa.selenium.remote.service.DriverCommandExecutor.invokeExecute(DriverCommandExecutor.java:216)
+	at org.openqa.selenium.remote.service.DriverCommandExecutor.execute(DriverCommandExecutor.java:174)
+	at org.openqa.selenium.remote.RemoteWebDriver.execute(RemoteWebDriver.java:545)
+	at org.openqa.selenium.remote.ElementLocation$ElementFinder$2.findElements(ElementLocation.java:182)
+	at org.openqa.selenium.remote.ElementLocation.findElements(ElementLocation.java:103)
+	at org.openqa.selenium.remote.RemoteWebDriver.findElements(RemoteWebDriver.java:381)
+	at org.openqa.selenium.remote.RemoteWebElement.findElements(RemoteWebElement.java:203)
+	at pages.DriverCustomerListPage.findDataRows(DriverCustomerListPage.java:82)
+	at pages.DriverCustomerListPage.getCustomerRows(DriverCustomerListPage.java:34)
+	at pages.DriverCustomerListPage.getCustomerCellText(DriverCustomerListPage.java:93)
+	at pages.DriverCustomerListPage.getCustomerPickPoint(DriverCustomerListPage.java:58)
+	at tests.UC07_2_CustomerListTest.testCustomerInfoFields(UC07_2_CustomerListTest.java:52)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+... Removed 32 stack frames</pre></div><a href='#' onClick='toggleBox("stack-trace614787520", this, "Click to show all stack frames", "Click to hide stack frames")'>Click to show all stack frames</a>
+<div class='stack-trace' id='stack-trace614787520'><pre>org.openqa.selenium.StaleElementReferenceException: stale element reference: stale element not found in the current frame
+  (Session info: chrome=147.0.7727.138)
+For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors#stale-element-reference-exception
+Build info: version: &apos;4.29.0&apos;, revision: &apos;5fc1ec94cb&apos;
+System info: os.name: &apos;Windows 11&apos;, os.arch: &apos;amd64&apos;, os.version: &apos;10.0&apos;, java.version: &apos;25.0.2&apos;
+Driver info: org.openqa.selenium.chrome.ChromeDriver
+Command: [8828f2c3997e8480c1828ab91c9ab41f, findChildElements {using=css selector, value=td[colspan], id=f.A88C72C3F1C754FDFBDF789DC2FDFC94.d.47ED0C03AA7345E80747CBCCFC591716.e.43}]
+Capabilities {acceptInsecureCerts: false, browserName: chrome, browserVersion: 147.0.7727.138, chrome: {chromedriverVersion: 147.0.7727.117 (474cc805edd..., userDataDir: C:\Users\admin\AppData\Loca...}, fedcm:accounts: true, goog:chromeOptions: {debuggerAddress: localhost:62210}, goog:processID: 20780, networkConnectionEnabled: false, pageLoadStrategy: normal, platformName: windows, proxy: Proxy(), se:cdp: ws://localhost:62210/devtoo..., se:cdpVersion: 147.0.7727.138, setWindowRect: true, strictFileInteractability: false, timeouts: {implicit: 0, pageLoad: 300000, script: 30000}, unhandledPromptBehavior: dismiss and notify, webauthn:extension:credBlob: true, webauthn:extension:largeBlob: true, webauthn:extension:minPinLength: true, webauthn:extension:prf: true, webauthn:virtualAuthenticators: true}
+Session ID: 8828f2c3997e8480c1828ab91c9ab41f
+	at java.base/jdk.internal.reflect.DirectConstructorHandleAccessor.newInstance(DirectConstructorHandleAccessor.java:62)
+	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:499)
+	at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:483)
+	at org.openqa.selenium.remote.ErrorCodec.decode(ErrorCodec.java:167)
+	at org.openqa.selenium.remote.codec.w3c.W3CHttpResponseCodec.decode(W3CHttpResponseCodec.java:138)
+	at org.openqa.selenium.remote.codec.w3c.W3CHttpResponseCodec.decode(W3CHttpResponseCodec.java:50)
+	at org.openqa.selenium.remote.HttpCommandExecutor.execute(HttpCommandExecutor.java:215)
+	at org.openqa.selenium.remote.service.DriverCommandExecutor.invokeExecute(DriverCommandExecutor.java:216)
+	at org.openqa.selenium.remote.service.DriverCommandExecutor.execute(DriverCommandExecutor.java:174)
+	at org.openqa.selenium.remote.RemoteWebDriver.execute(RemoteWebDriver.java:545)
+	at org.openqa.selenium.remote.ElementLocation$ElementFinder$2.findElements(ElementLocation.java:182)
+	at org.openqa.selenium.remote.ElementLocation.findElements(ElementLocation.java:103)
+	at org.openqa.selenium.remote.RemoteWebDriver.findElements(RemoteWebDriver.java:381)
+	at org.openqa.selenium.remote.RemoteWebElement.findElements(RemoteWebElement.java:203)
+	at pages.DriverCustomerListPage.findDataRows(DriverCustomerListPage.java:82)
+	at pages.DriverCustomerListPage.getCustomerRows(DriverCustomerListPage.java:34)
+	at pages.DriverCustomerListPage.getCustomerCellText(DriverCustomerListPage.java:93)
+	at pages.DriverCustomerListPage.getCustomerPickPoint(DriverCustomerListPage.java:58)
+	at tests.UC07_2_CustomerListTest.testCustomerInfoFields(UC07_2_CustomerListTest.java:52)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:565)
+	at org.testng.internal.invokers.MethodInvocationHelper.invokeMethod(MethodInvocationHelper.java:139)
+	at org.testng.internal.invokers.TestInvoker.invokeMethod(TestInvoker.java:664)
+	at org.testng.internal.invokers.TestInvoker.invokeTestMethod(TestInvoker.java:228)
+	at org.testng.internal.invokers.MethodRunner.runInSequence(MethodRunner.java:63)
+	at org.testng.internal.invokers.TestInvoker$MethodInvocationAgent.invoke(TestInvoker.java:961)
+	at org.testng.internal.invokers.TestInvoker.invokeTestMethods(TestInvoker.java:201)
+	at org.testng.internal.invokers.TestMethodWorker.invokeTestMethods(TestMethodWorker.java:148)
+	at org.testng.internal.invokers.TestMethodWorker.run(TestMethodWorker.java:128)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+	at org.testng.TestRunner.privateRun(TestRunner.java:819)
+	at org.testng.TestRunner.run(TestRunner.java:619)
+	at org.testng.SuiteRunner.runTest(SuiteRunner.java:443)
+	at org.testng.SuiteRunner.runSequentially(SuiteRunner.java:437)
+	at org.testng.SuiteRunner.privateRun(SuiteRunner.java:397)
+	at org.testng.SuiteRunner.run(SuiteRunner.java:336)
+	at org.testng.SuiteRunnerWorker.runSuite(SuiteRunnerWorker.java:52)
+	at org.testng.SuiteRunnerWorker.run(SuiteRunnerWorker.java:95)
+	at org.testng.TestNG.runSuitesSequentially(TestNG.java:1301)
+	at org.testng.TestNG.runSuitesLocally(TestNG.java:1228)
+	at org.testng.TestNG.runSuites(TestNG.java:1134)
+	at org.testng.TestNG.run(TestNG.java:1101)
+	at org.apache.maven.surefire.testng.TestNGExecutor.run(TestNGExecutor.java:308)
+	at org.apache.maven.surefire.testng.TestNGXmlTestSuite.execute(TestNGXmlTestSuite.java:71)
+	at org.apache.maven.surefire.testng.TestNGProvider.invoke(TestNGProvider.java:113)
+	at org.apache.maven.surefire.booter.ForkedBooter.runSuitesInProcess(ForkedBooter.java:385)
+	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162)
+	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507)
+	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495)
+</pre></div></td>
+<td>47</td>
+<td>tests.UC07_2_CustomerListTest@3e2e18f2</td></tr>
+<tr>
+<td title='tests.DieuChinhLoTrinhTest.testSearchByRouteCode()'><b>testSearchByRouteCode</b><br>Test class: tests.DieuChinhLoTrinhTest<br>Test method: TC_UC05.1_12: Tìm kiếm lộ trình theo mã lộ trình</td>
+<td><div><pre>java.lang.AssertionError: Không tìm thấy kết quả nào cho mã lộ trình: LT00 expected [true] but found [false]
+	at tests.DieuChinhLoTrinhTest.testSearchByRouteCode(DieuChinhLoTrinhTest.java:228)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+... Removed 32 stack frames</pre></div><a href='#' onClick='toggleBox("stack-trace1603114855", this, "Click to show all stack frames", "Click to hide stack frames")'>Click to show all stack frames</a>
+<div class='stack-trace' id='stack-trace1603114855'><pre>java.lang.AssertionError: Không tìm thấy kết quả nào cho mã lộ trình: LT00 expected [true] but found [false]
+	at org.testng.Assert.fail(Assert.java:111)
+	at org.testng.Assert.failNotEquals(Assert.java:1578)
+	at org.testng.Assert.assertTrue(Assert.java:57)
+	at tests.DieuChinhLoTrinhTest.testSearchByRouteCode(DieuChinhLoTrinhTest.java:228)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:565)
+	at org.testng.internal.invokers.MethodInvocationHelper.invokeMethod(MethodInvocationHelper.java:139)
+	at org.testng.internal.invokers.TestInvoker.invokeMethod(TestInvoker.java:664)
+	at org.testng.internal.invokers.TestInvoker.invokeTestMethod(TestInvoker.java:228)
+	at org.testng.internal.invokers.MethodRunner.runInSequence(MethodRunner.java:63)
+	at org.testng.internal.invokers.TestInvoker$MethodInvocationAgent.invoke(TestInvoker.java:961)
+	at org.testng.internal.invokers.TestInvoker.invokeTestMethods(TestInvoker.java:201)
+	at org.testng.internal.invokers.TestMethodWorker.invokeTestMethods(TestMethodWorker.java:148)
+	at org.testng.internal.invokers.TestMethodWorker.run(TestMethodWorker.java:128)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+	at org.testng.TestRunner.privateRun(TestRunner.java:819)
+	at org.testng.TestRunner.run(TestRunner.java:619)
+	at org.testng.SuiteRunner.runTest(SuiteRunner.java:443)
+	at org.testng.SuiteRunner.runSequentially(SuiteRunner.java:437)
+	at org.testng.SuiteRunner.privateRun(SuiteRunner.java:397)
+	at org.testng.SuiteRunner.run(SuiteRunner.java:336)
+	at org.testng.SuiteRunnerWorker.runSuite(SuiteRunnerWorker.java:52)
+	at org.testng.SuiteRunnerWorker.run(SuiteRunnerWorker.java:95)
+	at org.testng.TestNG.runSuitesSequentially(TestNG.java:1301)
+	at org.testng.TestNG.runSuitesLocally(TestNG.java:1228)
+	at org.testng.TestNG.runSuites(TestNG.java:1134)
+	at org.testng.TestNG.run(TestNG.java:1101)
+	at org.apache.maven.surefire.testng.TestNGExecutor.run(TestNGExecutor.java:308)
+	at org.apache.maven.surefire.testng.TestNGXmlTestSuite.execute(TestNGXmlTestSuite.java:71)
+	at org.apache.maven.surefire.testng.TestNGProvider.invoke(TestNGProvider.java:113)
+	at org.apache.maven.surefire.booter.ForkedBooter.runSuitesInProcess(ForkedBooter.java:385)
+	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162)
+	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507)
+	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495)
+</pre></div></td>
+<td>12</td>
+<td>tests.DieuChinhLoTrinhTest@5e316c74</td></tr>
+<tr>
+<td title='tests.TC_UC07_1_03.testShowStops()'><b>testShowStops</b><br>Test class: tests.TC_UC07_1_03<br>Test method: UC07.1.03 - Hiển thị các điểm đón trả</td>
+<td><div><pre>org.openqa.selenium.TimeoutException: Expected condition failed: waiting for tests.TC_UC07_1_03$$Lambda/0x000000009a259970@1f42366 (tried for 20 second(s) with 500 milliseconds interval)
+Build info: version: &apos;4.29.0&apos;, revision: &apos;5fc1ec94cb&apos;
+System info: os.name: &apos;Windows 11&apos;, os.arch: &apos;amd64&apos;, os.version: &apos;10.0&apos;, java.version: &apos;25.0.2&apos;
+Driver info: org.openqa.selenium.chrome.ChromeDriver
+Capabilities {acceptInsecureCerts: false, browserName: chrome, browserVersion: 147.0.7727.138, chrome: {chromedriverVersion: 147.0.7727.117 (474cc805edd..., userDataDir: C:\Users\admin\AppData\Loca...}, fedcm:accounts: true, goog:chromeOptions: {debuggerAddress: localhost:64759}, goog:processID: 28488, networkConnectionEnabled: false, pageLoadStrategy: normal, platformName: windows, proxy: Proxy(), se:cdp: ws://localhost:64759/devtoo..., se:cdpVersion: 147.0.7727.138, setWindowRect: true, strictFileInteractability: false, timeouts: {implicit: 0, pageLoad: 300000, script: 30000}, unhandledPromptBehavior: dismiss and notify, webauthn:extension:credBlob: true, webauthn:extension:largeBlob: true, webauthn:extension:minPinLength: true, webauthn:extension:prf: true, webauthn:virtualAuthenticators: true}
+Session ID: 2c18d7e89a6a72d4f1c309eef34673e2
+	at org.openqa.selenium.support.ui.WebDriverWait.timeoutException(WebDriverWait.java:84)
+	at org.openqa.selenium.support.ui.FluentWait.until(FluentWait.java:228)
+	at tests.TC_UC07_1_03.testShowStops(TC_UC07_1_03.java:46)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+... Removed 29 stack frames</pre></div><a href='#' onClick='toggleBox("stack-trace1214459753", this, "Click to show all stack frames", "Click to hide stack frames")'>Click to show all stack frames</a>
+<div class='stack-trace' id='stack-trace1214459753'><pre>org.openqa.selenium.TimeoutException: Expected condition failed: waiting for tests.TC_UC07_1_03$$Lambda/0x000000009a259970@1f42366 (tried for 20 second(s) with 500 milliseconds interval)
+Build info: version: &apos;4.29.0&apos;, revision: &apos;5fc1ec94cb&apos;
+System info: os.name: &apos;Windows 11&apos;, os.arch: &apos;amd64&apos;, os.version: &apos;10.0&apos;, java.version: &apos;25.0.2&apos;
+Driver info: org.openqa.selenium.chrome.ChromeDriver
+Capabilities {acceptInsecureCerts: false, browserName: chrome, browserVersion: 147.0.7727.138, chrome: {chromedriverVersion: 147.0.7727.117 (474cc805edd..., userDataDir: C:\Users\admin\AppData\Loca...}, fedcm:accounts: true, goog:chromeOptions: {debuggerAddress: localhost:64759}, goog:processID: 28488, networkConnectionEnabled: false, pageLoadStrategy: normal, platformName: windows, proxy: Proxy(), se:cdp: ws://localhost:64759/devtoo..., se:cdpVersion: 147.0.7727.138, setWindowRect: true, strictFileInteractability: false, timeouts: {implicit: 0, pageLoad: 300000, script: 30000}, unhandledPromptBehavior: dismiss and notify, webauthn:extension:credBlob: true, webauthn:extension:largeBlob: true, webauthn:extension:minPinLength: true, webauthn:extension:prf: true, webauthn:virtualAuthenticators: true}
+Session ID: 2c18d7e89a6a72d4f1c309eef34673e2
+	at org.openqa.selenium.support.ui.WebDriverWait.timeoutException(WebDriverWait.java:84)
+	at org.openqa.selenium.support.ui.FluentWait.until(FluentWait.java:228)
+	at tests.TC_UC07_1_03.testShowStops(TC_UC07_1_03.java:46)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:565)
+	at org.testng.internal.invokers.MethodInvocationHelper.invokeMethod(MethodInvocationHelper.java:139)
+	at org.testng.internal.invokers.TestInvoker.invokeMethod(TestInvoker.java:664)
+	at org.testng.internal.invokers.TestInvoker.invokeTestMethod(TestInvoker.java:228)
+	at org.testng.internal.invokers.MethodRunner.runInSequence(MethodRunner.java:63)
+	at org.testng.internal.invokers.TestInvoker$MethodInvocationAgent.invoke(TestInvoker.java:961)
+	at org.testng.internal.invokers.TestInvoker.invokeTestMethods(TestInvoker.java:201)
+	at org.testng.internal.invokers.TestMethodWorker.invokeTestMethods(TestMethodWorker.java:148)
+	at org.testng.internal.invokers.TestMethodWorker.run(TestMethodWorker.java:128)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+	at org.testng.TestRunner.privateRun(TestRunner.java:819)
+	at org.testng.TestRunner.run(TestRunner.java:619)
+	at org.testng.SuiteRunner.runTest(SuiteRunner.java:443)
+	at org.testng.SuiteRunner.runSequentially(SuiteRunner.java:437)
+	at org.testng.SuiteRunner.privateRun(SuiteRunner.java:397)
+	at org.testng.SuiteRunner.run(SuiteRunner.java:336)
+	at org.testng.SuiteRunnerWorker.runSuite(SuiteRunnerWorker.java:52)
+	at org.testng.SuiteRunnerWorker.run(SuiteRunnerWorker.java:95)
+	at org.testng.TestNG.runSuitesSequentially(TestNG.java:1301)
+	at org.testng.TestNG.runSuitesLocally(TestNG.java:1228)
+	at org.testng.TestNG.runSuites(TestNG.java:1134)
+	at org.testng.TestNG.run(TestNG.java:1101)
+	at org.apache.maven.surefire.testng.TestNGExecutor.run(TestNGExecutor.java:308)
+	at org.apache.maven.surefire.testng.TestNGXmlTestSuite.execute(TestNGXmlTestSuite.java:71)
+	at org.apache.maven.surefire.testng.TestNGProvider.invoke(TestNGProvider.java:113)
+	at org.apache.maven.surefire.booter.ForkedBooter.runSuitesInProcess(ForkedBooter.java:385)
+	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162)
+	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507)
+	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495)
+</pre></div></td>
+<td>26</td>
+<td>tests.TC_UC07_1_03@4a22f9e2</td></tr>
+<tr>
+<td title='tests.TripStatusTest.testUpdateCustomerStatus()'><b>testUpdateCustomerStatus</b><br>Test class: tests.TripStatusTest<br>Test method: TC_UC07.3_06: Cập nhật trạng thái đón/trả khách thành công</td>
+<td><div><pre>java.lang.UnsupportedOperationException: You may not select an option in disabled select
+	at org.openqa.selenium.support.ui.Select.assertSelectIsEnabled(Select.java:431)
+	at org.openqa.selenium.support.ui.Select.selectByVisibleText(Select.java:125)
+	at pages.DriverTripDetailPage.updateCustomerStatus(DriverTripDetailPage.java:70)
+	at tests.TripStatusTest.testUpdateCustomerStatus(TripStatusTest.java:123)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+... Removed 29 stack frames</pre></div><a href='#' onClick='toggleBox("stack-trace448739537", this, "Click to show all stack frames", "Click to hide stack frames")'>Click to show all stack frames</a>
+<div class='stack-trace' id='stack-trace448739537'><pre>java.lang.UnsupportedOperationException: You may not select an option in disabled select
+	at org.openqa.selenium.support.ui.Select.assertSelectIsEnabled(Select.java:431)
+	at org.openqa.selenium.support.ui.Select.selectByVisibleText(Select.java:125)
+	at pages.DriverTripDetailPage.updateCustomerStatus(DriverTripDetailPage.java:70)
+	at tests.TripStatusTest.testUpdateCustomerStatus(TripStatusTest.java:123)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:565)
+	at org.testng.internal.invokers.MethodInvocationHelper.invokeMethod(MethodInvocationHelper.java:139)
+	at org.testng.internal.invokers.TestInvoker.invokeMethod(TestInvoker.java:664)
+	at org.testng.internal.invokers.TestInvoker.invokeTestMethod(TestInvoker.java:228)
+	at org.testng.internal.invokers.MethodRunner.runInSequence(MethodRunner.java:63)
+	at org.testng.internal.invokers.TestInvoker$MethodInvocationAgent.invoke(TestInvoker.java:961)
+	at org.testng.internal.invokers.TestInvoker.invokeTestMethods(TestInvoker.java:201)
+	at org.testng.internal.invokers.TestMethodWorker.invokeTestMethods(TestMethodWorker.java:148)
+	at org.testng.internal.invokers.TestMethodWorker.run(TestMethodWorker.java:128)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+	at org.testng.TestRunner.privateRun(TestRunner.java:819)
+	at org.testng.TestRunner.run(TestRunner.java:619)
+	at org.testng.SuiteRunner.runTest(SuiteRunner.java:443)
+	at org.testng.SuiteRunner.runSequentially(SuiteRunner.java:437)
+	at org.testng.SuiteRunner.privateRun(SuiteRunner.java:397)
+	at org.testng.SuiteRunner.run(SuiteRunner.java:336)
+	at org.testng.SuiteRunnerWorker.runSuite(SuiteRunnerWorker.java:52)
+	at org.testng.SuiteRunnerWorker.run(SuiteRunnerWorker.java:95)
+	at org.testng.TestNG.runSuitesSequentially(TestNG.java:1301)
+	at org.testng.TestNG.runSuitesLocally(TestNG.java:1228)
+	at org.testng.TestNG.runSuites(TestNG.java:1134)
+	at org.testng.TestNG.run(TestNG.java:1101)
+	at org.apache.maven.surefire.testng.TestNGExecutor.run(TestNGExecutor.java:308)
+	at org.apache.maven.surefire.testng.TestNGXmlTestSuite.execute(TestNGXmlTestSuite.java:71)
+	at org.apache.maven.surefire.testng.TestNGProvider.invoke(TestNGProvider.java:113)
+	at org.apache.maven.surefire.booter.ForkedBooter.runSuitesInProcess(ForkedBooter.java:385)
+	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162)
+	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507)
+	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495)
+</pre></div></td>
+<td>3</td>
+<td>tests.TripStatusTest@cd3fee8</td></tr>
+<tr>
+<td title='tests.TripStatusTest.testReportIncident()'><b>testReportIncident</b><br>Test class: tests.TripStatusTest<br>Test method: TC_UC07.3_10: Báo cáo sự cố thành công</td>
+<td><div><pre>org.openqa.selenium.TimeoutException: Expected condition failed: waiting for visibility of element located by By.xpath: //div[contains(@style, &apos;background: #DCFCE7&apos;) or contains(@style, &apos;rgb(220, 252, 231)&apos;)] (tried for 10 second(s) with 500 milliseconds interval)
+Build info: version: &apos;4.29.0&apos;, revision: &apos;5fc1ec94cb&apos;
+System info: os.name: &apos;Windows 11&apos;, os.arch: &apos;amd64&apos;, os.version: &apos;10.0&apos;, java.version: &apos;25.0.2&apos;
+Driver info: org.openqa.selenium.chrome.ChromeDriver
+Capabilities {acceptInsecureCerts: false, browserName: chrome, browserVersion: 147.0.7727.138, chrome: {chromedriverVersion: 147.0.7727.117 (474cc805edd..., userDataDir: C:\Users\admin\AppData\Loca...}, fedcm:accounts: true, goog:chromeOptions: {debuggerAddress: localhost:61838}, goog:processID: 2868, networkConnectionEnabled: false, pageLoadStrategy: normal, platformName: windows, proxy: Proxy(), se:cdp: ws://localhost:61838/devtoo..., se:cdpVersion: 147.0.7727.138, setWindowRect: true, strictFileInteractability: false, timeouts: {implicit: 0, pageLoad: 300000, script: 30000}, unhandledPromptBehavior: dismiss and notify, webauthn:extension:credBlob: true, webauthn:extension:largeBlob: true, webauthn:extension:minPinLength: true, webauthn:extension:prf: true, webauthn:virtualAuthenticators: true}
+Session ID: 3edb71cc5fbe0a6587fa571f50ad67f0
+	at org.openqa.selenium.support.ui.WebDriverWait.timeoutException(WebDriverWait.java:84)
+	at org.openqa.selenium.support.ui.FluentWait.until(FluentWait.java:228)
+	at pages.DriverTripDetailPage.getSuccessMessageText(DriverTripDetailPage.java:122)
+	at tests.TripStatusTest.testReportIncident(TripStatusTest.java:167)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+... Removed 29 stack frames</pre></div><a href='#' onClick='toggleBox("stack-trace1171055810", this, "Click to show all stack frames", "Click to hide stack frames")'>Click to show all stack frames</a>
+<div class='stack-trace' id='stack-trace1171055810'><pre>org.openqa.selenium.TimeoutException: Expected condition failed: waiting for visibility of element located by By.xpath: //div[contains(@style, &apos;background: #DCFCE7&apos;) or contains(@style, &apos;rgb(220, 252, 231)&apos;)] (tried for 10 second(s) with 500 milliseconds interval)
+Build info: version: &apos;4.29.0&apos;, revision: &apos;5fc1ec94cb&apos;
+System info: os.name: &apos;Windows 11&apos;, os.arch: &apos;amd64&apos;, os.version: &apos;10.0&apos;, java.version: &apos;25.0.2&apos;
+Driver info: org.openqa.selenium.chrome.ChromeDriver
+Capabilities {acceptInsecureCerts: false, browserName: chrome, browserVersion: 147.0.7727.138, chrome: {chromedriverVersion: 147.0.7727.117 (474cc805edd..., userDataDir: C:\Users\admin\AppData\Loca...}, fedcm:accounts: true, goog:chromeOptions: {debuggerAddress: localhost:61838}, goog:processID: 2868, networkConnectionEnabled: false, pageLoadStrategy: normal, platformName: windows, proxy: Proxy(), se:cdp: ws://localhost:61838/devtoo..., se:cdpVersion: 147.0.7727.138, setWindowRect: true, strictFileInteractability: false, timeouts: {implicit: 0, pageLoad: 300000, script: 30000}, unhandledPromptBehavior: dismiss and notify, webauthn:extension:credBlob: true, webauthn:extension:largeBlob: true, webauthn:extension:minPinLength: true, webauthn:extension:prf: true, webauthn:virtualAuthenticators: true}
+Session ID: 3edb71cc5fbe0a6587fa571f50ad67f0
+	at org.openqa.selenium.support.ui.WebDriverWait.timeoutException(WebDriverWait.java:84)
+	at org.openqa.selenium.support.ui.FluentWait.until(FluentWait.java:228)
+	at pages.DriverTripDetailPage.getSuccessMessageText(DriverTripDetailPage.java:122)
+	at tests.TripStatusTest.testReportIncident(TripStatusTest.java:167)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:565)
+	at org.testng.internal.invokers.MethodInvocationHelper.invokeMethod(MethodInvocationHelper.java:139)
+	at org.testng.internal.invokers.TestInvoker.invokeMethod(TestInvoker.java:664)
+	at org.testng.internal.invokers.TestInvoker.invokeTestMethod(TestInvoker.java:228)
+	at org.testng.internal.invokers.MethodRunner.runInSequence(MethodRunner.java:63)
+	at org.testng.internal.invokers.TestInvoker$MethodInvocationAgent.invoke(TestInvoker.java:961)
+	at org.testng.internal.invokers.TestInvoker.invokeTestMethods(TestInvoker.java:201)
+	at org.testng.internal.invokers.TestMethodWorker.invokeTestMethods(TestMethodWorker.java:148)
+	at org.testng.internal.invokers.TestMethodWorker.run(TestMethodWorker.java:128)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+	at org.testng.TestRunner.privateRun(TestRunner.java:819)
+	at org.testng.TestRunner.run(TestRunner.java:619)
+	at org.testng.SuiteRunner.runTest(SuiteRunner.java:443)
+	at org.testng.SuiteRunner.runSequentially(SuiteRunner.java:437)
+	at org.testng.SuiteRunner.privateRun(SuiteRunner.java:397)
+	at org.testng.SuiteRunner.run(SuiteRunner.java:336)
+	at org.testng.SuiteRunnerWorker.runSuite(SuiteRunnerWorker.java:52)
+	at org.testng.SuiteRunnerWorker.run(SuiteRunnerWorker.java:95)
+	at org.testng.TestNG.runSuitesSequentially(TestNG.java:1301)
+	at org.testng.TestNG.runSuitesLocally(TestNG.java:1228)
+	at org.testng.TestNG.runSuites(TestNG.java:1134)
+	at org.testng.TestNG.run(TestNG.java:1101)
+	at org.apache.maven.surefire.testng.TestNGExecutor.run(TestNGExecutor.java:308)
+	at org.apache.maven.surefire.testng.TestNGXmlTestSuite.execute(TestNGXmlTestSuite.java:71)
+	at org.apache.maven.surefire.testng.TestNGProvider.invoke(TestNGProvider.java:113)
+	at org.apache.maven.surefire.booter.ForkedBooter.runSuitesInProcess(ForkedBooter.java:385)
+	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162)
+	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507)
+	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495)
+</pre></div></td>
+<td>12</td>
+<td>tests.TripStatusTest@cd3fee8</td></tr>
+<tr>
+<td title='tests.TheoDoiTrangThaiTrungChuyenTest.testSearchByRouteCode()'><b>testSearchByRouteCode</b><br>Test class: tests.TheoDoiTrangThaiTrungChuyenTest<br>Test method: TC_UC05.3_07: Tìm kiếm lộ trình theo mã lộ trình</td>
+<td><div><pre>java.lang.AssertionError: Không tìm thấy kết quả nào cho mã lộ trình: LT001 expected [true] but found [false]
+	at tests.TheoDoiTrangThaiTrungChuyenTest.testSearchByRouteCode(TheoDoiTrangThaiTrungChuyenTest.java:118)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+... Removed 32 stack frames</pre></div><a href='#' onClick='toggleBox("stack-trace350829638", this, "Click to show all stack frames", "Click to hide stack frames")'>Click to show all stack frames</a>
+<div class='stack-trace' id='stack-trace350829638'><pre>java.lang.AssertionError: Không tìm thấy kết quả nào cho mã lộ trình: LT001 expected [true] but found [false]
+	at org.testng.Assert.fail(Assert.java:111)
+	at org.testng.Assert.failNotEquals(Assert.java:1578)
+	at org.testng.Assert.assertTrue(Assert.java:57)
+	at tests.TheoDoiTrangThaiTrungChuyenTest.testSearchByRouteCode(TheoDoiTrangThaiTrungChuyenTest.java:118)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:565)
+	at org.testng.internal.invokers.MethodInvocationHelper.invokeMethod(MethodInvocationHelper.java:139)
+	at org.testng.internal.invokers.TestInvoker.invokeMethod(TestInvoker.java:664)
+	at org.testng.internal.invokers.TestInvoker.invokeTestMethod(TestInvoker.java:228)
+	at org.testng.internal.invokers.MethodRunner.runInSequence(MethodRunner.java:63)
+	at org.testng.internal.invokers.TestInvoker$MethodInvocationAgent.invoke(TestInvoker.java:961)
+	at org.testng.internal.invokers.TestInvoker.invokeTestMethods(TestInvoker.java:201)
+	at org.testng.internal.invokers.TestMethodWorker.invokeTestMethods(TestMethodWorker.java:148)
+	at org.testng.internal.invokers.TestMethodWorker.run(TestMethodWorker.java:128)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+	at org.testng.TestRunner.privateRun(TestRunner.java:819)
+	at org.testng.TestRunner.run(TestRunner.java:619)
+	at org.testng.SuiteRunner.runTest(SuiteRunner.java:443)
+	at org.testng.SuiteRunner.runSequentially(SuiteRunner.java:437)
+	at org.testng.SuiteRunner.privateRun(SuiteRunner.java:397)
+	at org.testng.SuiteRunner.run(SuiteRunner.java:336)
+	at org.testng.SuiteRunnerWorker.runSuite(SuiteRunnerWorker.java:52)
+	at org.testng.SuiteRunnerWorker.run(SuiteRunnerWorker.java:95)
+	at org.testng.TestNG.runSuitesSequentially(TestNG.java:1301)
+	at org.testng.TestNG.runSuitesLocally(TestNG.java:1228)
+	at org.testng.TestNG.runSuites(TestNG.java:1134)
+	at org.testng.TestNG.run(TestNG.java:1101)
+	at org.apache.maven.surefire.testng.TestNGExecutor.run(TestNGExecutor.java:308)
+	at org.apache.maven.surefire.testng.TestNGXmlTestSuite.execute(TestNGXmlTestSuite.java:71)
+	at org.apache.maven.surefire.testng.TestNGProvider.invoke(TestNGProvider.java:113)
+	at org.apache.maven.surefire.booter.ForkedBooter.runSuitesInProcess(ForkedBooter.java:385)
+	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162)
+	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507)
+	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495)
+</pre></div></td>
+<td>12</td>
+<td>tests.TheoDoiTrangThaiTrungChuyenTest@3c130745</td></tr>
+<tr>
+<td title='tests.TripStatusTest.testSubmitRejectTripSuccessfully()'><b>testSubmitRejectTripSuccessfully</b><br>Test class: tests.TripStatusTest<br>Test method: TC_UC07.3_03: Từ chối chuyến thành công</td>
+<td><div><pre>java.lang.AssertionError: Popup Từ chối không đóng lại sau khi gửi! expected [true] but found [false]
+	at tests.TripStatusTest.testSubmitRejectTripSuccessfully(TripStatusTest.java:74)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+... Removed 32 stack frames</pre></div><a href='#' onClick='toggleBox("stack-trace993904466", this, "Click to show all stack frames", "Click to hide stack frames")'>Click to show all stack frames</a>
+<div class='stack-trace' id='stack-trace993904466'><pre>java.lang.AssertionError: Popup Từ chối không đóng lại sau khi gửi! expected [true] but found [false]
+	at org.testng.Assert.fail(Assert.java:111)
+	at org.testng.Assert.failNotEquals(Assert.java:1578)
+	at org.testng.Assert.assertTrue(Assert.java:57)
+	at tests.TripStatusTest.testSubmitRejectTripSuccessfully(TripStatusTest.java:74)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:565)
+	at org.testng.internal.invokers.MethodInvocationHelper.invokeMethod(MethodInvocationHelper.java:139)
+	at org.testng.internal.invokers.TestInvoker.invokeMethod(TestInvoker.java:664)
+	at org.testng.internal.invokers.TestInvoker.invokeTestMethod(TestInvoker.java:228)
+	at org.testng.internal.invokers.MethodRunner.runInSequence(MethodRunner.java:63)
+	at org.testng.internal.invokers.TestInvoker$MethodInvocationAgent.invoke(TestInvoker.java:961)
+	at org.testng.internal.invokers.TestInvoker.invokeTestMethods(TestInvoker.java:201)
+	at org.testng.internal.invokers.TestMethodWorker.invokeTestMethods(TestMethodWorker.java:148)
+	at org.testng.internal.invokers.TestMethodWorker.run(TestMethodWorker.java:128)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+	at org.testng.TestRunner.privateRun(TestRunner.java:819)
+	at org.testng.TestRunner.run(TestRunner.java:619)
+	at org.testng.SuiteRunner.runTest(SuiteRunner.java:443)
+	at org.testng.SuiteRunner.runSequentially(SuiteRunner.java:437)
+	at org.testng.SuiteRunner.privateRun(SuiteRunner.java:397)
+	at org.testng.SuiteRunner.run(SuiteRunner.java:336)
+	at org.testng.SuiteRunnerWorker.runSuite(SuiteRunnerWorker.java:52)
+	at org.testng.SuiteRunnerWorker.run(SuiteRunnerWorker.java:95)
+	at org.testng.TestNG.runSuitesSequentially(TestNG.java:1301)
+	at org.testng.TestNG.runSuitesLocally(TestNG.java:1228)
+	at org.testng.TestNG.runSuites(TestNG.java:1134)
+	at org.testng.TestNG.run(TestNG.java:1101)
+	at org.apache.maven.surefire.testng.TestNGExecutor.run(TestNGExecutor.java:308)
+	at org.apache.maven.surefire.testng.TestNGXmlTestSuite.execute(TestNGXmlTestSuite.java:71)
+	at org.apache.maven.surefire.testng.TestNGProvider.invoke(TestNGProvider.java:113)
+	at org.apache.maven.surefire.booter.ForkedBooter.runSuitesInProcess(ForkedBooter.java:385)
+	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162)
+	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507)
+	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495)
+</pre></div></td>
+<td>13</td>
+<td>tests.TripStatusTest@cd3fee8</td></tr>
+<tr>
+<td title='tests.TC_UC07_1_06.testStopSequence()'><b>testStopSequence</b><br>Test class: tests.TC_UC07_1_06<br>Test method: UC07.1.06 - Hiển thị thứ tự các điểm dừng</td>
+<td><div><pre>org.openqa.selenium.TimeoutException: Expected condition failed: waiting for visibility of all elements located by By.xpath: //*[contains(@class, &apos;sequence&apos;) or contains(text(), &apos;1&apos;) or contains(text(), &apos;2&apos;)] (tried for 15 second(s) with 500 milliseconds interval)
+Build info: version: &apos;4.29.0&apos;, revision: &apos;5fc1ec94cb&apos;
+System info: os.name: &apos;Windows 11&apos;, os.arch: &apos;amd64&apos;, os.version: &apos;10.0&apos;, java.version: &apos;25.0.2&apos;
+Driver info: org.openqa.selenium.chrome.ChromeDriver
+Capabilities {acceptInsecureCerts: false, browserName: chrome, browserVersion: 147.0.7727.138, chrome: {chromedriverVersion: 147.0.7727.117 (474cc805edd..., userDataDir: C:\Users\admin\AppData\Loca...}, fedcm:accounts: true, goog:chromeOptions: {debuggerAddress: localhost:51908}, goog:processID: 19760, networkConnectionEnabled: false, pageLoadStrategy: normal, platformName: windows, proxy: Proxy(), se:cdp: ws://localhost:51908/devtoo..., se:cdpVersion: 147.0.7727.138, setWindowRect: true, strictFileInteractability: false, timeouts: {implicit: 0, pageLoad: 300000, script: 30000}, unhandledPromptBehavior: dismiss and notify, webauthn:extension:credBlob: true, webauthn:extension:largeBlob: true, webauthn:extension:minPinLength: true, webauthn:extension:prf: true, webauthn:virtualAuthenticators: true}
+Session ID: cf148f7b4b845ea4517ffb6eb86ab3e4
+	at org.openqa.selenium.support.ui.WebDriverWait.timeoutException(WebDriverWait.java:84)
+	at org.openqa.selenium.support.ui.FluentWait.until(FluentWait.java:228)
+	at tests.TC_UC07_1_06.testStopSequence(TC_UC07_1_06.java:35)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+... Removed 29 stack frames</pre></div><a href='#' onClick='toggleBox("stack-trace743901415", this, "Click to show all stack frames", "Click to hide stack frames")'>Click to show all stack frames</a>
+<div class='stack-trace' id='stack-trace743901415'><pre>org.openqa.selenium.TimeoutException: Expected condition failed: waiting for visibility of all elements located by By.xpath: //*[contains(@class, &apos;sequence&apos;) or contains(text(), &apos;1&apos;) or contains(text(), &apos;2&apos;)] (tried for 15 second(s) with 500 milliseconds interval)
+Build info: version: &apos;4.29.0&apos;, revision: &apos;5fc1ec94cb&apos;
+System info: os.name: &apos;Windows 11&apos;, os.arch: &apos;amd64&apos;, os.version: &apos;10.0&apos;, java.version: &apos;25.0.2&apos;
+Driver info: org.openqa.selenium.chrome.ChromeDriver
+Capabilities {acceptInsecureCerts: false, browserName: chrome, browserVersion: 147.0.7727.138, chrome: {chromedriverVersion: 147.0.7727.117 (474cc805edd..., userDataDir: C:\Users\admin\AppData\Loca...}, fedcm:accounts: true, goog:chromeOptions: {debuggerAddress: localhost:51908}, goog:processID: 19760, networkConnectionEnabled: false, pageLoadStrategy: normal, platformName: windows, proxy: Proxy(), se:cdp: ws://localhost:51908/devtoo..., se:cdpVersion: 147.0.7727.138, setWindowRect: true, strictFileInteractability: false, timeouts: {implicit: 0, pageLoad: 300000, script: 30000}, unhandledPromptBehavior: dismiss and notify, webauthn:extension:credBlob: true, webauthn:extension:largeBlob: true, webauthn:extension:minPinLength: true, webauthn:extension:prf: true, webauthn:virtualAuthenticators: true}
+Session ID: cf148f7b4b845ea4517ffb6eb86ab3e4
+	at org.openqa.selenium.support.ui.WebDriverWait.timeoutException(WebDriverWait.java:84)
+	at org.openqa.selenium.support.ui.FluentWait.until(FluentWait.java:228)
+	at tests.TC_UC07_1_06.testStopSequence(TC_UC07_1_06.java:35)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:565)
+	at org.testng.internal.invokers.MethodInvocationHelper.invokeMethod(MethodInvocationHelper.java:139)
+	at org.testng.internal.invokers.TestInvoker.invokeMethod(TestInvoker.java:664)
+	at org.testng.internal.invokers.TestInvoker.invokeTestMethod(TestInvoker.java:228)
+	at org.testng.internal.invokers.MethodRunner.runInSequence(MethodRunner.java:63)
+	at org.testng.internal.invokers.TestInvoker$MethodInvocationAgent.invoke(TestInvoker.java:961)
+	at org.testng.internal.invokers.TestInvoker.invokeTestMethods(TestInvoker.java:201)
+	at org.testng.internal.invokers.TestMethodWorker.invokeTestMethods(TestMethodWorker.java:148)
+	at org.testng.internal.invokers.TestMethodWorker.run(TestMethodWorker.java:128)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+	at org.testng.TestRunner.privateRun(TestRunner.java:819)
+	at org.testng.TestRunner.run(TestRunner.java:619)
+	at org.testng.SuiteRunner.runTest(SuiteRunner.java:443)
+	at org.testng.SuiteRunner.runSequentially(SuiteRunner.java:437)
+	at org.testng.SuiteRunner.privateRun(SuiteRunner.java:397)
+	at org.testng.SuiteRunner.run(SuiteRunner.java:336)
+	at org.testng.SuiteRunnerWorker.runSuite(SuiteRunnerWorker.java:52)
+	at org.testng.SuiteRunnerWorker.run(SuiteRunnerWorker.java:95)
+	at org.testng.TestNG.runSuitesSequentially(TestNG.java:1301)
+	at org.testng.TestNG.runSuitesLocally(TestNG.java:1228)
+	at org.testng.TestNG.runSuites(TestNG.java:1134)
+	at org.testng.TestNG.run(TestNG.java:1101)
+	at org.apache.maven.surefire.testng.TestNGExecutor.run(TestNGExecutor.java:308)
+	at org.apache.maven.surefire.testng.TestNGXmlTestSuite.execute(TestNGXmlTestSuite.java:71)
+	at org.apache.maven.surefire.testng.TestNGProvider.invoke(TestNGProvider.java:113)
+	at org.apache.maven.surefire.booter.ForkedBooter.runSuitesInProcess(ForkedBooter.java:385)
+	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162)
+	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507)
+	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495)
+</pre></div></td>
+<td>16</td>
+<td>tests.TC_UC07_1_06@61230f6a</td></tr>
+<tr>
+<td title='tests.DieuChinhLoTrinhTest.testChangeDriver()'><b>testChangeDriver</b><br>Test class: tests.DieuChinhLoTrinhTest<br>Test method: TC_UC05.1_08: Thay đổi tài xế</td>
+<td><div><pre>java.lang.AssertionError: Theo thiết kế phần mềm hiện tại, chức năng thay đổi tài xế không được hỗ trợ tại trang Điều chỉnh lộ trình (Input bị readOnly). Test case failed theo requirement.
+	at tests.DieuChinhLoTrinhTest.testChangeDriver(DieuChinhLoTrinhTest.java:173)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+... Removed 30 stack frames</pre></div><a href='#' onClick='toggleBox("stack-trace728746911", this, "Click to show all stack frames", "Click to hide stack frames")'>Click to show all stack frames</a>
+<div class='stack-trace' id='stack-trace728746911'><pre>java.lang.AssertionError: Theo thiết kế phần mềm hiện tại, chức năng thay đổi tài xế không được hỗ trợ tại trang Điều chỉnh lộ trình (Input bị readOnly). Test case failed theo requirement.
+	at org.testng.Assert.fail(Assert.java:111)
+	at tests.DieuChinhLoTrinhTest.testChangeDriver(DieuChinhLoTrinhTest.java:173)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:565)
+	at org.testng.internal.invokers.MethodInvocationHelper.invokeMethod(MethodInvocationHelper.java:139)
+	at org.testng.internal.invokers.TestInvoker.invokeMethod(TestInvoker.java:664)
+	at org.testng.internal.invokers.TestInvoker.invokeTestMethod(TestInvoker.java:228)
+	at org.testng.internal.invokers.MethodRunner.runInSequence(MethodRunner.java:63)
+	at org.testng.internal.invokers.TestInvoker$MethodInvocationAgent.invoke(TestInvoker.java:961)
+	at org.testng.internal.invokers.TestInvoker.invokeTestMethods(TestInvoker.java:201)
+	at org.testng.internal.invokers.TestMethodWorker.invokeTestMethods(TestMethodWorker.java:148)
+	at org.testng.internal.invokers.TestMethodWorker.run(TestMethodWorker.java:128)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+	at org.testng.TestRunner.privateRun(TestRunner.java:819)
+	at org.testng.TestRunner.run(TestRunner.java:619)
+	at org.testng.SuiteRunner.runTest(SuiteRunner.java:443)
+	at org.testng.SuiteRunner.runSequentially(SuiteRunner.java:437)
+	at org.testng.SuiteRunner.privateRun(SuiteRunner.java:397)
+	at org.testng.SuiteRunner.run(SuiteRunner.java:336)
+	at org.testng.SuiteRunnerWorker.runSuite(SuiteRunnerWorker.java:52)
+	at org.testng.SuiteRunnerWorker.run(SuiteRunnerWorker.java:95)
+	at org.testng.TestNG.runSuitesSequentially(TestNG.java:1301)
+	at org.testng.TestNG.runSuitesLocally(TestNG.java:1228)
+	at org.testng.TestNG.runSuites(TestNG.java:1134)
+	at org.testng.TestNG.run(TestNG.java:1101)
+	at org.apache.maven.surefire.testng.TestNGExecutor.run(TestNGExecutor.java:308)
+	at org.apache.maven.surefire.testng.TestNGXmlTestSuite.execute(TestNGXmlTestSuite.java:71)
+	at org.apache.maven.surefire.testng.TestNGProvider.invoke(TestNGProvider.java:113)
+	at org.apache.maven.surefire.booter.ForkedBooter.runSuitesInProcess(ForkedBooter.java:385)
+	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162)
+	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507)
+	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495)
+</pre></div></td>
+<td>3</td>
+<td>tests.DieuChinhLoTrinhTest@5e316c74</td></tr>
+<tr>
+<td title='tests.TripStatusTest.testCompleteTrip()'><b>testCompleteTrip</b><br>Test class: tests.TripStatusTest<br>Test method: TC_UC07.3_11: Hoàn thành chuyến xe</td>
+<td><div><pre>org.openqa.selenium.TimeoutException: Expected condition failed: waiting for visibility of element located by By.xpath: //div[contains(@style, &apos;background: #DCFCE7&apos;) or contains(@style, &apos;rgb(220, 252, 231)&apos;)] (tried for 10 second(s) with 500 milliseconds interval)
+Build info: version: &apos;4.29.0&apos;, revision: &apos;5fc1ec94cb&apos;
+System info: os.name: &apos;Windows 11&apos;, os.arch: &apos;amd64&apos;, os.version: &apos;10.0&apos;, java.version: &apos;25.0.2&apos;
+Driver info: org.openqa.selenium.chrome.ChromeDriver
+Capabilities {acceptInsecureCerts: false, browserName: chrome, browserVersion: 147.0.7727.138, chrome: {chromedriverVersion: 147.0.7727.117 (474cc805edd..., userDataDir: C:\Users\admin\AppData\Loca...}, fedcm:accounts: true, goog:chromeOptions: {debuggerAddress: localhost:50569}, goog:processID: 14472, networkConnectionEnabled: false, pageLoadStrategy: normal, platformName: windows, proxy: Proxy(), se:cdp: ws://localhost:50569/devtoo..., se:cdpVersion: 147.0.7727.138, setWindowRect: true, strictFileInteractability: false, timeouts: {implicit: 0, pageLoad: 300000, script: 30000}, unhandledPromptBehavior: dismiss and notify, webauthn:extension:credBlob: true, webauthn:extension:largeBlob: true, webauthn:extension:minPinLength: true, webauthn:extension:prf: true, webauthn:virtualAuthenticators: true}
+Session ID: 91fe513a20eacd7e46cd5dcb81d0d1cc
+	at org.openqa.selenium.support.ui.WebDriverWait.timeoutException(WebDriverWait.java:84)
+	at org.openqa.selenium.support.ui.FluentWait.until(FluentWait.java:228)
+	at pages.DriverTripDetailPage.getSuccessMessageText(DriverTripDetailPage.java:122)
+	at tests.TripStatusTest.testCompleteTrip(TripStatusTest.java:180)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+... Removed 29 stack frames</pre></div><a href='#' onClick='toggleBox("stack-trace671920308", this, "Click to show all stack frames", "Click to hide stack frames")'>Click to show all stack frames</a>
+<div class='stack-trace' id='stack-trace671920308'><pre>org.openqa.selenium.TimeoutException: Expected condition failed: waiting for visibility of element located by By.xpath: //div[contains(@style, &apos;background: #DCFCE7&apos;) or contains(@style, &apos;rgb(220, 252, 231)&apos;)] (tried for 10 second(s) with 500 milliseconds interval)
+Build info: version: &apos;4.29.0&apos;, revision: &apos;5fc1ec94cb&apos;
+System info: os.name: &apos;Windows 11&apos;, os.arch: &apos;amd64&apos;, os.version: &apos;10.0&apos;, java.version: &apos;25.0.2&apos;
+Driver info: org.openqa.selenium.chrome.ChromeDriver
+Capabilities {acceptInsecureCerts: false, browserName: chrome, browserVersion: 147.0.7727.138, chrome: {chromedriverVersion: 147.0.7727.117 (474cc805edd..., userDataDir: C:\Users\admin\AppData\Loca...}, fedcm:accounts: true, goog:chromeOptions: {debuggerAddress: localhost:50569}, goog:processID: 14472, networkConnectionEnabled: false, pageLoadStrategy: normal, platformName: windows, proxy: Proxy(), se:cdp: ws://localhost:50569/devtoo..., se:cdpVersion: 147.0.7727.138, setWindowRect: true, strictFileInteractability: false, timeouts: {implicit: 0, pageLoad: 300000, script: 30000}, unhandledPromptBehavior: dismiss and notify, webauthn:extension:credBlob: true, webauthn:extension:largeBlob: true, webauthn:extension:minPinLength: true, webauthn:extension:prf: true, webauthn:virtualAuthenticators: true}
+Session ID: 91fe513a20eacd7e46cd5dcb81d0d1cc
+	at org.openqa.selenium.support.ui.WebDriverWait.timeoutException(WebDriverWait.java:84)
+	at org.openqa.selenium.support.ui.FluentWait.until(FluentWait.java:228)
+	at pages.DriverTripDetailPage.getSuccessMessageText(DriverTripDetailPage.java:122)
+	at tests.TripStatusTest.testCompleteTrip(TripStatusTest.java:180)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:565)
+	at org.testng.internal.invokers.MethodInvocationHelper.invokeMethod(MethodInvocationHelper.java:139)
+	at org.testng.internal.invokers.TestInvoker.invokeMethod(TestInvoker.java:664)
+	at org.testng.internal.invokers.TestInvoker.invokeTestMethod(TestInvoker.java:228)
+	at org.testng.internal.invokers.MethodRunner.runInSequence(MethodRunner.java:63)
+	at org.testng.internal.invokers.TestInvoker$MethodInvocationAgent.invoke(TestInvoker.java:961)
+	at org.testng.internal.invokers.TestInvoker.invokeTestMethods(TestInvoker.java:201)
+	at org.testng.internal.invokers.TestMethodWorker.invokeTestMethods(TestMethodWorker.java:148)
+	at org.testng.internal.invokers.TestMethodWorker.run(TestMethodWorker.java:128)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+	at org.testng.TestRunner.privateRun(TestRunner.java:819)
+	at org.testng.TestRunner.run(TestRunner.java:619)
+	at org.testng.SuiteRunner.runTest(SuiteRunner.java:443)
+	at org.testng.SuiteRunner.runSequentially(SuiteRunner.java:437)
+	at org.testng.SuiteRunner.privateRun(SuiteRunner.java:397)
+	at org.testng.SuiteRunner.run(SuiteRunner.java:336)
+	at org.testng.SuiteRunnerWorker.runSuite(SuiteRunnerWorker.java:52)
+	at org.testng.SuiteRunnerWorker.run(SuiteRunnerWorker.java:95)
+	at org.testng.TestNG.runSuitesSequentially(TestNG.java:1301)
+	at org.testng.TestNG.runSuitesLocally(TestNG.java:1228)
+	at org.testng.TestNG.runSuites(TestNG.java:1134)
+	at org.testng.TestNG.run(TestNG.java:1101)
+	at org.apache.maven.surefire.testng.TestNGExecutor.run(TestNGExecutor.java:308)
+	at org.apache.maven.surefire.testng.TestNGXmlTestSuite.execute(TestNGXmlTestSuite.java:71)
+	at org.apache.maven.surefire.testng.TestNGProvider.invoke(TestNGProvider.java:113)
+	at org.apache.maven.surefire.booter.ForkedBooter.runSuitesInProcess(ForkedBooter.java:385)
+	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162)
+	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507)
+	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495)
+</pre></div></td>
+<td>12</td>
+<td>tests.TripStatusTest@cd3fee8</td></tr>
+<tr>
+<td title='tests.TC_UC07_1_04.testUpdateStopStatus()'><b>testUpdateStopStatus</b><br>Test class: tests.TC_UC07_1_04<br>Test method: UC07.1.04 - Cập nhật trạng thái điểm đón trả</td>
+<td><div><pre>org.openqa.selenium.NoSuchElementException: no such element: Unable to locate element: {&quot;method&quot;:&quot;xpath&quot;,&quot;selector&quot;:&quot;//button[contains(text(), &apos;Cập nhật&apos;)] | //input[@type=&apos;checkbox&apos;]&quot;}
+  (Session info: chrome=147.0.7727.138)
+For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors#no-such-element-exception
+Build info: version: &apos;4.29.0&apos;, revision: &apos;5fc1ec94cb&apos;
+System info: os.name: &apos;Windows 11&apos;, os.arch: &apos;amd64&apos;, os.version: &apos;10.0&apos;, java.version: &apos;25.0.2&apos;
+Driver info: org.openqa.selenium.chrome.ChromeDriver
+Command: [939374e8a0876ce01e98d6402e21a26f, findElement {value=//button[contains(text(), &apos;Cập nhật&apos;)] | //input[@type=&apos;checkbox&apos;], using=xpath}]
+Capabilities {acceptInsecureCerts: false, browserName: chrome, browserVersion: 147.0.7727.138, chrome: {chromedriverVersion: 147.0.7727.117 (474cc805edd..., userDataDir: C:\Users\admin\AppData\Loca...}, fedcm:accounts: true, goog:chromeOptions: {debuggerAddress: localhost:51594}, goog:processID: 31480, networkConnectionEnabled: false, pageLoadStrategy: normal, platformName: windows, proxy: Proxy(), se:cdp: ws://localhost:51594/devtoo..., se:cdpVersion: 147.0.7727.138, setWindowRect: true, strictFileInteractability: false, timeouts: {implicit: 0, pageLoad: 300000, script: 30000}, unhandledPromptBehavior: dismiss and notify, webauthn:extension:credBlob: true, webauthn:extension:largeBlob: true, webauthn:extension:minPinLength: true, webauthn:extension:prf: true, webauthn:virtualAuthenticators: true}
+Session ID: 939374e8a0876ce01e98d6402e21a26f
+	at org.openqa.selenium.remote.ErrorCodec.decode(ErrorCodec.java:167)
+	at org.openqa.selenium.remote.codec.w3c.W3CHttpResponseCodec.decode(W3CHttpResponseCodec.java:138)
+	at org.openqa.selenium.remote.codec.w3c.W3CHttpResponseCodec.decode(W3CHttpResponseCodec.java:50)
+	at org.openqa.selenium.remote.HttpCommandExecutor.execute(HttpCommandExecutor.java:215)
+	at org.openqa.selenium.remote.service.DriverCommandExecutor.invokeExecute(DriverCommandExecutor.java:216)
+	at org.openqa.selenium.remote.service.DriverCommandExecutor.execute(DriverCommandExecutor.java:174)
+	at org.openqa.selenium.remote.RemoteWebDriver.execute(RemoteWebDriver.java:545)
+	at org.openqa.selenium.remote.ElementLocation$ElementFinder$2.findElement(ElementLocation.java:165)
+	at org.openqa.selenium.remote.ElementLocation.findElement(ElementLocation.java:59)
+	at org.openqa.selenium.remote.RemoteWebDriver.findElement(RemoteWebDriver.java:368)
+	at org.openqa.selenium.remote.RemoteWebDriver.findElement(RemoteWebDriver.java:362)
+	at tests.TC_UC07_1_04.testUpdateStopStatus(TC_UC07_1_04.java:41)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+... Removed 32 stack frames</pre></div><a href='#' onClick='toggleBox("stack-trace1805259269", this, "Click to show all stack frames", "Click to hide stack frames")'>Click to show all stack frames</a>
+<div class='stack-trace' id='stack-trace1805259269'><pre>org.openqa.selenium.NoSuchElementException: no such element: Unable to locate element: {&quot;method&quot;:&quot;xpath&quot;,&quot;selector&quot;:&quot;//button[contains(text(), &apos;Cập nhật&apos;)] | //input[@type=&apos;checkbox&apos;]&quot;}
+  (Session info: chrome=147.0.7727.138)
+For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors#no-such-element-exception
+Build info: version: &apos;4.29.0&apos;, revision: &apos;5fc1ec94cb&apos;
+System info: os.name: &apos;Windows 11&apos;, os.arch: &apos;amd64&apos;, os.version: &apos;10.0&apos;, java.version: &apos;25.0.2&apos;
+Driver info: org.openqa.selenium.chrome.ChromeDriver
+Command: [939374e8a0876ce01e98d6402e21a26f, findElement {value=//button[contains(text(), &apos;Cập nhật&apos;)] | //input[@type=&apos;checkbox&apos;], using=xpath}]
+Capabilities {acceptInsecureCerts: false, browserName: chrome, browserVersion: 147.0.7727.138, chrome: {chromedriverVersion: 147.0.7727.117 (474cc805edd..., userDataDir: C:\Users\admin\AppData\Loca...}, fedcm:accounts: true, goog:chromeOptions: {debuggerAddress: localhost:51594}, goog:processID: 31480, networkConnectionEnabled: false, pageLoadStrategy: normal, platformName: windows, proxy: Proxy(), se:cdp: ws://localhost:51594/devtoo..., se:cdpVersion: 147.0.7727.138, setWindowRect: true, strictFileInteractability: false, timeouts: {implicit: 0, pageLoad: 300000, script: 30000}, unhandledPromptBehavior: dismiss and notify, webauthn:extension:credBlob: true, webauthn:extension:largeBlob: true, webauthn:extension:minPinLength: true, webauthn:extension:prf: true, webauthn:virtualAuthenticators: true}
+Session ID: 939374e8a0876ce01e98d6402e21a26f
+	at java.base/jdk.internal.reflect.DirectConstructorHandleAccessor.newInstance(DirectConstructorHandleAccessor.java:62)
+	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:499)
+	at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:483)
+	at org.openqa.selenium.remote.ErrorCodec.decode(ErrorCodec.java:167)
+	at org.openqa.selenium.remote.codec.w3c.W3CHttpResponseCodec.decode(W3CHttpResponseCodec.java:138)
+	at org.openqa.selenium.remote.codec.w3c.W3CHttpResponseCodec.decode(W3CHttpResponseCodec.java:50)
+	at org.openqa.selenium.remote.HttpCommandExecutor.execute(HttpCommandExecutor.java:215)
+	at org.openqa.selenium.remote.service.DriverCommandExecutor.invokeExecute(DriverCommandExecutor.java:216)
+	at org.openqa.selenium.remote.service.DriverCommandExecutor.execute(DriverCommandExecutor.java:174)
+	at org.openqa.selenium.remote.RemoteWebDriver.execute(RemoteWebDriver.java:545)
+	at org.openqa.selenium.remote.ElementLocation$ElementFinder$2.findElement(ElementLocation.java:165)
+	at org.openqa.selenium.remote.ElementLocation.findElement(ElementLocation.java:59)
+	at org.openqa.selenium.remote.RemoteWebDriver.findElement(RemoteWebDriver.java:368)
+	at org.openqa.selenium.remote.RemoteWebDriver.findElement(RemoteWebDriver.java:362)
+	at tests.TC_UC07_1_04.testUpdateStopStatus(TC_UC07_1_04.java:41)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:565)
+	at org.testng.internal.invokers.MethodInvocationHelper.invokeMethod(MethodInvocationHelper.java:139)
+	at org.testng.internal.invokers.TestInvoker.invokeMethod(TestInvoker.java:664)
+	at org.testng.internal.invokers.TestInvoker.invokeTestMethod(TestInvoker.java:228)
+	at org.testng.internal.invokers.MethodRunner.runInSequence(MethodRunner.java:63)
+	at org.testng.internal.invokers.TestInvoker$MethodInvocationAgent.invoke(TestInvoker.java:961)
+	at org.testng.internal.invokers.TestInvoker.invokeTestMethods(TestInvoker.java:201)
+	at org.testng.internal.invokers.TestMethodWorker.invokeTestMethods(TestMethodWorker.java:148)
+	at org.testng.internal.invokers.TestMethodWorker.run(TestMethodWorker.java:128)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+	at org.testng.TestRunner.privateRun(TestRunner.java:819)
+	at org.testng.TestRunner.run(TestRunner.java:619)
+	at org.testng.SuiteRunner.runTest(SuiteRunner.java:443)
+	at org.testng.SuiteRunner.runSequentially(SuiteRunner.java:437)
+	at org.testng.SuiteRunner.privateRun(SuiteRunner.java:397)
+	at org.testng.SuiteRunner.run(SuiteRunner.java:336)
+	at org.testng.SuiteRunnerWorker.runSuite(SuiteRunnerWorker.java:52)
+	at org.testng.SuiteRunnerWorker.run(SuiteRunnerWorker.java:95)
+	at org.testng.TestNG.runSuitesSequentially(TestNG.java:1301)
+	at org.testng.TestNG.runSuitesLocally(TestNG.java:1228)
+	at org.testng.TestNG.runSuites(TestNG.java:1134)
+	at org.testng.TestNG.run(TestNG.java:1101)
+	at org.apache.maven.surefire.testng.TestNGExecutor.run(TestNGExecutor.java:308)
+	at org.apache.maven.surefire.testng.TestNGXmlTestSuite.execute(TestNGXmlTestSuite.java:71)
+	at org.apache.maven.surefire.testng.TestNGProvider.invoke(TestNGProvider.java:113)
+	at org.apache.maven.surefire.booter.ForkedBooter.runSuitesInProcess(ForkedBooter.java:385)
+	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162)
+	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507)
+	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495)
+</pre></div></td>
+<td>2</td>
+<td>tests.TC_UC07_1_04@3c419631</td></tr>
+</table><p>
+<table width='100%' border='1' class='invocation-passed'>
+<tr><td colspan='4' align='center'><b>PASSED TESTS</b></td></tr>
+<tr><td><b>Test method</b></td>
+<td><b>Attribute(s)</b></td>
+<td width="30%"><b>Exception</b></td>
+<td width="10%"><b>Time (seconds)</b></td>
+<td><b>Instance</b></td>
+</tr>
+<tr>
+<td title='tests.DieuChinhLoTrinhTest.testAccessAdjustRouteFunction()'><b>testAccessAdjustRouteFunction</b><br>Test class: tests.DieuChinhLoTrinhTest<br>Test method: TC_UC05.1_01: Truy cập chức năng điều chỉnh lộ trình</td>
+<td></td>
+<td>3</td>
+<td>tests.DieuChinhLoTrinhTest@5e316c74</td></tr>
+<tr>
+<td title='tests.UC07_2_CustomerListTest.testNoAssignedTrip()'><b>testNoAssignedTrip</b><br>Test class: tests.UC07_2_CustomerListTest<br>Test method: TC_UC07.2_06: Không có chuyến được phân công</td>
+<td></td>
+<td>0</td>
+<td>tests.UC07_2_CustomerListTest@3e2e18f2</td></tr>
+<tr>
+<td title='tests.UC07_2_CustomerListTest.testErrorLoadingCustomerList()'><b>testErrorLoadingCustomerList</b><br>Test class: tests.UC07_2_CustomerListTest<br>Test method: TC_UC07.2_08: Lỗi tải danh sách khách hàng</td>
+<td></td>
+<td>2</td>
+<td>tests.UC07_2_CustomerListTest@3e2e18f2</td></tr>
+<tr>
+<td title='tests.TheoDoiTrangThaiTrungChuyenTest.testTrackPendingRoute()'><b>testTrackPendingRoute</b><br>Test class: tests.TheoDoiTrangThaiTrungChuyenTest<br>Test method: TC_UC05.3_03: Theo dõi lộ trình 'Chưa thực hiện'</td>
+<td></td>
+<td>2</td>
+<td>tests.TheoDoiTrangThaiTrungChuyenTest@3c130745</td></tr>
+<tr>
+<td title='tests.DieuChinhLoTrinhTest.testCannotEditCompletedRoute()'><b>testCannotEditCompletedRoute</b><br>Test class: tests.DieuChinhLoTrinhTest<br>Test method: TC_UC05.1_11: Không cho thay đổi thông tin khi lộ trình đã ở trạng thái hoàn thành</td>
+<td></td>
+<td>4</td>
+<td>tests.DieuChinhLoTrinhTest@5e316c74</td></tr>
+<tr>
+<td title='tests.TC_UC07_1_02.testViewRouteDetail()'><b>testViewRouteDetail</b><br>Test class: tests.TC_UC07_1_02<br>Test method: UC07.1.02 - Xem chi tiết lộ trình trung chuyển</td>
+<td></td>
+<td>2</td>
+<td>tests.TC_UC07_1_02@4b5d6a01</td></tr>
+<tr>
+<td title='tests.TheoDoiTrangThaiTrungChuyenTest.testViewRouteDetails()'><b>testViewRouteDetails</b><br>Test class: tests.TheoDoiTrangThaiTrungChuyenTest<br>Test method: TC_UC05.3_02: Xem chi tiết lộ trình</td>
+<td></td>
+<td>2</td>
+<td>tests.TheoDoiTrangThaiTrungChuyenTest@3c130745</td></tr>
+<tr>
+<td title='tests.DieuChinhLoTrinhTest.testValidTimePendingRoute()'><b>testValidTimePendingRoute</b><br>Test class: tests.DieuChinhLoTrinhTest<br>Test method: TC_UC05.1_07: Thay đổi thời gian bắt đầu hợp lệ ở trạng thái chưa thực hiện</td>
+<td></td>
+<td>6</td>
+<td>tests.DieuChinhLoTrinhTest@5e316c74</td></tr>
+<tr>
+<td title='tests.UC07_2_CustomerListTest.testAutoUpdateOnDataChange()'><b>testAutoUpdateOnDataChange</b><br>Test class: tests.UC07_2_CustomerListTest<br>Test method: TC_UC07.2_07: Cập nhật danh sách khi có thay đổi</td>
+<td></td>
+<td>12</td>
+<td>tests.UC07_2_CustomerListTest@3e2e18f2</td></tr>
+<tr>
+<td title='tests.UC07_2_CustomerListTest.testCustomerStatusIndicators()'><b>testCustomerStatusIndicators</b><br>Test class: tests.UC07_2_CustomerListTest<br>Test method: TC_UC07.2_10: Kiểm tra cập nhật trạng thái khách hàng</td>
+<td></td>
+<td>12</td>
+<td>tests.UC07_2_CustomerListTest@3e2e18f2</td></tr>
+<tr>
+<td title='tests.UC07_2_CustomerListTest.testHighlightOnMapInteraction()'><b>testHighlightOnMapInteraction</b><br>Test class: tests.UC07_2_CustomerListTest<br>Test method: TC_UC07.2_05: Highlight khách hàng khi chọn trên bản đồ</td>
+<td></td>
+<td>3</td>
+<td>tests.UC07_2_CustomerListTest@3e2e18f2</td></tr>
+<tr>
+<td title='tests.DieuChinhLoTrinhTest.testCancelEditRoute()'><b>testCancelEditRoute</b><br>Test class: tests.DieuChinhLoTrinhTest<br>Test method: TC_UC05.1_05: Hủy chỉnh sửa lộ trình</td>
+<td></td>
+<td>4</td>
+<td>tests.DieuChinhLoTrinhTest@5e316c74</td></tr>
+<tr>
+<td title='tests.TripStatusTest.testDisableActionsBeforeStartingTrip()'><b>testDisableActionsBeforeStartingTrip</b><br>Test class: tests.TripStatusTest<br>Test method: TC_UC07.3_04: Kiểm tra chặn thao tác khách hàng khi chưa bắt đầu chuyến</td>
+<td></td>
+<td>2</td>
+<td>tests.TripStatusTest@cd3fee8</td></tr>
+<tr>
+<td title='tests.TripStatusTest.testStartTrip()'><b>testStartTrip</b><br>Test class: tests.TripStatusTest<br>Test method: TC_UC07.3_05: Bắt đầu chuyến xe</td>
+<td></td>
+<td>3</td>
+<td>tests.TripStatusTest@cd3fee8</td></tr>
+<tr>
+<td title='tests.TripStatusTest.testDisableCompleteTripIfCustomersPending()'><b>testDisableCompleteTripIfCustomersPending</b><br>Test class: tests.TripStatusTest<br>Test method: TC_UC07.3_08: Chặn hoàn thành khi chưa xử lý hết khách</td>
+<td></td>
+<td>1</td>
+<td>tests.TripStatusTest@cd3fee8</td></tr>
+<tr>
+<td title='tests.DieuChinhLoTrinhTest.testPastTimePendingRoute()'><b>testPastTimePendingRoute</b><br>Test class: tests.DieuChinhLoTrinhTest<br>Test method: TC_UC05.1_09: Thay đổi thời gian bắt đầu ở quá khứ ở trạng thái 'Chưa thực hiện'</td>
+<td></td>
+<td>4</td>
+<td>tests.DieuChinhLoTrinhTest@5e316c74</td></tr>
+<tr>
+<td title='tests.DieuChinhLoTrinhTest.testSearchByDriverName()'><b>testSearchByDriverName</b><br>Test class: tests.DieuChinhLoTrinhTest<br>Test method: TC_UC05.1_14: Tìm kiếm lộ trình theo tên tài xế</td>
+<td></td>
+<td>2</td>
+<td>tests.DieuChinhLoTrinhTest@5e316c74</td></tr>
+<tr>
+<td title='tests.DieuChinhLoTrinhTest.testSearchByNonExistentKeyword()'><b>testSearchByNonExistentKeyword</b><br>Test class: tests.DieuChinhLoTrinhTest<br>Test method: TC_UC05.1_15: Tìm kiếm với từ khóa không tồn tại</td>
+<td></td>
+<td>12</td>
+<td>tests.DieuChinhLoTrinhTest@5e316c74</td></tr>
+<tr>
+<td title='tests.UC07_2_CustomerListTest.testCustomerOrder()'><b>testCustomerOrder</b><br>Test class: tests.UC07_2_CustomerListTest<br>Test method: TC_UC07.2_03: Hiển thị đúng thứ tự khách hàng</td>
+<td></td>
+<td>12</td>
+<td>tests.UC07_2_CustomerListTest@3e2e18f2</td></tr>
+<tr>
+<td title='tests.TheoDoiTrangThaiTrungChuyenTest.testClearSearchKeyword()'><b>testClearSearchKeyword</b><br>Test class: tests.TheoDoiTrangThaiTrungChuyenTest<br>Test method: TC_UC05.3_11: Xóa từ khóa sau khi tìm kiếm</td>
+<td></td>
+<td>3</td>
+<td>tests.TheoDoiTrangThaiTrungChuyenTest@3c130745</td></tr>
+<tr>
+<td title='tests.DieuChinhLoTrinhTest.testSearchByVehiclePlate()'><b>testSearchByVehiclePlate</b><br>Test class: tests.DieuChinhLoTrinhTest<br>Test method: TC_UC05.1_13: Tìm kiếm lộ trình theo biển số xe</td>
+<td></td>
+<td>12</td>
+<td>tests.DieuChinhLoTrinhTest@5e316c74</td></tr>
+<tr>
+<td title='tests.UC07_2_CustomerListTest.testSyncWithRouteMap()'><b>testSyncWithRouteMap</b><br>Test class: tests.UC07_2_CustomerListTest<br>Test method: TC_UC07.2_04: Đồng bộ với bản đồ lộ trình</td>
+<td></td>
+<td>3</td>
+<td>tests.UC07_2_CustomerListTest@3e2e18f2</td></tr>
+<tr>
+<td title='tests.TripStatusTest.testCancelRejectTrip()'><b>testCancelRejectTrip</b><br>Test class: tests.TripStatusTest<br>Test method: TC_UC07.3_02: Hủy thao tác từ chối chuyến</td>
+<td></td>
+<td>12</td>
+<td>tests.TripStatusTest@cd3fee8</td></tr>
+<tr>
+<td title='tests.DieuChinhLoTrinhTest.testClearSearchKeyword()'><b>testClearSearchKeyword</b><br>Test class: tests.DieuChinhLoTrinhTest<br>Test method: TC_UC05.1_16: Xóa từ khóa sau khi tìm kiếm</td>
+<td></td>
+<td>3</td>
+<td>tests.DieuChinhLoTrinhTest@5e316c74</td></tr>
+<tr>
+<td title='tests.TripStatusTest.testCancelIncidentReport()'><b>testCancelIncidentReport</b><br>Test class: tests.TripStatusTest<br>Test method: TC_UC07.3_09: Hủy thao tác báo cáo sự cố</td>
+<td></td>
+<td>12</td>
+<td>tests.TripStatusTest@cd3fee8</td></tr>
+<tr>
+<td title='tests.TripStatusTest.testNetworkErrorOnUpdate()'><b>testNetworkErrorOnUpdate</b><br>Test class: tests.TripStatusTest<br>Test method: TC_UC07.3_12: Lỗi mạng khi cập nhật trạng thái (Giả lập)</td>
+<td></td>
+<td>0</td>
+<td>tests.TripStatusTest@cd3fee8</td></tr>
+<tr>
+<td title='tests.UC07_2_CustomerListTest.testReadOnlyCustomerList()'><b>testReadOnlyCustomerList</b><br>Test class: tests.UC07_2_CustomerListTest<br>Test method: TC_UC07.2_09: Không cho phép chỉnh sửa khách hàng</td>
+<td></td>
+<td>12</td>
+<td>tests.UC07_2_CustomerListTest@3e2e18f2</td></tr>
+<tr>
+<td title='tests.TheoDoiTrangThaiTrungChuyenTest.testAccessTrackStatusFunction()'><b>testAccessTrackStatusFunction</b><br>Test class: tests.TheoDoiTrangThaiTrungChuyenTest<br>Test method: TC_UC05.3_01: Truy cập chức năng</td>
+<td></td>
+<td>1</td>
+<td>tests.TheoDoiTrangThaiTrungChuyenTest@3c130745</td></tr>
+<tr>
+<td title='tests.TheoDoiTrangThaiTrungChuyenTest.testSearchByNonExistentKeyword()'><b>testSearchByNonExistentKeyword</b><br>Test class: tests.TheoDoiTrangThaiTrungChuyenTest<br>Test method: TC_UC05.3_10: Tìm kiếm với từ khóa không tồn tại</td>
+<td></td>
+<td>12</td>
+<td>tests.TheoDoiTrangThaiTrungChuyenTest@3c130745</td></tr>
+<tr>
+<td title='tests.UC07_2_CustomerListTest.testViewCustomerList()'><b>testViewCustomerList</b><br>Test class: tests.UC07_2_CustomerListTest<br>Test method: TC_UC07.2_01: Xem danh sách khách hàng đón/trả</td>
+<td></td>
+<td>12</td>
+<td>tests.UC07_2_CustomerListTest@3e2e18f2</td></tr>
+<tr>
+<td title='tests.TC_UC07_1_01.testOpenRouteList()'><b>testOpenRouteList</b><br>Test class: tests.TC_UC07_1_01<br>Test method: UC07.1.01 - Mở chức năng xem lộ trình trung chuyển</td>
+<td></td>
+<td>1</td>
+<td>tests.TC_UC07_1_01@3d680b5a</td></tr>
+<tr>
+<td title='tests.DieuChinhLoTrinhTest.testSelectRouteToAdjust()'><b>testSelectRouteToAdjust</b><br>Test class: tests.DieuChinhLoTrinhTest<br>Test method: TC_UC05.1_02: Chọn lộ trình cần điều chỉnh</td>
+<td></td>
+<td>2</td>
+<td>tests.DieuChinhLoTrinhTest@5e316c74</td></tr>
+<tr>
+<td title='tests.TheoDoiTrangThaiTrungChuyenTest.testSearchByVehiclePlate()'><b>testSearchByVehiclePlate</b><br>Test class: tests.TheoDoiTrangThaiTrungChuyenTest<br>Test method: TC_UC05.3_08: Tìm kiếm lộ trình theo biển số xe</td>
+<td></td>
+<td>12</td>
+<td>tests.TheoDoiTrangThaiTrungChuyenTest@3c130745</td></tr>
+<tr>
+<td title='tests.TC_UC07_1_05.testDriverPermissions()'><b>testDriverPermissions</b><br>Test class: tests.TC_UC07_1_05<br>Test method: UC07.1.05 - Không cho phép tài xế chỉnh sửa lộ trình</td>
+<td></td>
+<td>1</td>
+<td>tests.TC_UC07_1_05@418e7838</td></tr>
+<tr>
+<td title='tests.TheoDoiTrangThaiTrungChuyenTest.testSearchByDriverName()'><b>testSearchByDriverName</b><br>Test class: tests.TheoDoiTrangThaiTrungChuyenTest<br>Test method: TC_UC05.3_09: Tìm kiếm lộ trình theo tên tài xế</td>
+<td></td>
+<td>2</td>
+<td>tests.TheoDoiTrangThaiTrungChuyenTest@3c130745</td></tr>
+<tr>
+<td title='tests.TripStatusTest.testOpenRejectTripForm()'><b>testOpenRejectTripForm</b><br>Test class: tests.TripStatusTest<br>Test method: TC_UC07.3_01: Mở form nhập lý do từ chối chuyến</td>
+<td></td>
+<td>1</td>
+<td>tests.TripStatusTest@cd3fee8</td></tr>
+</table><p>
+<table width='100%' border='1' class='invocation-skipped'>
+<tr><td colspan='4' align='center'><b>SKIPPED TESTS</b></td></tr>
+<tr><td><b>Test method</b></td>
+<td><b>Attribute(s)</b></td>
+<td width="30%"><b>Exception</b></td>
+<td width="10%"><b>Time (seconds)</b></td>
+<td><b>Instance</b></td>
+</tr>
+<tr>
+<td title='tests.TheoDoiTrangThaiTrungChuyenTest.testGPSRealTimeUpdate()'><b>testGPSRealTimeUpdate</b><br>Test class: tests.TheoDoiTrangThaiTrungChuyenTest<br>Test method: TC_UC05.3_06: GPS cập nhật liên tục</td>
+<td><div><pre>org.testng.SkipException: Không có lộ trình trạng thái: Đang thực hiện
+	at tests.TheoDoiTrangThaiTrungChuyenTest.selectRouteByStatusOrSkip(TheoDoiTrangThaiTrungChuyenTest.java:32)
+	at tests.TheoDoiTrangThaiTrungChuyenTest.testGPSRealTimeUpdate(TheoDoiTrangThaiTrungChuyenTest.java:81)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+... Removed 29 stack frames</pre></div><a href='#' onClick='toggleBox("stack-trace1448904830", this, "Click to show all stack frames", "Click to hide stack frames")'>Click to show all stack frames</a>
+<div class='stack-trace' id='stack-trace1448904830'><pre>org.testng.SkipException: Không có lộ trình trạng thái: Đang thực hiện
+	at tests.TheoDoiTrangThaiTrungChuyenTest.selectRouteByStatusOrSkip(TheoDoiTrangThaiTrungChuyenTest.java:32)
+	at tests.TheoDoiTrangThaiTrungChuyenTest.testGPSRealTimeUpdate(TheoDoiTrangThaiTrungChuyenTest.java:81)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:565)
+	at org.testng.internal.invokers.MethodInvocationHelper.invokeMethod(MethodInvocationHelper.java:139)
+	at org.testng.internal.invokers.TestInvoker.invokeMethod(TestInvoker.java:664)
+	at org.testng.internal.invokers.TestInvoker.invokeTestMethod(TestInvoker.java:228)
+	at org.testng.internal.invokers.MethodRunner.runInSequence(MethodRunner.java:63)
+	at org.testng.internal.invokers.TestInvoker$MethodInvocationAgent.invoke(TestInvoker.java:961)
+	at org.testng.internal.invokers.TestInvoker.invokeTestMethods(TestInvoker.java:201)
+	at org.testng.internal.invokers.TestMethodWorker.invokeTestMethods(TestMethodWorker.java:148)
+	at org.testng.internal.invokers.TestMethodWorker.run(TestMethodWorker.java:128)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+	at org.testng.TestRunner.privateRun(TestRunner.java:819)
+	at org.testng.TestRunner.run(TestRunner.java:619)
+	at org.testng.SuiteRunner.runTest(SuiteRunner.java:443)
+	at org.testng.SuiteRunner.runSequentially(SuiteRunner.java:437)
+	at org.testng.SuiteRunner.privateRun(SuiteRunner.java:397)
+	at org.testng.SuiteRunner.run(SuiteRunner.java:336)
+	at org.testng.SuiteRunnerWorker.runSuite(SuiteRunnerWorker.java:52)
+	at org.testng.SuiteRunnerWorker.run(SuiteRunnerWorker.java:95)
+	at org.testng.TestNG.runSuitesSequentially(TestNG.java:1301)
+	at org.testng.TestNG.runSuitesLocally(TestNG.java:1228)
+	at org.testng.TestNG.runSuites(TestNG.java:1134)
+	at org.testng.TestNG.run(TestNG.java:1101)
+	at org.apache.maven.surefire.testng.TestNGExecutor.run(TestNGExecutor.java:308)
+	at org.apache.maven.surefire.testng.TestNGXmlTestSuite.execute(TestNGXmlTestSuite.java:71)
+	at org.apache.maven.surefire.testng.TestNGProvider.invoke(TestNGProvider.java:113)
+	at org.apache.maven.surefire.booter.ForkedBooter.runSuitesInProcess(ForkedBooter.java:385)
+	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162)
+	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507)
+	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495)
+</pre></div></td>
+<td>11</td>
+<td>tests.TheoDoiTrangThaiTrungChuyenTest@3c130745</td></tr>
+<tr>
+<td title='tests.TheoDoiTrangThaiTrungChuyenTest.testTrackRunningRoute()'><b>testTrackRunningRoute</b><br>Test class: tests.TheoDoiTrangThaiTrungChuyenTest<br>Test method: TC_UC05.3_04: Theo dõi lộ trình 'Đang thực hiện'</td>
+<td><div><pre>org.testng.SkipException: Không có lộ trình trạng thái: Đang thực hiện
+	at tests.TheoDoiTrangThaiTrungChuyenTest.selectRouteByStatusOrSkip(TheoDoiTrangThaiTrungChuyenTest.java:32)
+	at tests.TheoDoiTrangThaiTrungChuyenTest.testTrackRunningRoute(TheoDoiTrangThaiTrungChuyenTest.java:92)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+... Removed 29 stack frames</pre></div><a href='#' onClick='toggleBox("stack-trace230465865", this, "Click to show all stack frames", "Click to hide stack frames")'>Click to show all stack frames</a>
+<div class='stack-trace' id='stack-trace230465865'><pre>org.testng.SkipException: Không có lộ trình trạng thái: Đang thực hiện
+	at tests.TheoDoiTrangThaiTrungChuyenTest.selectRouteByStatusOrSkip(TheoDoiTrangThaiTrungChuyenTest.java:32)
+	at tests.TheoDoiTrangThaiTrungChuyenTest.testTrackRunningRoute(TheoDoiTrangThaiTrungChuyenTest.java:92)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:565)
+	at org.testng.internal.invokers.MethodInvocationHelper.invokeMethod(MethodInvocationHelper.java:139)
+	at org.testng.internal.invokers.TestInvoker.invokeMethod(TestInvoker.java:664)
+	at org.testng.internal.invokers.TestInvoker.invokeTestMethod(TestInvoker.java:228)
+	at org.testng.internal.invokers.MethodRunner.runInSequence(MethodRunner.java:63)
+	at org.testng.internal.invokers.TestInvoker$MethodInvocationAgent.invoke(TestInvoker.java:961)
+	at org.testng.internal.invokers.TestInvoker.invokeTestMethods(TestInvoker.java:201)
+	at org.testng.internal.invokers.TestMethodWorker.invokeTestMethods(TestMethodWorker.java:148)
+	at org.testng.internal.invokers.TestMethodWorker.run(TestMethodWorker.java:128)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+	at org.testng.TestRunner.privateRun(TestRunner.java:819)
+	at org.testng.TestRunner.run(TestRunner.java:619)
+	at org.testng.SuiteRunner.runTest(SuiteRunner.java:443)
+	at org.testng.SuiteRunner.runSequentially(SuiteRunner.java:437)
+	at org.testng.SuiteRunner.privateRun(SuiteRunner.java:397)
+	at org.testng.SuiteRunner.run(SuiteRunner.java:336)
+	at org.testng.SuiteRunnerWorker.runSuite(SuiteRunnerWorker.java:52)
+	at org.testng.SuiteRunnerWorker.run(SuiteRunnerWorker.java:95)
+	at org.testng.TestNG.runSuitesSequentially(TestNG.java:1301)
+	at org.testng.TestNG.runSuitesLocally(TestNG.java:1228)
+	at org.testng.TestNG.runSuites(TestNG.java:1134)
+	at org.testng.TestNG.run(TestNG.java:1101)
+	at org.apache.maven.surefire.testng.TestNGExecutor.run(TestNGExecutor.java:308)
+	at org.apache.maven.surefire.testng.TestNGXmlTestSuite.execute(TestNGXmlTestSuite.java:71)
+	at org.apache.maven.surefire.testng.TestNGProvider.invoke(TestNGProvider.java:113)
+	at org.apache.maven.surefire.booter.ForkedBooter.runSuitesInProcess(ForkedBooter.java:385)
+	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162)
+	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507)
+	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495)
+</pre></div></td>
+<td>11</td>
+<td>tests.TheoDoiTrangThaiTrungChuyenTest@3c130745</td></tr>
+<tr>
+<td title='tests.DieuChinhLoTrinhTest.testChangeInfoAndConfirm()'><b>testChangeInfoAndConfirm</b><br>Test class: tests.DieuChinhLoTrinhTest<br>Test method: TC_UC05.1_03: Thay đổi thông tin</td>
+<td><div><pre>org.testng.SkipException: Không có lộ trình trạng thái: Đang thực hiện
+	at tests.DieuChinhLoTrinhTest.selectRouteByStatusOrSkip(DieuChinhLoTrinhTest.java:34)
+	at tests.DieuChinhLoTrinhTest.testChangeInfoAndConfirm(DieuChinhLoTrinhTest.java:79)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+... Removed 29 stack frames</pre></div><a href='#' onClick='toggleBox("stack-trace278879704", this, "Click to show all stack frames", "Click to hide stack frames")'>Click to show all stack frames</a>
+<div class='stack-trace' id='stack-trace278879704'><pre>org.testng.SkipException: Không có lộ trình trạng thái: Đang thực hiện
+	at tests.DieuChinhLoTrinhTest.selectRouteByStatusOrSkip(DieuChinhLoTrinhTest.java:34)
+	at tests.DieuChinhLoTrinhTest.testChangeInfoAndConfirm(DieuChinhLoTrinhTest.java:79)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:565)
+	at org.testng.internal.invokers.MethodInvocationHelper.invokeMethod(MethodInvocationHelper.java:139)
+	at org.testng.internal.invokers.TestInvoker.invokeMethod(TestInvoker.java:664)
+	at org.testng.internal.invokers.TestInvoker.invokeTestMethod(TestInvoker.java:228)
+	at org.testng.internal.invokers.MethodRunner.runInSequence(MethodRunner.java:63)
+	at org.testng.internal.invokers.TestInvoker$MethodInvocationAgent.invoke(TestInvoker.java:961)
+	at org.testng.internal.invokers.TestInvoker.invokeTestMethods(TestInvoker.java:201)
+	at org.testng.internal.invokers.TestMethodWorker.invokeTestMethods(TestMethodWorker.java:148)
+	at org.testng.internal.invokers.TestMethodWorker.run(TestMethodWorker.java:128)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+	at org.testng.TestRunner.privateRun(TestRunner.java:819)
+	at org.testng.TestRunner.run(TestRunner.java:619)
+	at org.testng.SuiteRunner.runTest(SuiteRunner.java:443)
+	at org.testng.SuiteRunner.runSequentially(SuiteRunner.java:437)
+	at org.testng.SuiteRunner.privateRun(SuiteRunner.java:397)
+	at org.testng.SuiteRunner.run(SuiteRunner.java:336)
+	at org.testng.SuiteRunnerWorker.runSuite(SuiteRunnerWorker.java:52)
+	at org.testng.SuiteRunnerWorker.run(SuiteRunnerWorker.java:95)
+	at org.testng.TestNG.runSuitesSequentially(TestNG.java:1301)
+	at org.testng.TestNG.runSuitesLocally(TestNG.java:1228)
+	at org.testng.TestNG.runSuites(TestNG.java:1134)
+	at org.testng.TestNG.run(TestNG.java:1101)
+	at org.apache.maven.surefire.testng.TestNGExecutor.run(TestNGExecutor.java:308)
+	at org.apache.maven.surefire.testng.TestNGXmlTestSuite.execute(TestNGXmlTestSuite.java:71)
+	at org.apache.maven.surefire.testng.TestNGProvider.invoke(TestNGProvider.java:113)
+	at org.apache.maven.surefire.booter.ForkedBooter.runSuitesInProcess(ForkedBooter.java:385)
+	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162)
+	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507)
+	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495)
+</pre></div></td>
+<td>11</td>
+<td>tests.DieuChinhLoTrinhTest@5e316c74</td></tr>
+<tr>
+<td title='tests.DieuChinhLoTrinhTest.testCancelAfterWarning()'><b>testCancelAfterWarning</b><br>Test class: tests.DieuChinhLoTrinhTest<br>Test method: TC_UC05.1_04: Hủy sau cảnh báo</td>
+<td><div><pre>org.testng.SkipException: Không có lộ trình trạng thái: Đang thực hiện
+	at tests.DieuChinhLoTrinhTest.selectRouteByStatusOrSkip(DieuChinhLoTrinhTest.java:34)
+	at tests.DieuChinhLoTrinhTest.testCancelAfterWarning(DieuChinhLoTrinhTest.java:102)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+... Removed 29 stack frames</pre></div><a href='#' onClick='toggleBox("stack-trace1320869181", this, "Click to show all stack frames", "Click to hide stack frames")'>Click to show all stack frames</a>
+<div class='stack-trace' id='stack-trace1320869181'><pre>org.testng.SkipException: Không có lộ trình trạng thái: Đang thực hiện
+	at tests.DieuChinhLoTrinhTest.selectRouteByStatusOrSkip(DieuChinhLoTrinhTest.java:34)
+	at tests.DieuChinhLoTrinhTest.testCancelAfterWarning(DieuChinhLoTrinhTest.java:102)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:565)
+	at org.testng.internal.invokers.MethodInvocationHelper.invokeMethod(MethodInvocationHelper.java:139)
+	at org.testng.internal.invokers.TestInvoker.invokeMethod(TestInvoker.java:664)
+	at org.testng.internal.invokers.TestInvoker.invokeTestMethod(TestInvoker.java:228)
+	at org.testng.internal.invokers.MethodRunner.runInSequence(MethodRunner.java:63)
+	at org.testng.internal.invokers.TestInvoker$MethodInvocationAgent.invoke(TestInvoker.java:961)
+	at org.testng.internal.invokers.TestInvoker.invokeTestMethods(TestInvoker.java:201)
+	at org.testng.internal.invokers.TestMethodWorker.invokeTestMethods(TestMethodWorker.java:148)
+	at org.testng.internal.invokers.TestMethodWorker.run(TestMethodWorker.java:128)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+	at org.testng.TestRunner.privateRun(TestRunner.java:819)
+	at org.testng.TestRunner.run(TestRunner.java:619)
+	at org.testng.SuiteRunner.runTest(SuiteRunner.java:443)
+	at org.testng.SuiteRunner.runSequentially(SuiteRunner.java:437)
+	at org.testng.SuiteRunner.privateRun(SuiteRunner.java:397)
+	at org.testng.SuiteRunner.run(SuiteRunner.java:336)
+	at org.testng.SuiteRunnerWorker.runSuite(SuiteRunnerWorker.java:52)
+	at org.testng.SuiteRunnerWorker.run(SuiteRunnerWorker.java:95)
+	at org.testng.TestNG.runSuitesSequentially(TestNG.java:1301)
+	at org.testng.TestNG.runSuitesLocally(TestNG.java:1228)
+	at org.testng.TestNG.runSuites(TestNG.java:1134)
+	at org.testng.TestNG.run(TestNG.java:1101)
+	at org.apache.maven.surefire.testng.TestNGExecutor.run(TestNGExecutor.java:308)
+	at org.apache.maven.surefire.testng.TestNGXmlTestSuite.execute(TestNGXmlTestSuite.java:71)
+	at org.apache.maven.surefire.testng.TestNGProvider.invoke(TestNGProvider.java:113)
+	at org.apache.maven.surefire.booter.ForkedBooter.runSuitesInProcess(ForkedBooter.java:385)
+	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162)
+	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507)
+	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495)
+</pre></div></td>
+<td>11</td>
+<td>tests.DieuChinhLoTrinhTest@5e316c74</td></tr>
+<tr>
+<td title='tests.DieuChinhLoTrinhTest.testPastTimeInProgressRoute()'><b>testPastTimeInProgressRoute</b><br>Test class: tests.DieuChinhLoTrinhTest<br>Test method: TC_UC05.1_06: Thay đổi thời gian bắt đầu ở quá khứ ở trạng thái 'Đang thực hiện'</td>
+<td><div><pre>org.testng.SkipException: Không có lộ trình trạng thái: Đang thực hiện
+	at tests.DieuChinhLoTrinhTest.selectRouteByStatusOrSkip(DieuChinhLoTrinhTest.java:34)
+	at tests.DieuChinhLoTrinhTest.testPastTimeInProgressRoute(DieuChinhLoTrinhTest.java:140)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+... Removed 29 stack frames</pre></div><a href='#' onClick='toggleBox("stack-trace1810349933", this, "Click to show all stack frames", "Click to hide stack frames")'>Click to show all stack frames</a>
+<div class='stack-trace' id='stack-trace1810349933'><pre>org.testng.SkipException: Không có lộ trình trạng thái: Đang thực hiện
+	at tests.DieuChinhLoTrinhTest.selectRouteByStatusOrSkip(DieuChinhLoTrinhTest.java:34)
+	at tests.DieuChinhLoTrinhTest.testPastTimeInProgressRoute(DieuChinhLoTrinhTest.java:140)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:565)
+	at org.testng.internal.invokers.MethodInvocationHelper.invokeMethod(MethodInvocationHelper.java:139)
+	at org.testng.internal.invokers.TestInvoker.invokeMethod(TestInvoker.java:664)
+	at org.testng.internal.invokers.TestInvoker.invokeTestMethod(TestInvoker.java:228)
+	at org.testng.internal.invokers.MethodRunner.runInSequence(MethodRunner.java:63)
+	at org.testng.internal.invokers.TestInvoker$MethodInvocationAgent.invoke(TestInvoker.java:961)
+	at org.testng.internal.invokers.TestInvoker.invokeTestMethods(TestInvoker.java:201)
+	at org.testng.internal.invokers.TestMethodWorker.invokeTestMethods(TestMethodWorker.java:148)
+	at org.testng.internal.invokers.TestMethodWorker.run(TestMethodWorker.java:128)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+	at org.testng.TestRunner.privateRun(TestRunner.java:819)
+	at org.testng.TestRunner.run(TestRunner.java:619)
+	at org.testng.SuiteRunner.runTest(SuiteRunner.java:443)
+	at org.testng.SuiteRunner.runSequentially(SuiteRunner.java:437)
+	at org.testng.SuiteRunner.privateRun(SuiteRunner.java:397)
+	at org.testng.SuiteRunner.run(SuiteRunner.java:336)
+	at org.testng.SuiteRunnerWorker.runSuite(SuiteRunnerWorker.java:52)
+	at org.testng.SuiteRunnerWorker.run(SuiteRunnerWorker.java:95)
+	at org.testng.TestNG.runSuitesSequentially(TestNG.java:1301)
+	at org.testng.TestNG.runSuitesLocally(TestNG.java:1228)
+	at org.testng.TestNG.runSuites(TestNG.java:1134)
+	at org.testng.TestNG.run(TestNG.java:1101)
+	at org.apache.maven.surefire.testng.TestNGExecutor.run(TestNGExecutor.java:308)
+	at org.apache.maven.surefire.testng.TestNGXmlTestSuite.execute(TestNGXmlTestSuite.java:71)
+	at org.apache.maven.surefire.testng.TestNGProvider.invoke(TestNGProvider.java:113)
+	at org.apache.maven.surefire.booter.ForkedBooter.runSuitesInProcess(ForkedBooter.java:385)
+	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162)
+	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507)
+	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495)
+</pre></div></td>
+<td>11</td>
+<td>tests.DieuChinhLoTrinhTest@5e316c74</td></tr>
+<tr>
+<td title='tests.DieuChinhLoTrinhTest.testValidTimeInProgressRoute()'><b>testValidTimeInProgressRoute</b><br>Test class: tests.DieuChinhLoTrinhTest<br>Test method: TC_UC05.1_10: Thay đổi thời gian bắt đầu hợp lệ ở trạng thái đang thực hiện</td>
+<td><div><pre>org.testng.SkipException: Không có lộ trình trạng thái: Đang thực hiện
+	at tests.DieuChinhLoTrinhTest.selectRouteByStatusOrSkip(DieuChinhLoTrinhTest.java:34)
+	at tests.DieuChinhLoTrinhTest.testValidTimeInProgressRoute(DieuChinhLoTrinhTest.java:192)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+... Removed 29 stack frames</pre></div><a href='#' onClick='toggleBox("stack-trace180084736", this, "Click to show all stack frames", "Click to hide stack frames")'>Click to show all stack frames</a>
+<div class='stack-trace' id='stack-trace180084736'><pre>org.testng.SkipException: Không có lộ trình trạng thái: Đang thực hiện
+	at tests.DieuChinhLoTrinhTest.selectRouteByStatusOrSkip(DieuChinhLoTrinhTest.java:34)
+	at tests.DieuChinhLoTrinhTest.testValidTimeInProgressRoute(DieuChinhLoTrinhTest.java:192)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:565)
+	at org.testng.internal.invokers.MethodInvocationHelper.invokeMethod(MethodInvocationHelper.java:139)
+	at org.testng.internal.invokers.TestInvoker.invokeMethod(TestInvoker.java:664)
+	at org.testng.internal.invokers.TestInvoker.invokeTestMethod(TestInvoker.java:228)
+	at org.testng.internal.invokers.MethodRunner.runInSequence(MethodRunner.java:63)
+	at org.testng.internal.invokers.TestInvoker$MethodInvocationAgent.invoke(TestInvoker.java:961)
+	at org.testng.internal.invokers.TestInvoker.invokeTestMethods(TestInvoker.java:201)
+	at org.testng.internal.invokers.TestMethodWorker.invokeTestMethods(TestMethodWorker.java:148)
+	at org.testng.internal.invokers.TestMethodWorker.run(TestMethodWorker.java:128)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+	at org.testng.TestRunner.privateRun(TestRunner.java:819)
+	at org.testng.TestRunner.run(TestRunner.java:619)
+	at org.testng.SuiteRunner.runTest(SuiteRunner.java:443)
+	at org.testng.SuiteRunner.runSequentially(SuiteRunner.java:437)
+	at org.testng.SuiteRunner.privateRun(SuiteRunner.java:397)
+	at org.testng.SuiteRunner.run(SuiteRunner.java:336)
+	at org.testng.SuiteRunnerWorker.runSuite(SuiteRunnerWorker.java:52)
+	at org.testng.SuiteRunnerWorker.run(SuiteRunnerWorker.java:95)
+	at org.testng.TestNG.runSuitesSequentially(TestNG.java:1301)
+	at org.testng.TestNG.runSuitesLocally(TestNG.java:1228)
+	at org.testng.TestNG.runSuites(TestNG.java:1134)
+	at org.testng.TestNG.run(TestNG.java:1101)
+	at org.apache.maven.surefire.testng.TestNGExecutor.run(TestNGExecutor.java:308)
+	at org.apache.maven.surefire.testng.TestNGXmlTestSuite.execute(TestNGXmlTestSuite.java:71)
+	at org.apache.maven.surefire.testng.TestNGProvider.invoke(TestNGProvider.java:113)
+	at org.apache.maven.surefire.booter.ForkedBooter.runSuitesInProcess(ForkedBooter.java:385)
+	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162)
+	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507)
+	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495)
+</pre></div></td>
+<td>11</td>
+<td>tests.DieuChinhLoTrinhTest@5e316c74</td></tr>
+</table><p>
+</body>
+</html>
