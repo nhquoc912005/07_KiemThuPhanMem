@@ -8,7 +8,6 @@ import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
 import java.time.Duration;
-import java.util.List;
 import java.util.Map;
 
 public class DriverTripsPage {
@@ -16,7 +15,6 @@ public class DriverTripsPage {
     private WebDriverWait wait;
 
     // Locators
-    private By listTrips = By.xpath("//table/tbody/tr");
     private By rejectPopup = By.xpath("//div[contains(text(), 'Nhập lý do từ chối')]");
     private By inputRejectReason = By.cssSelector("textarea[placeholder='Nhập lý do vào đây']");
     private By btnCancelReject = By.xpath("//button[text()='Hủy']");

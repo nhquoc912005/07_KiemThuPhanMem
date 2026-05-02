@@ -1,6 +1,7 @@
-TC_UC07_1_05.class
-TC_UC07_1_02.class
-TC_UC07_1_01.class
-TC_UC07_1_03.class
-TC_UC07_1_06.class
-TC_UC07_1_04.class
+base\BaseTest.class
+pages\LoginPage.class
+pages\DriverCustomerListPage.class
+pages\RoutePlanningPage.class
+tests\RoutePlanningTest.class
+pages\DriverTripDetailPage.class
+pages\DriverTripsPage.class

@@ -1,0 +1,432 @@
+<html>
+<head>
+<title>TestNG:  Route Planning Tests</title>
+<link href="../testng.css" rel="stylesheet" type="text/css" />
+<link href="../my-testng.css" rel="stylesheet" type="text/css" />
+
+<style type="text/css">
+.log { display: none;} 
+.stack-trace { display: none;} 
+</style>
+<script type="text/javascript">
+<!--
+function flip(e) {
+  current = e.style.display;
+  if (current == 'block') {
+    e.style.display = 'none';
+    return 0;
+  }
+  else {
+    e.style.display = 'block';
+    return 1;
+  }
+}
+
+function toggleBox(szDivId, elem, msg1, msg2)
+{
+  var res = -1;  if (document.getElementById) {
+    res = flip(document.getElementById(szDivId));
+  }
+  else if (document.all) {
+    // this is the way old msie versions work
+    res = flip(document.all[szDivId]);
+  }
+  if(elem) {
+    if(res == 0) elem.innerHTML = msg1; else elem.innerHTML = msg2;
+  }
+
+}
+
+function toggleAllBoxes() {
+  if (document.getElementsByTagName) {
+    d = document.getElementsByTagName('div');
+    for (i = 0; i < d.length; i++) {
+      if (d[i].className == 'log') {
+        flip(d[i]);
+      }
+    }
+  }
+}
+
+// -->
+</script>
+
+</head>
+<body>
+<h2 align='center'>Route Planning Tests</h2><table border='1' align="center">
+<tr>
+<td>Tests passed/Failed/Skipped:</td><td>29/1/1</td>
+</tr><tr>
+<td>Started on:</td><td>Sat May 02 20:34:54 GMT+07:00 2026</td>
+</tr>
+<tr><td>Total time:</td><td>572 seconds (572556 ms)</td>
+</tr><tr>
+<td>Included groups:</td><td></td>
+</tr><tr>
+<td>Excluded groups:</td><td></td>
+</tr>
+</table><p/>
+<small><i>(Hover the method name to see the test class name)</i></small><p/>
+<table width='100%' border='1' class='invocation-failed'>
+<tr><td colspan='4' align='center'><b>FAILED CONFIGURATIONS</b></td></tr>
+<tr><td><b>Test method</b></td>
+<td><b>Attribute(s)</b></td>
+<td width="30%"><b>Exception</b></td>
+<td width="10%"><b>Time (seconds)</b></td>
+<td><b>Instance</b></td>
+</tr>
+<tr>
+<td title='tests.RoutePlanningTest.prepareTest()'><b>prepareTest</b><br>Test class: tests.RoutePlanningTest</td>
+<td><div><pre>org.openqa.selenium.WebDriverException: Remote browser did not respond to getCurrentUrl
+Build info: version: &apos;4.20.0&apos;, revision: &apos;866c76ca80&apos;
+System info: os.name: &apos;Windows 11&apos;, os.arch: &apos;amd64&apos;, os.version: &apos;10.0&apos;, java.version: &apos;25.0.2&apos;
+Driver info: driver.version: RemoteWebDriver
+	at org.openqa.selenium.remote.RemoteWebDriver.getCurrentUrl(RemoteWebDriver.java:314)
+	at org.openqa.selenium.support.ui.ExpectedConditions$4.apply(ExpectedConditions.java:124)
+	at org.openqa.selenium.support.ui.ExpectedConditions$4.apply(ExpectedConditions.java:119)
+	at org.openqa.selenium.support.ui.FluentWait.until(FluentWait.java:203)
+	at pages.RoutePlanningPage.navigateToPlan(RoutePlanningPage.java:56)
+	at tests.RoutePlanningTest.prepareTest(RoutePlanningTest.java:20)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+... Removed 33 stack frames</pre></div><a href='#' onClick='toggleBox("stack-trace1389236661", this, "Click to show all stack frames", "Click to hide stack frames")'>Click to show all stack frames</a>
+<div class='stack-trace' id='stack-trace1389236661'><pre>org.openqa.selenium.WebDriverException: Remote browser did not respond to getCurrentUrl
+Build info: version: &apos;4.20.0&apos;, revision: &apos;866c76ca80&apos;
+System info: os.name: &apos;Windows 11&apos;, os.arch: &apos;amd64&apos;, os.version: &apos;10.0&apos;, java.version: &apos;25.0.2&apos;
+Driver info: driver.version: RemoteWebDriver
+	at org.openqa.selenium.remote.RemoteWebDriver.getCurrentUrl(RemoteWebDriver.java:314)
+	at org.openqa.selenium.support.ui.ExpectedConditions$4.apply(ExpectedConditions.java:124)
+	at org.openqa.selenium.support.ui.ExpectedConditions$4.apply(ExpectedConditions.java:119)
+	at org.openqa.selenium.support.ui.FluentWait.until(FluentWait.java:203)
+	at pages.RoutePlanningPage.navigateToPlan(RoutePlanningPage.java:56)
+	at tests.RoutePlanningTest.prepareTest(RoutePlanningTest.java:20)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:565)
+	at org.testng.internal.invokers.MethodInvocationHelper.invokeMethod(MethodInvocationHelper.java:139)
+	at org.testng.internal.invokers.MethodInvocationHelper.invokeMethodConsideringTimeout(MethodInvocationHelper.java:69)
+	at org.testng.internal.invokers.ConfigInvoker.invokeConfigurationMethod(ConfigInvoker.java:393)
+	at org.testng.internal.invokers.ConfigInvoker.invokeConfigurations(ConfigInvoker.java:326)
+	at org.testng.internal.invokers.TestInvoker.runConfigMethods(TestInvoker.java:810)
+	at org.testng.internal.invokers.TestInvoker.invokeMethod(TestInvoker.java:578)
+	at org.testng.internal.invokers.TestInvoker.invokeTestMethod(TestInvoker.java:228)
+	at org.testng.internal.invokers.MethodRunner.runInSequence(MethodRunner.java:63)
+	at org.testng.internal.invokers.TestInvoker$MethodInvocationAgent.invoke(TestInvoker.java:961)
+	at org.testng.internal.invokers.TestInvoker.invokeTestMethods(TestInvoker.java:201)
+	at org.testng.internal.invokers.TestMethodWorker.invokeTestMethods(TestMethodWorker.java:148)
+	at org.testng.internal.invokers.TestMethodWorker.run(TestMethodWorker.java:128)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+	at org.testng.TestRunner.privateRun(TestRunner.java:819)
+	at org.testng.TestRunner.run(TestRunner.java:619)
+	at org.testng.SuiteRunner.runTest(SuiteRunner.java:443)
+	at org.testng.SuiteRunner.runSequentially(SuiteRunner.java:437)
+	at org.testng.SuiteRunner.privateRun(SuiteRunner.java:397)
+	at org.testng.SuiteRunner.run(SuiteRunner.java:336)
+	at org.testng.SuiteRunnerWorker.runSuite(SuiteRunnerWorker.java:52)
+	at org.testng.SuiteRunnerWorker.run(SuiteRunnerWorker.java:95)
+	at org.testng.TestNG.runSuitesSequentially(TestNG.java:1301)
+	at org.testng.TestNG.runSuitesLocally(TestNG.java:1228)
+	at org.testng.TestNG.runSuites(TestNG.java:1134)
+	at org.testng.TestNG.run(TestNG.java:1101)
+	at org.apache.maven.surefire.testng.TestNGExecutor.run(TestNGExecutor.java:308)
+	at org.apache.maven.surefire.testng.TestNGXmlTestSuite.execute(TestNGXmlTestSuite.java:71)
+	at org.apache.maven.surefire.testng.TestNGProvider.invoke(TestNGProvider.java:113)
+	at org.apache.maven.surefire.booter.ForkedBooter.runSuitesInProcess(ForkedBooter.java:385)
+	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162)
+	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507)
+	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495)
+</pre></div></td>
+<td>2</td>
+<td>tests.RoutePlanningTest@3901d134</td></tr>
+</table><p>
+<table width='100%' border='1' class='invocation-skipped'>
+<tr><td colspan='4' align='center'><b>SKIPPED CONFIGURATIONS</b></td></tr>
+<tr><td><b>Test method</b></td>
+<td><b>Attribute(s)</b></td>
+<td width="30%"><b>Exception</b></td>
+<td width="10%"><b>Time (seconds)</b></td>
+<td><b>Instance</b></td>
+</tr>
+<tr>
+<td title='tests.RoutePlanningTest.tearDown()'><b>tearDown</b><br>Test class: tests.RoutePlanningTest</td>
+<td></td>
+<td>0</td>
+<td>tests.RoutePlanningTest@3901d134</td></tr>
+</table><p>
+<table width='100%' border='1' class='invocation-failed'>
+<tr><td colspan='4' align='center'><b>FAILED TESTS</b></td></tr>
+<tr><td><b>Test method</b></td>
+<td><b>Attribute(s)</b></td>
+<td width="30%"><b>Exception</b></td>
+<td width="10%"><b>Time (seconds)</b></td>
+<td><b>Instance</b></td>
+</tr>
+<tr>
+<td title='tests.RoutePlanningTest.testNoCustomerSelected()'><b>testNoCustomerSelected</b><br>Test class: tests.RoutePlanningTest<br>Test method: TC_UC05.2_05: Không chọn nhóm hành khách</td>
+<td><div><pre>java.lang.AssertionError: Button state checked expected [false] but found [true]
+	at tests.RoutePlanningTest.testNoCustomerSelected(RoutePlanningTest.java:70)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+... Removed 32 stack frames</pre></div><a href='#' onClick='toggleBox("stack-trace1364958538", this, "Click to show all stack frames", "Click to hide stack frames")'>Click to show all stack frames</a>
+<div class='stack-trace' id='stack-trace1364958538'><pre>java.lang.AssertionError: Button state checked expected [false] but found [true]
+	at org.testng.Assert.fail(Assert.java:111)
+	at org.testng.Assert.failNotEquals(Assert.java:1578)
+	at org.testng.Assert.assertFalse(Assert.java:79)
+	at tests.RoutePlanningTest.testNoCustomerSelected(RoutePlanningTest.java:70)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:565)
+	at org.testng.internal.invokers.MethodInvocationHelper.invokeMethod(MethodInvocationHelper.java:139)
+	at org.testng.internal.invokers.TestInvoker.invokeMethod(TestInvoker.java:664)
+	at org.testng.internal.invokers.TestInvoker.invokeTestMethod(TestInvoker.java:228)
+	at org.testng.internal.invokers.MethodRunner.runInSequence(MethodRunner.java:63)
+	at org.testng.internal.invokers.TestInvoker$MethodInvocationAgent.invoke(TestInvoker.java:961)
+	at org.testng.internal.invokers.TestInvoker.invokeTestMethods(TestInvoker.java:201)
+	at org.testng.internal.invokers.TestMethodWorker.invokeTestMethods(TestMethodWorker.java:148)
+	at org.testng.internal.invokers.TestMethodWorker.run(TestMethodWorker.java:128)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+	at org.testng.TestRunner.privateRun(TestRunner.java:819)
+	at org.testng.TestRunner.run(TestRunner.java:619)
+	at org.testng.SuiteRunner.runTest(SuiteRunner.java:443)
+	at org.testng.SuiteRunner.runSequentially(SuiteRunner.java:437)
+	at org.testng.SuiteRunner.privateRun(SuiteRunner.java:397)
+	at org.testng.SuiteRunner.run(SuiteRunner.java:336)
+	at org.testng.SuiteRunnerWorker.runSuite(SuiteRunnerWorker.java:52)
+	at org.testng.SuiteRunnerWorker.run(SuiteRunnerWorker.java:95)
+	at org.testng.TestNG.runSuitesSequentially(TestNG.java:1301)
+	at org.testng.TestNG.runSuitesLocally(TestNG.java:1228)
+	at org.testng.TestNG.runSuites(TestNG.java:1134)
+	at org.testng.TestNG.run(TestNG.java:1101)
+	at org.apache.maven.surefire.testng.TestNGExecutor.run(TestNGExecutor.java:308)
+	at org.apache.maven.surefire.testng.TestNGXmlTestSuite.execute(TestNGXmlTestSuite.java:71)
+	at org.apache.maven.surefire.testng.TestNGProvider.invoke(TestNGProvider.java:113)
+	at org.apache.maven.surefire.booter.ForkedBooter.runSuitesInProcess(ForkedBooter.java:385)
+	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162)
+	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507)
+	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495)
+</pre></div></td>
+<td>10</td>
+<td>tests.RoutePlanningTest@3901d134</td></tr>
+</table><p>
+<table width='100%' border='1' class='invocation-passed'>
+<tr><td colspan='4' align='center'><b>PASSED TESTS</b></td></tr>
+<tr><td><b>Test method</b></td>
+<td><b>Attribute(s)</b></td>
+<td width="30%"><b>Exception</b></td>
+<td width="10%"><b>Time (seconds)</b></td>
+<td><b>Instance</b></td>
+</tr>
+<tr>
+<td title='tests.RoutePlanningTest.testSelectBusyDriver()'><b>testSelectBusyDriver</b><br>Test class: tests.RoutePlanningTest<br>Test method: TC_UC05.2_13: Chọn tài xế đang bận</td>
+<td></td>
+<td>10</td>
+<td>tests.RoutePlanningTest@3901d134</td></tr>
+<tr>
+<td title='tests.RoutePlanningTest.testSearchByPhone()'><b>testSearchByPhone</b><br>Test class: tests.RoutePlanningTest<br>Test method: TC_UC05.2_18: Tìm kiếm khách hàng theo số điện thoại</td>
+<td></td>
+<td>10</td>
+<td>tests.RoutePlanningTest@3901d134</td></tr>
+<tr>
+<td title='tests.RoutePlanningTest.testNoDriverSelected()'><b>testNoDriverSelected</b><br>Test class: tests.RoutePlanningTest<br>Test method: TC_UC05.2_12: Không chọn tài xế</td>
+<td></td>
+<td>10</td>
+<td>tests.RoutePlanningTest@3901d134</td></tr>
+<tr>
+<td title='tests.RoutePlanningTest.testSelectMultipleCustomers()'><b>testSelectMultipleCustomers</b><br>Test class: tests.RoutePlanningTest<br>Test method: TC_UC05.2_04: Chọn nhóm hành khách >= 1</td>
+<td></td>
+<td>11</td>
+<td>tests.RoutePlanningTest@3901d134</td></tr>
+<tr>
+<td title='tests.RoutePlanningTest.testSearchDriverByName()'><b>testSearchDriverByName</b><br>Test class: tests.RoutePlanningTest<br>Test method: TC_UC05.2_28: Tìm kiếm tài xế theo tên</td>
+<td></td>
+<td>10</td>
+<td>tests.RoutePlanningTest@3901d134</td></tr>
+<tr>
+<td title='tests.RoutePlanningTest.testSearchByTicketCode()'><b>testSearchByTicketCode</b><br>Test class: tests.RoutePlanningTest<br>Test method: TC_UC05.2_16: Tìm kiếm khách hàng theo mã vé</td>
+<td></td>
+<td>10</td>
+<td>tests.RoutePlanningTest@3901d134</td></tr>
+<tr>
+<td title='tests.RoutePlanningTest.testCancelDriverSelection()'><b>testCancelDriverSelection</b><br>Test class: tests.RoutePlanningTest<br>Test method: TC_UC05.2_15: Hủy phân công tài xế</td>
+<td></td>
+<td>10</td>
+<td>tests.RoutePlanningTest@3901d134</td></tr>
+<tr>
+<td title='tests.RoutePlanningTest.testSearchDriverNonExistent()'><b>testSearchDriverNonExistent</b><br>Test class: tests.RoutePlanningTest<br>Test method: TC_UC05.2_30: Tìm kiếm tài xế với từ khóa không tồn tại</td>
+<td></td>
+<td>10</td>
+<td>tests.RoutePlanningTest@3901d134</td></tr>
+<tr>
+<td title='tests.RoutePlanningTest.testCancelVehicleSelection()'><b>testCancelVehicleSelection</b><br>Test class: tests.RoutePlanningTest<br>Test method: TC_UC05.2_10: Hủy thao tác phân công xe</td>
+<td></td>
+<td>10</td>
+<td>tests.RoutePlanningTest@3901d134</td></tr>
+<tr>
+<td title='tests.RoutePlanningTest.testSelectValidVehicle()'><b>testSelectValidVehicle</b><br>Test class: tests.RoutePlanningTest<br>Test method: TC_UC05.2_06: Chọn xe hợp lệ</td>
+<td></td>
+<td>10</td>
+<td>tests.RoutePlanningTest@3901d134</td></tr>
+<tr>
+<td title='tests.RoutePlanningTest.testSelectAssignedDriver()'><b>testSelectAssignedDriver</b><br>Test class: tests.RoutePlanningTest<br>Test method: TC_UC05.2_14: Chọn tài xế đã được phân công</td>
+<td></td>
+<td>11</td>
+<td>tests.RoutePlanningTest@3901d134</td></tr>
+<tr>
+<td title='tests.RoutePlanningTest.testAccessVehicleStep()'><b>testAccessVehicleStep</b><br>Test class: tests.RoutePlanningTest<br>Test method: TC_UC05.2_21: Truy cập bước chọn xe trung chuyển</td>
+<td></td>
+<td>10</td>
+<td>tests.RoutePlanningTest@3901d134</td></tr>
+<tr>
+<td title='tests.RoutePlanningTest.testSearchVehicleByPlate()'><b>testSearchVehicleByPlate</b><br>Test class: tests.RoutePlanningTest<br>Test method: TC_UC05.2_22: Tìm kiếm xe theo biển số</td>
+<td></td>
+<td>10</td>
+<td>tests.RoutePlanningTest@3901d134</td></tr>
+<tr>
+<td title='tests.RoutePlanningTest.testClearSearch()'><b>testClearSearch</b><br>Test class: tests.RoutePlanningTest<br>Test method: TC_UC05.2_20: Xóa từ khóa sau khi tìm kiếm</td>
+<td></td>
+<td>10</td>
+<td>tests.RoutePlanningTest@3901d134</td></tr>
+<tr>
+<td title='tests.RoutePlanningTest.testSelectValidDriver()'><b>testSelectValidDriver</b><br>Test class: tests.RoutePlanningTest<br>Test method: TC_UC05.2_11: Chọn tài xế hợp lệ</td>
+<td></td>
+<td>10</td>
+<td>tests.RoutePlanningTest@3901d134</td></tr>
+<tr>
+<td title='tests.RoutePlanningTest.testSelectFullVehicle()'><b>testSelectFullVehicle</b><br>Test class: tests.RoutePlanningTest<br>Test method: TC_UC05.2_09: Chọn xe đang đầy</td>
+<td></td>
+<td>10</td>
+<td>tests.RoutePlanningTest@3901d134</td></tr>
+<tr>
+<td title='tests.RoutePlanningTest.testNavigateToRoutePlanning()'><b>testNavigateToRoutePlanning</b><br>Test class: tests.RoutePlanningTest<br>Test method: TC_UC05.2_01: Truy cập chức năng lập lộ trình</td>
+<td></td>
+<td>0</td>
+<td>tests.RoutePlanningTest@3901d134</td></tr>
+<tr>
+<td title='tests.RoutePlanningTest.testAccessDriverStep()'><b>testAccessDriverStep</b><br>Test class: tests.RoutePlanningTest<br>Test method: TC_UC05.2_26: Truy cập bước chọn tài xế phù hợp</td>
+<td></td>
+<td>10</td>
+<td>tests.RoutePlanningTest@3901d134</td></tr>
+<tr>
+<td title='tests.RoutePlanningTest.testSearchVehicleByType()'><b>testSearchVehicleByType</b><br>Test class: tests.RoutePlanningTest<br>Test method: TC_UC05.2_23: Tìm kiếm xe theo loại xe</td>
+<td></td>
+<td>10</td>
+<td>tests.RoutePlanningTest@3901d134</td></tr>
+<tr>
+<td title='tests.RoutePlanningTest.testSelectInsufficientCapacityVehicle()'><b>testSelectInsufficientCapacityVehicle</b><br>Test class: tests.RoutePlanningTest<br>Test method: TC_UC05.2_08: Chọn xe không đủ chỗ</td>
+<td></td>
+<td>12</td>
+<td>tests.RoutePlanningTest@3901d134</td></tr>
+<tr>
+<td title='tests.RoutePlanningTest.testSearchVehicleNonExistent()'><b>testSearchVehicleNonExistent</b><br>Test class: tests.RoutePlanningTest<br>Test method: TC_UC05.2_24: Tìm kiếm xe với từ khóa không tồn tại</td>
+<td></td>
+<td>10</td>
+<td>tests.RoutePlanningTest@3901d134</td></tr>
+<tr>
+<td title='tests.RoutePlanningTest.testNoVehicleSelected()'><b>testNoVehicleSelected</b><br>Test class: tests.RoutePlanningTest<br>Test method: TC_UC05.2_07: Không chọn xe</td>
+<td></td>
+<td>10</td>
+<td>tests.RoutePlanningTest@3901d134</td></tr>
+<tr>
+<td title='tests.RoutePlanningTest.testSearchNonExistent()'><b>testSearchNonExistent</b><br>Test class: tests.RoutePlanningTest<br>Test method: TC_UC05.2_19: Tìm kiếm với từ khóa không tồn tại</td>
+<td></td>
+<td>10</td>
+<td>tests.RoutePlanningTest@3901d134</td></tr>
+<tr>
+<td title='tests.RoutePlanningTest.testSearchDriverById()'><b>testSearchDriverById</b><br>Test class: tests.RoutePlanningTest<br>Test method: TC_UC05.2_27: Tìm kiếm tài xế theo mã</td>
+<td></td>
+<td>10</td>
+<td>tests.RoutePlanningTest@3901d134</td></tr>
+<tr>
+<td title='tests.RoutePlanningTest.testSearchDriverByPhone()'><b>testSearchDriverByPhone</b><br>Test class: tests.RoutePlanningTest<br>Test method: TC_UC05.2_29: Tìm kiếm tài xế theo số điện thoại</td>
+<td></td>
+<td>11</td>
+<td>tests.RoutePlanningTest@3901d134</td></tr>
+<tr>
+<td title='tests.RoutePlanningTest.testCreateFullRoute()'><b>testCreateFullRoute</b><br>Test class: tests.RoutePlanningTest<br>Test method: TC_UC05.2_02: Tạo lộ trình đầy đủ thông tin</td>
+<td></td>
+<td>10</td>
+<td>tests.RoutePlanningTest@3901d134</td></tr>
+<tr>
+<td title='tests.RoutePlanningTest.testFilterCustomers()'><b>testFilterCustomers</b><br>Test class: tests.RoutePlanningTest<br>Test method: TC_UC05.2_03: Lọc danh sách hành khách</td>
+<td></td>
+<td>10</td>
+<td>tests.RoutePlanningTest@3901d134</td></tr>
+<tr>
+<td title='tests.RoutePlanningTest.testSearchByCustomerName()'><b>testSearchByCustomerName</b><br>Test class: tests.RoutePlanningTest<br>Test method: TC_UC05.2_17: Tìm kiếm khách hàng theo tên</td>
+<td></td>
+<td>10</td>
+<td>tests.RoutePlanningTest@3901d134</td></tr>
+<tr>
+<td title='tests.RoutePlanningTest.testClearVehicleSearch()'><b>testClearVehicleSearch</b><br>Test class: tests.RoutePlanningTest<br>Test method: TC_UC05.2_25: Xóa từ khóa tìm kiếm xe</td>
+<td></td>
+<td>10</td>
+<td>tests.RoutePlanningTest@3901d134</td></tr>
+</table><p>
+<table width='100%' border='1' class='invocation-skipped'>
+<tr><td colspan='4' align='center'><b>SKIPPED TESTS</b></td></tr>
+<tr><td><b>Test method</b></td>
+<td><b>Attribute(s)</b></td>
+<td width="30%"><b>Exception</b></td>
+<td width="10%"><b>Time (seconds)</b></td>
+<td><b>Instance</b></td>
+</tr>
+<tr>
+<td title='tests.RoutePlanningTest.testClearDriverSearch()'><b>testClearDriverSearch</b><br>Test class: tests.RoutePlanningTest<br>Test method: TC_UC05.2_31: Xóa từ khóa tìm kiếm tài xế</td>
+<td><div><pre>org.openqa.selenium.WebDriverException: Remote browser did not respond to getCurrentUrl
+Build info: version: &apos;4.20.0&apos;, revision: &apos;866c76ca80&apos;
+System info: os.name: &apos;Windows 11&apos;, os.arch: &apos;amd64&apos;, os.version: &apos;10.0&apos;, java.version: &apos;25.0.2&apos;
+Driver info: driver.version: RemoteWebDriver
+	at org.openqa.selenium.remote.RemoteWebDriver.getCurrentUrl(RemoteWebDriver.java:314)
+	at org.openqa.selenium.support.ui.ExpectedConditions$4.apply(ExpectedConditions.java:124)
+	at org.openqa.selenium.support.ui.ExpectedConditions$4.apply(ExpectedConditions.java:119)
+	at org.openqa.selenium.support.ui.FluentWait.until(FluentWait.java:203)
+	at pages.RoutePlanningPage.navigateToPlan(RoutePlanningPage.java:56)
+	at tests.RoutePlanningTest.prepareTest(RoutePlanningTest.java:20)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+... Removed 33 stack frames</pre></div><a href='#' onClick='toggleBox("stack-trace1989315552", this, "Click to show all stack frames", "Click to hide stack frames")'>Click to show all stack frames</a>
+<div class='stack-trace' id='stack-trace1989315552'><pre>org.openqa.selenium.WebDriverException: Remote browser did not respond to getCurrentUrl
+Build info: version: &apos;4.20.0&apos;, revision: &apos;866c76ca80&apos;
+System info: os.name: &apos;Windows 11&apos;, os.arch: &apos;amd64&apos;, os.version: &apos;10.0&apos;, java.version: &apos;25.0.2&apos;
+Driver info: driver.version: RemoteWebDriver
+	at org.openqa.selenium.remote.RemoteWebDriver.getCurrentUrl(RemoteWebDriver.java:314)
+	at org.openqa.selenium.support.ui.ExpectedConditions$4.apply(ExpectedConditions.java:124)
+	at org.openqa.selenium.support.ui.ExpectedConditions$4.apply(ExpectedConditions.java:119)
+	at org.openqa.selenium.support.ui.FluentWait.until(FluentWait.java:203)
+	at pages.RoutePlanningPage.navigateToPlan(RoutePlanningPage.java:56)
+	at tests.RoutePlanningTest.prepareTest(RoutePlanningTest.java:20)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:565)
+	at org.testng.internal.invokers.MethodInvocationHelper.invokeMethod(MethodInvocationHelper.java:139)
+	at org.testng.internal.invokers.MethodInvocationHelper.invokeMethodConsideringTimeout(MethodInvocationHelper.java:69)
+	at org.testng.internal.invokers.ConfigInvoker.invokeConfigurationMethod(ConfigInvoker.java:393)
+	at org.testng.internal.invokers.ConfigInvoker.invokeConfigurations(ConfigInvoker.java:326)
+	at org.testng.internal.invokers.TestInvoker.runConfigMethods(TestInvoker.java:810)
+	at org.testng.internal.invokers.TestInvoker.invokeMethod(TestInvoker.java:578)
+	at org.testng.internal.invokers.TestInvoker.invokeTestMethod(TestInvoker.java:228)
+	at org.testng.internal.invokers.MethodRunner.runInSequence(MethodRunner.java:63)
+	at org.testng.internal.invokers.TestInvoker$MethodInvocationAgent.invoke(TestInvoker.java:961)
+	at org.testng.internal.invokers.TestInvoker.invokeTestMethods(TestInvoker.java:201)
+	at org.testng.internal.invokers.TestMethodWorker.invokeTestMethods(TestMethodWorker.java:148)
+	at org.testng.internal.invokers.TestMethodWorker.run(TestMethodWorker.java:128)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+	at org.testng.TestRunner.privateRun(TestRunner.java:819)
+	at org.testng.TestRunner.run(TestRunner.java:619)
+	at org.testng.SuiteRunner.runTest(SuiteRunner.java:443)
+	at org.testng.SuiteRunner.runSequentially(SuiteRunner.java:437)
+	at org.testng.SuiteRunner.privateRun(SuiteRunner.java:397)
+	at org.testng.SuiteRunner.run(SuiteRunner.java:336)
+	at org.testng.SuiteRunnerWorker.runSuite(SuiteRunnerWorker.java:52)
+	at org.testng.SuiteRunnerWorker.run(SuiteRunnerWorker.java:95)
+	at org.testng.TestNG.runSuitesSequentially(TestNG.java:1301)
+	at org.testng.TestNG.runSuitesLocally(TestNG.java:1228)
+	at org.testng.TestNG.runSuites(TestNG.java:1134)
+	at org.testng.TestNG.run(TestNG.java:1101)
+	at org.apache.maven.surefire.testng.TestNGExecutor.run(TestNGExecutor.java:308)
+	at org.apache.maven.surefire.testng.TestNGXmlTestSuite.execute(TestNGXmlTestSuite.java:71)
+	at org.apache.maven.surefire.testng.TestNGProvider.invoke(TestNGProvider.java:113)
+	at org.apache.maven.surefire.booter.ForkedBooter.runSuitesInProcess(ForkedBooter.java:385)
+	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162)
+	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507)
+	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495)
+</pre></div></td>
+<td>0</td>
+<td>tests.RoutePlanningTest@3901d134</td></tr>
+</table><p>
+</body>
+</html>

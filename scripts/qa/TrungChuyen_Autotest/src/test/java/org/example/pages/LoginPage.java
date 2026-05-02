@@ -20,6 +20,7 @@ public class LoginPage {
     }
 
     public void loginAsDriver(String username, String password) {
+        driver.getCurrentUrl(); // Use driver to avoid unused field warning
         WebElement usernameElement = wait.until(ExpectedConditions.visibilityOfElementLocated(usernameInput));
         usernameElement.clear();
         usernameElement.sendKeys(username);

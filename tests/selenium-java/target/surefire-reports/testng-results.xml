@@ -1,264 +1,872 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testng-results ignored="0" total="1" passed="1" failed="0" skipped="0">
+<testng-results ignored="0" total="31" passed="29" failed="1" skipped="1">
   <reporter-output>
   </reporter-output>
-  <suite started-at="2026-05-02T15:10:36 GMT+07:00" name="Surefire suite" finished-at="2026-05-02T15:10:46 GMT+07:00" duration-ms="9886">
+  <suite started-at="2026-05-02T20:34:54 GMT+07:00" name="Route Planning Test Suite" finished-at="2026-05-02T20:44:26 GMT+07:00" duration-ms="572556">
     <groups>
     </groups>
-    <test started-at="2026-05-02T15:10:36 GMT+07:00" name="Surefire test" finished-at="2026-05-02T15:10:46 GMT+07:00" duration-ms="9886">
-      <class name="TC_UC07_1_03">
-        <test-method is-config="true" signature="setUp()[pri:0, instance:TC_UC07_1_03@176d53b2]" started-at="2026-05-02T15:10:36 GMT+07:00" name="setUp" finished-at="2026-05-02T15:10:38 GMT+07:00" duration-ms="1820" status="PASS">
+    <test started-at="2026-05-02T20:34:54 GMT+07:00" name="Route Planning Tests" finished-at="2026-05-02T20:44:26 GMT+07:00" duration-ms="572556">
+      <class name="tests.RoutePlanningTest">
+        <test-method is-config="true" signature="setUp()[pri:0, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:34:54 GMT+07:00" name="setUp" finished-at="2026-05-02T20:34:58 GMT+07:00" duration-ms="4245" status="PASS">
           <reporter-output>
           </reporter-output>
         </test-method> <!-- setUp -->
-        <test-method signature="testShowStops()[pri:0, instance:TC_UC07_1_03@176d53b2]" started-at="2026-05-02T15:10:38 GMT+07:00" name="testShowStops" description="UC07.1.03 - Hiển thị các điểm đón trả" finished-at="2026-05-02T15:10:46 GMT+07:00" duration-ms="7777" status="PASS">
+        <test-method is-config="true" signature="prepareTest()[pri:0, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:34:58 GMT+07:00" name="prepareTest" finished-at="2026-05-02T20:35:07 GMT+07:00" duration-ms="8842" status="PASS">
           <reporter-output>
           </reporter-output>
-        </test-method> <!-- testShowStops -->
-        <test-method is-config="true" signature="tearDown()[pri:0, instance:TC_UC07_1_03@176d53b2]" started-at="2026-05-02T15:10:46 GMT+07:00" name="tearDown" finished-at="2026-05-02T15:10:46 GMT+07:00" duration-ms="256" status="PASS">
+        </test-method> <!-- prepareTest -->
+        <test-method signature="testNavigateToRoutePlanning()[pri:1, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:35:07 GMT+07:00" name="testNavigateToRoutePlanning" description="TC_UC05.2_01: Truy cập chức năng lập lộ trình" finished-at="2026-05-02T20:35:07 GMT+07:00" duration-ms="60" status="PASS">
           <reporter-output>
           </reporter-output>
-        </test-method> <!-- tearDown -->
-      </class> <!-- TC_UC07_1_03 -->
-<testng-results ignored="0" total="10" passed="10" failed="0" skipped="0">
-  <reporter-output>
-  </reporter-output>
-  <suite started-at="2026-05-02T16:29:44 GMT+07:00" name="Surefire suite" finished-at="2026-05-02T16:33:05 GMT+07:00" duration-ms="201400">
-    <groups>
-    </groups>
-    <test started-at="2026-05-02T16:29:44 GMT+07:00" name="Surefire test" finished-at="2026-05-02T16:33:05 GMT+07:00" duration-ms="201400">
-      <class name="tests.UC07_2_CustomerListTest">
-        <test-method is-config="true" signature="setUp()[pri:0, instance:tests.UC07_2_CustomerListTest@3b2c72c2]" started-at="2026-05-02T16:29:44 GMT+07:00" name="setUp" finished-at="2026-05-02T16:29:45 GMT+07:00" duration-ms="1795" status="PASS">
-          <reporter-output>
-          </reporter-output>
-        </test-method> <!-- setUp -->
-        <test-method is-config="true" signature="setupPages()[pri:0, instance:tests.UC07_2_CustomerListTest@3b2c72c2]" started-at="2026-05-02T16:29:45 GMT+07:00" name="setupPages" finished-at="2026-05-02T16:29:45 GMT+07:00" duration-ms="7" status="PASS">
-          <reporter-output>
-          </reporter-output>
-        </test-method> <!-- setupPages -->
-        <test-method signature="testViewCustomerList()[pri:1, instance:tests.UC07_2_CustomerListTest@3b2c72c2]" started-at="2026-05-02T16:29:45 GMT+07:00" name="testViewCustomerList" description="TC_UC07.2_01: Xem danh sách khách hàng đón/trả" finished-at="2026-05-02T16:30:00 GMT+07:00" duration-ms="14833" status="PASS">
-          <reporter-output>
-          </reporter-output>
-        </test-method> <!-- testViewCustomerList -->
-        <test-method is-config="true" signature="tearDown(org.testng.ITestResult)[pri:0, instance:tests.UC07_2_CustomerListTest@3b2c72c2]" started-at="2026-05-02T16:30:00 GMT+07:00" name="tearDown" finished-at="2026-05-02T16:30:01 GMT+07:00" duration-ms="347" status="PASS">
+        </test-method> <!-- testNavigateToRoutePlanning -->
+        <test-method is-config="true" signature="tearDown(org.testng.ITestResult)[pri:0, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:35:07 GMT+07:00" name="tearDown" finished-at="2026-05-02T20:35:11 GMT+07:00" duration-ms="4055" status="PASS">
           <params>
             <param index="0">
               <value>
-                <![CDATA[[TestResult name=testViewCustomerList status=SUCCESS method=UC07_2_CustomerListTest.testViewCustomerList()[pri:1, instance:tests.UC07_2_CustomerListTest@3b2c72c2] output={null}]]]>
+                <![CDATA[[TestResult name=testNavigateToRoutePlanning status=SUCCESS method=RoutePlanningTest.testNavigateToRoutePlanning()[pri:1, instance:tests.RoutePlanningTest@3901d134] output={null}]]]>
               </value>
             </param>
           </params>
           <reporter-output>
           </reporter-output>
         </test-method> <!-- tearDown -->
-        <test-method is-config="true" signature="setUp()[pri:0, instance:tests.UC07_2_CustomerListTest@3b2c72c2]" started-at="2026-05-02T16:30:01 GMT+07:00" name="setUp" finished-at="2026-05-02T16:30:01 GMT+07:00" duration-ms="916" status="PASS">
+        <test-method is-config="true" signature="setUp()[pri:0, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:35:11 GMT+07:00" name="setUp" finished-at="2026-05-02T20:35:13 GMT+07:00" duration-ms="1524" status="PASS">
           <reporter-output>
           </reporter-output>
         </test-method> <!-- setUp -->
-        <test-method is-config="true" signature="setupPages()[pri:0, instance:tests.UC07_2_CustomerListTest@3b2c72c2]" started-at="2026-05-02T16:30:01 GMT+07:00" name="setupPages" finished-at="2026-05-02T16:30:01 GMT+07:00" duration-ms="2" status="PASS">
+        <test-method is-config="true" signature="prepareTest()[pri:0, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:35:13 GMT+07:00" name="prepareTest" finished-at="2026-05-02T20:35:16 GMT+07:00" duration-ms="3896" status="PASS">
           <reporter-output>
           </reporter-output>
-        </test-method> <!-- setupPages -->
-        <test-method signature="testCustomerInfoFields()[pri:2, instance:tests.UC07_2_CustomerListTest@3b2c72c2]" started-at="2026-05-02T16:30:01 GMT+07:00" name="testCustomerInfoFields" description="TC_UC07.2_02: Hiển thị đầy đủ thông tin khách hàng" finished-at="2026-05-02T16:31:46 GMT+07:00" duration-ms="104915" status="PASS">
+        </test-method> <!-- prepareTest -->
+        <test-method signature="testCreateFullRoute()[pri:2, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:35:16 GMT+07:00" name="testCreateFullRoute" description="TC_UC05.2_02: Tạo lộ trình đầy đủ thông tin" finished-at="2026-05-02T20:35:27 GMT+07:00" duration-ms="10440" status="PASS">
           <reporter-output>
           </reporter-output>
-        </test-method> <!-- testCustomerInfoFields -->
-        <test-method is-config="true" signature="tearDown(org.testng.ITestResult)[pri:0, instance:tests.UC07_2_CustomerListTest@3b2c72c2]" started-at="2026-05-02T16:31:46 GMT+07:00" name="tearDown" finished-at="2026-05-02T16:31:47 GMT+07:00" duration-ms="364" status="PASS">
+        </test-method> <!-- testCreateFullRoute -->
+        <test-method is-config="true" signature="tearDown(org.testng.ITestResult)[pri:0, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:35:27 GMT+07:00" name="tearDown" finished-at="2026-05-02T20:35:33 GMT+07:00" duration-ms="5798" status="PASS">
           <params>
             <param index="0">
               <value>
-                <![CDATA[[TestResult name=testCustomerInfoFields status=SUCCESS method=UC07_2_CustomerListTest.testCustomerInfoFields()[pri:2, instance:tests.UC07_2_CustomerListTest@3b2c72c2] output={null}]]]>
+                <![CDATA[[TestResult name=testCreateFullRoute status=SUCCESS method=RoutePlanningTest.testCreateFullRoute()[pri:2, instance:tests.RoutePlanningTest@3901d134] output={null}]]]>
               </value>
             </param>
           </params>
           <reporter-output>
           </reporter-output>
         </test-method> <!-- tearDown -->
-        <test-method is-config="true" signature="setUp()[pri:0, instance:tests.UC07_2_CustomerListTest@3b2c72c2]" started-at="2026-05-02T16:31:47 GMT+07:00" name="setUp" finished-at="2026-05-02T16:31:48 GMT+07:00" duration-ms="925" status="PASS">
+        <test-method is-config="true" signature="setUp()[pri:0, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:35:33 GMT+07:00" name="setUp" finished-at="2026-05-02T20:35:34 GMT+07:00" duration-ms="1643" status="PASS">
           <reporter-output>
           </reporter-output>
         </test-method> <!-- setUp -->
-        <test-method is-config="true" signature="setupPages()[pri:0, instance:tests.UC07_2_CustomerListTest@3b2c72c2]" started-at="2026-05-02T16:31:48 GMT+07:00" name="setupPages" finished-at="2026-05-02T16:31:48 GMT+07:00" duration-ms="1" status="PASS">
+        <test-method is-config="true" signature="prepareTest()[pri:0, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:35:34 GMT+07:00" name="prepareTest" finished-at="2026-05-02T20:35:41 GMT+07:00" duration-ms="6504" status="PASS">
           <reporter-output>
           </reporter-output>
-        </test-method> <!-- setupPages -->
-        <test-method signature="testCustomerOrder()[pri:3, instance:tests.UC07_2_CustomerListTest@3b2c72c2]" started-at="2026-05-02T16:31:48 GMT+07:00" name="testCustomerOrder" description="TC_UC07.2_03: Hiển thị đúng thứ tự khách hàng" finished-at="2026-05-02T16:32:03 GMT+07:00" duration-ms="15114" status="PASS">
+        </test-method> <!-- prepareTest -->
+        <test-method signature="testFilterCustomers()[pri:3, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:35:41 GMT+07:00" name="testFilterCustomers" description="TC_UC05.2_03: Lọc danh sách hành khách" finished-at="2026-05-02T20:35:51 GMT+07:00" duration-ms="10533" status="PASS">
           <reporter-output>
           </reporter-output>
-        </test-method> <!-- testCustomerOrder -->
-        <test-method is-config="true" signature="tearDown(org.testng.ITestResult)[pri:0, instance:tests.UC07_2_CustomerListTest@3b2c72c2]" started-at="2026-05-02T16:32:03 GMT+07:00" name="tearDown" finished-at="2026-05-02T16:32:03 GMT+07:00" duration-ms="314" status="PASS">
+        </test-method> <!-- testFilterCustomers -->
+        <test-method is-config="true" signature="tearDown(org.testng.ITestResult)[pri:0, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:35:51 GMT+07:00" name="tearDown" finished-at="2026-05-02T20:35:54 GMT+07:00" duration-ms="2468" status="PASS">
           <params>
             <param index="0">
               <value>
-                <![CDATA[[TestResult name=testCustomerOrder status=SUCCESS method=UC07_2_CustomerListTest.testCustomerOrder()[pri:3, instance:tests.UC07_2_CustomerListTest@3b2c72c2] output={null}]]]>
+                <![CDATA[[TestResult name=testFilterCustomers status=SUCCESS method=RoutePlanningTest.testFilterCustomers()[pri:3, instance:tests.RoutePlanningTest@3901d134] output={null}]]]>
               </value>
             </param>
           </params>
           <reporter-output>
           </reporter-output>
         </test-method> <!-- tearDown -->
-        <test-method is-config="true" signature="setUp()[pri:0, instance:tests.UC07_2_CustomerListTest@3b2c72c2]" started-at="2026-05-02T16:32:03 GMT+07:00" name="setUp" finished-at="2026-05-02T16:32:04 GMT+07:00" duration-ms="856" status="PASS">
+        <test-method is-config="true" signature="setUp()[pri:0, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:35:54 GMT+07:00" name="setUp" finished-at="2026-05-02T20:35:56 GMT+07:00" duration-ms="2444" status="PASS">
           <reporter-output>
           </reporter-output>
         </test-method> <!-- setUp -->
-        <test-method is-config="true" signature="setupPages()[pri:0, instance:tests.UC07_2_CustomerListTest@3b2c72c2]" started-at="2026-05-02T16:32:04 GMT+07:00" name="setupPages" finished-at="2026-05-02T16:32:04 GMT+07:00" duration-ms="1" status="PASS">
+        <test-method is-config="true" signature="prepareTest()[pri:0, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:35:56 GMT+07:00" name="prepareTest" finished-at="2026-05-02T20:36:05 GMT+07:00" duration-ms="9066" status="PASS">
           <reporter-output>
           </reporter-output>
-        </test-method> <!-- setupPages -->
-        <test-method signature="testSyncWithRouteMap()[pri:4, instance:tests.UC07_2_CustomerListTest@3b2c72c2]" started-at="2026-05-02T16:32:04 GMT+07:00" name="testSyncWithRouteMap" description="TC_UC07.2_04: Đồng bộ với bản đồ lộ trình" finished-at="2026-05-02T16:32:09 GMT+07:00" duration-ms="4579" status="PASS">
+        </test-method> <!-- prepareTest -->
+        <test-method signature="testSelectMultipleCustomers()[pri:4, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:36:05 GMT+07:00" name="testSelectMultipleCustomers" description="TC_UC05.2_04: Chọn nhóm hành khách &gt;= 1" finished-at="2026-05-02T20:36:17 GMT+07:00" duration-ms="11648" status="PASS">
           <reporter-output>
           </reporter-output>
-        </test-method> <!-- testSyncWithRouteMap -->
-        <test-method is-config="true" signature="tearDown(org.testng.ITestResult)[pri:0, instance:tests.UC07_2_CustomerListTest@3b2c72c2]" started-at="2026-05-02T16:32:09 GMT+07:00" name="tearDown" finished-at="2026-05-02T16:32:09 GMT+07:00" duration-ms="224" status="PASS">
+        </test-method> <!-- testSelectMultipleCustomers -->
+        <test-method is-config="true" signature="tearDown(org.testng.ITestResult)[pri:0, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:36:17 GMT+07:00" name="tearDown" finished-at="2026-05-02T20:36:20 GMT+07:00" duration-ms="3234" status="PASS">
           <params>
             <param index="0">
               <value>
-                <![CDATA[[TestResult name=testSyncWithRouteMap status=SUCCESS method=UC07_2_CustomerListTest.testSyncWithRouteMap()[pri:4, instance:tests.UC07_2_CustomerListTest@3b2c72c2] output={null}]]]>
+                <![CDATA[[TestResult name=testSelectMultipleCustomers status=SUCCESS method=RoutePlanningTest.testSelectMultipleCustomers()[pri:4, instance:tests.RoutePlanningTest@3901d134] output={null}]]]>
               </value>
             </param>
           </params>
           <reporter-output>
           </reporter-output>
         </test-method> <!-- tearDown -->
-        <test-method is-config="true" signature="setUp()[pri:0, instance:tests.UC07_2_CustomerListTest@3b2c72c2]" started-at="2026-05-02T16:32:09 GMT+07:00" name="setUp" finished-at="2026-05-02T16:32:10 GMT+07:00" duration-ms="863" status="PASS">
+        <test-method is-config="true" signature="setUp()[pri:0, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:36:20 GMT+07:00" name="setUp" finished-at="2026-05-02T20:36:21 GMT+07:00" duration-ms="1238" status="PASS">
           <reporter-output>
           </reporter-output>
         </test-method> <!-- setUp -->
-        <test-method is-config="true" signature="setupPages()[pri:0, instance:tests.UC07_2_CustomerListTest@3b2c72c2]" started-at="2026-05-02T16:32:10 GMT+07:00" name="setupPages" finished-at="2026-05-02T16:32:10 GMT+07:00" duration-ms="1" status="PASS">
+        <test-method is-config="true" signature="prepareTest()[pri:0, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:36:21 GMT+07:00" name="prepareTest" finished-at="2026-05-02T20:36:27 GMT+07:00" duration-ms="5923" status="PASS">
           <reporter-output>
           </reporter-output>
-        </test-method> <!-- setupPages -->
-        <test-method signature="testHighlightOnMapInteraction()[pri:5, instance:tests.UC07_2_CustomerListTest@3b2c72c2]" started-at="2026-05-02T16:32:10 GMT+07:00" name="testHighlightOnMapInteraction" description="TC_UC07.2_05: Highlight khách hàng khi chọn trên bản đồ" finished-at="2026-05-02T16:32:14 GMT+07:00" duration-ms="4859" status="PASS">
+        </test-method> <!-- prepareTest -->
+        <test-method signature="testNoCustomerSelected()[pri:5, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:36:27 GMT+07:00" name="testNoCustomerSelected" description="TC_UC05.2_05: Không chọn nhóm hành khách" finished-at="2026-05-02T20:36:38 GMT+07:00" duration-ms="10127" status="FAIL">
+          <exception class="java.lang.AssertionError">
+            <message>
+              <![CDATA[Button state checked expected [false] but found [true]]]>
+            </message>
+            <full-stacktrace>
+              <![CDATA[java.lang.AssertionError: Button state checked expected [false] but found [true]
+at org.testng.Assert.fail(Assert.java:111)
+at org.testng.Assert.failNotEquals(Assert.java:1578)
+at org.testng.Assert.assertFalse(Assert.java:79)
+at tests.RoutePlanningTest.testNoCustomerSelected(RoutePlanningTest.java:70)
+at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104)
+at java.base/java.lang.reflect.Method.invoke(Method.java:565)
+at org.testng.internal.invokers.MethodInvocationHelper.invokeMethod(MethodInvocationHelper.java:139)
+at org.testng.internal.invokers.TestInvoker.invokeMethod(TestInvoker.java:664)
+at org.testng.internal.invokers.TestInvoker.invokeTestMethod(TestInvoker.java:228)
+at org.testng.internal.invokers.MethodRunner.runInSequence(MethodRunner.java:63)
+at org.testng.internal.invokers.TestInvoker$MethodInvocationAgent.invoke(TestInvoker.java:961)
+at org.testng.internal.invokers.TestInvoker.invokeTestMethods(TestInvoker.java:201)
+at org.testng.internal.invokers.TestMethodWorker.invokeTestMethods(TestMethodWorker.java:148)
+at org.testng.internal.invokers.TestMethodWorker.run(TestMethodWorker.java:128)
+at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+at org.testng.TestRunner.privateRun(TestRunner.java:819)
+at org.testng.TestRunner.run(TestRunner.java:619)
+at org.testng.SuiteRunner.runTest(SuiteRunner.java:443)
+at org.testng.SuiteRunner.runSequentially(SuiteRunner.java:437)
+at org.testng.SuiteRunner.privateRun(SuiteRunner.java:397)
+at org.testng.SuiteRunner.run(SuiteRunner.java:336)
+at org.testng.SuiteRunnerWorker.runSuite(SuiteRunnerWorker.java:52)
+at org.testng.SuiteRunnerWorker.run(SuiteRunnerWorker.java:95)
+at org.testng.TestNG.runSuitesSequentially(TestNG.java:1301)
+at org.testng.TestNG.runSuitesLocally(TestNG.java:1228)
+at org.testng.TestNG.runSuites(TestNG.java:1134)
+at org.testng.TestNG.run(TestNG.java:1101)
+at org.apache.maven.surefire.testng.TestNGExecutor.run(TestNGExecutor.java:308)
+at org.apache.maven.surefire.testng.TestNGXmlTestSuite.execute(TestNGXmlTestSuite.java:71)
+at org.apache.maven.surefire.testng.TestNGProvider.invoke(TestNGProvider.java:113)
+at org.apache.maven.surefire.booter.ForkedBooter.runSuitesInProcess(ForkedBooter.java:385)
+at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162)
+at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507)
+at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495)
+]]>
+            </full-stacktrace>
+          </exception> <!-- java.lang.AssertionError -->
           <reporter-output>
           </reporter-output>
-        </test-method> <!-- testHighlightOnMapInteraction -->
-        <test-method is-config="true" signature="tearDown(org.testng.ITestResult)[pri:0, instance:tests.UC07_2_CustomerListTest@3b2c72c2]" started-at="2026-05-02T16:32:14 GMT+07:00" name="tearDown" finished-at="2026-05-02T16:32:15 GMT+07:00" duration-ms="259" status="PASS">
+        </test-method> <!-- testNoCustomerSelected -->
+        <test-method is-config="true" signature="tearDown(org.testng.ITestResult)[pri:0, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:36:38 GMT+07:00" name="tearDown" finished-at="2026-05-02T20:36:39 GMT+07:00" duration-ms="1005" status="PASS">
           <params>
             <param index="0">
               <value>
-                <![CDATA[[TestResult name=testHighlightOnMapInteraction status=SUCCESS method=UC07_2_CustomerListTest.testHighlightOnMapInteraction()[pri:5, instance:tests.UC07_2_CustomerListTest@3b2c72c2] output={null}]]]>
+                <![CDATA[[TestResult name=testNoCustomerSelected status=FAILURE method=RoutePlanningTest.testNoCustomerSelected()[pri:5, instance:tests.RoutePlanningTest@3901d134] output={null}]]]>
               </value>
             </param>
           </params>
           <reporter-output>
           </reporter-output>
         </test-method> <!-- tearDown -->
-        <test-method is-config="true" signature="setUp()[pri:0, instance:tests.UC07_2_CustomerListTest@3b2c72c2]" started-at="2026-05-02T16:32:15 GMT+07:00" name="setUp" finished-at="2026-05-02T16:32:16 GMT+07:00" duration-ms="873" status="PASS">
+        <test-method is-config="true" signature="setUp()[pri:0, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:36:39 GMT+07:00" name="setUp" finished-at="2026-05-02T20:36:41 GMT+07:00" duration-ms="2013" status="PASS">
           <reporter-output>
           </reporter-output>
         </test-method> <!-- setUp -->
-        <test-method is-config="true" signature="setupPages()[pri:0, instance:tests.UC07_2_CustomerListTest@3b2c72c2]" started-at="2026-05-02T16:32:16 GMT+07:00" name="setupPages" finished-at="2026-05-02T16:32:16 GMT+07:00" duration-ms="0" status="PASS">
+        <test-method is-config="true" signature="prepareTest()[pri:0, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:36:41 GMT+07:00" name="prepareTest" finished-at="2026-05-02T20:36:47 GMT+07:00" duration-ms="6008" status="PASS">
           <reporter-output>
           </reporter-output>
-        </test-method> <!-- setupPages -->
-        <test-method signature="testNoAssignedTrip()[pri:6, instance:tests.UC07_2_CustomerListTest@3b2c72c2]" started-at="2026-05-02T16:32:16 GMT+07:00" name="testNoAssignedTrip" description="TC_UC07.2_06: Không có chuyến được phân công" finished-at="2026-05-02T16:32:16 GMT+07:00" duration-ms="0" status="PASS">
+        </test-method> <!-- prepareTest -->
+        <test-method signature="testSelectValidVehicle()[pri:6, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:36:47 GMT+07:00" name="testSelectValidVehicle" description="TC_UC05.2_06: Chọn xe hợp lệ" finished-at="2026-05-02T20:36:57 GMT+07:00" duration-ms="10192" status="PASS">
           <reporter-output>
           </reporter-output>
-        </test-method> <!-- testNoAssignedTrip -->
-        <test-method is-config="true" signature="tearDown(org.testng.ITestResult)[pri:0, instance:tests.UC07_2_CustomerListTest@3b2c72c2]" started-at="2026-05-02T16:32:16 GMT+07:00" name="tearDown" finished-at="2026-05-02T16:32:16 GMT+07:00" duration-ms="158" status="PASS">
+        </test-method> <!-- testSelectValidVehicle -->
+        <test-method is-config="true" signature="tearDown(org.testng.ITestResult)[pri:0, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:36:57 GMT+07:00" name="tearDown" finished-at="2026-05-02T20:36:58 GMT+07:00" duration-ms="1401" status="PASS">
           <params>
             <param index="0">
               <value>
-                <![CDATA[[TestResult name=testNoAssignedTrip status=SUCCESS method=UC07_2_CustomerListTest.testNoAssignedTrip()[pri:6, instance:tests.UC07_2_CustomerListTest@3b2c72c2] output={null}]]]>
+                <![CDATA[[TestResult name=testSelectValidVehicle status=SUCCESS method=RoutePlanningTest.testSelectValidVehicle()[pri:6, instance:tests.RoutePlanningTest@3901d134] output={null}]]]>
               </value>
             </param>
           </params>
           <reporter-output>
           </reporter-output>
         </test-method> <!-- tearDown -->
-        <test-method is-config="true" signature="setUp()[pri:0, instance:tests.UC07_2_CustomerListTest@3b2c72c2]" started-at="2026-05-02T16:32:16 GMT+07:00" name="setUp" finished-at="2026-05-02T16:32:17 GMT+07:00" duration-ms="826" status="PASS">
+        <test-method is-config="true" signature="setUp()[pri:0, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:36:58 GMT+07:00" name="setUp" finished-at="2026-05-02T20:36:59 GMT+07:00" duration-ms="1126" status="PASS">
           <reporter-output>
           </reporter-output>
         </test-method> <!-- setUp -->
-        <test-method is-config="true" signature="setupPages()[pri:0, instance:tests.UC07_2_CustomerListTest@3b2c72c2]" started-at="2026-05-02T16:32:17 GMT+07:00" name="setupPages" finished-at="2026-05-02T16:32:17 GMT+07:00" duration-ms="2" status="PASS">
+        <test-method is-config="true" signature="prepareTest()[pri:0, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:36:59 GMT+07:00" name="prepareTest" finished-at="2026-05-02T20:37:06 GMT+07:00" duration-ms="7147" status="PASS">
           <reporter-output>
           </reporter-output>
-        </test-method> <!-- setupPages -->
-        <test-method signature="testAutoUpdateOnDataChange()[pri:7, instance:tests.UC07_2_CustomerListTest@3b2c72c2]" started-at="2026-05-02T16:32:17 GMT+07:00" name="testAutoUpdateOnDataChange" description="TC_UC07.2_07: Cập nhật danh sách khi có thay đổi" finished-at="2026-05-02T16:32:30 GMT+07:00" duration-ms="13698" status="PASS">
+        </test-method> <!-- prepareTest -->
+        <test-method signature="testNoVehicleSelected()[pri:7, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:37:06 GMT+07:00" name="testNoVehicleSelected" description="TC_UC05.2_07: Không chọn xe" finished-at="2026-05-02T20:37:17 GMT+07:00" duration-ms="10304" status="PASS">
           <reporter-output>
           </reporter-output>
-        </test-method> <!-- testAutoUpdateOnDataChange -->
-        <test-method is-config="true" signature="tearDown(org.testng.ITestResult)[pri:0, instance:tests.UC07_2_CustomerListTest@3b2c72c2]" started-at="2026-05-02T16:32:30 GMT+07:00" name="tearDown" finished-at="2026-05-02T16:32:32 GMT+07:00" duration-ms="1905" status="PASS">
+        </test-method> <!-- testNoVehicleSelected -->
+        <test-method is-config="true" signature="tearDown(org.testng.ITestResult)[pri:0, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:37:17 GMT+07:00" name="tearDown" finished-at="2026-05-02T20:37:19 GMT+07:00" duration-ms="2501" status="PASS">
           <params>
             <param index="0">
               <value>
-                <![CDATA[[TestResult name=testAutoUpdateOnDataChange status=SUCCESS method=UC07_2_CustomerListTest.testAutoUpdateOnDataChange()[pri:7, instance:tests.UC07_2_CustomerListTest@3b2c72c2] output={null}]]]>
+                <![CDATA[[TestResult name=testNoVehicleSelected status=SUCCESS method=RoutePlanningTest.testNoVehicleSelected()[pri:7, instance:tests.RoutePlanningTest@3901d134] output={null}]]]>
               </value>
             </param>
           </params>
           <reporter-output>
           </reporter-output>
         </test-method> <!-- tearDown -->
-        <test-method is-config="true" signature="setUp()[pri:0, instance:tests.UC07_2_CustomerListTest@3b2c72c2]" started-at="2026-05-02T16:32:32 GMT+07:00" name="setUp" finished-at="2026-05-02T16:32:33 GMT+07:00" duration-ms="902" status="PASS">
+        <test-method is-config="true" signature="setUp()[pri:0, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:37:19 GMT+07:00" name="setUp" finished-at="2026-05-02T20:37:22 GMT+07:00" duration-ms="2991" status="PASS">
           <reporter-output>
           </reporter-output>
         </test-method> <!-- setUp -->
-        <test-method is-config="true" signature="setupPages()[pri:0, instance:tests.UC07_2_CustomerListTest@3b2c72c2]" started-at="2026-05-02T16:32:33 GMT+07:00" name="setupPages" finished-at="2026-05-02T16:32:33 GMT+07:00" duration-ms="1" status="PASS">
+        <test-method is-config="true" signature="prepareTest()[pri:0, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:37:22 GMT+07:00" name="prepareTest" finished-at="2026-05-02T20:37:37 GMT+07:00" duration-ms="14975" status="PASS">
           <reporter-output>
           </reporter-output>
-        </test-method> <!-- setupPages -->
-        <test-method signature="testErrorLoadingCustomerList()[pri:8, instance:tests.UC07_2_CustomerListTest@3b2c72c2]" started-at="2026-05-02T16:32:33 GMT+07:00" name="testErrorLoadingCustomerList" description="TC_UC07.2_08: Lỗi tải danh sách khách hàng" finished-at="2026-05-02T16:32:36 GMT+07:00" duration-ms="2761" status="PASS">
+        </test-method> <!-- prepareTest -->
+        <test-method signature="testSelectInsufficientCapacityVehicle()[pri:8, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:37:37 GMT+07:00" name="testSelectInsufficientCapacityVehicle" description="TC_UC05.2_08: Chọn xe không đủ chỗ" finished-at="2026-05-02T20:37:50 GMT+07:00" duration-ms="12830" status="PASS">
           <reporter-output>
           </reporter-output>
-        </test-method> <!-- testErrorLoadingCustomerList -->
-        <test-method is-config="true" signature="tearDown(org.testng.ITestResult)[pri:0, instance:tests.UC07_2_CustomerListTest@3b2c72c2]" started-at="2026-05-02T16:32:36 GMT+07:00" name="tearDown" finished-at="2026-05-02T16:32:36 GMT+07:00" duration-ms="234" status="PASS">
+        </test-method> <!-- testSelectInsufficientCapacityVehicle -->
+        <test-method is-config="true" signature="tearDown(org.testng.ITestResult)[pri:0, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:37:50 GMT+07:00" name="tearDown" finished-at="2026-05-02T20:38:00 GMT+07:00" duration-ms="10281" status="PASS">
           <params>
             <param index="0">
               <value>
-                <![CDATA[[TestResult name=testErrorLoadingCustomerList status=SUCCESS method=UC07_2_CustomerListTest.testErrorLoadingCustomerList()[pri:8, instance:tests.UC07_2_CustomerListTest@3b2c72c2] output={null}]]]>
+                <![CDATA[[TestResult name=testSelectInsufficientCapacityVehicle status=SUCCESS method=RoutePlanningTest.testSelectInsufficientCapacityVehicle()[pri:8, instance:tests.RoutePlanningTest@3901d134] output={null}]]]>
               </value>
             </param>
           </params>
           <reporter-output>
           </reporter-output>
         </test-method> <!-- tearDown -->
-        <test-method is-config="true" signature="setUp()[pri:0, instance:tests.UC07_2_CustomerListTest@3b2c72c2]" started-at="2026-05-02T16:32:36 GMT+07:00" name="setUp" finished-at="2026-05-02T16:32:37 GMT+07:00" duration-ms="901" status="PASS">
+        <test-method is-config="true" signature="setUp()[pri:0, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:38:00 GMT+07:00" name="setUp" finished-at="2026-05-02T20:38:01 GMT+07:00" duration-ms="986" status="PASS">
           <reporter-output>
           </reporter-output>
         </test-method> <!-- setUp -->
-        <test-method is-config="true" signature="setupPages()[pri:0, instance:tests.UC07_2_CustomerListTest@3b2c72c2]" started-at="2026-05-02T16:32:37 GMT+07:00" name="setupPages" finished-at="2026-05-02T16:32:37 GMT+07:00" duration-ms="3" status="PASS">
+        <test-method is-config="true" signature="prepareTest()[pri:0, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:38:01 GMT+07:00" name="prepareTest" finished-at="2026-05-02T20:38:06 GMT+07:00" duration-ms="5052" status="PASS">
           <reporter-output>
           </reporter-output>
-        </test-method> <!-- setupPages -->
-        <test-method signature="testReadOnlyCustomerList()[pri:9, instance:tests.UC07_2_CustomerListTest@3b2c72c2]" started-at="2026-05-02T16:32:37 GMT+07:00" name="testReadOnlyCustomerList" description="TC_UC07.2_09: Không cho phép chỉnh sửa khách hàng" finished-at="2026-05-02T16:32:50 GMT+07:00" duration-ms="12793" status="PASS">
+        </test-method> <!-- prepareTest -->
+        <test-method signature="testSelectFullVehicle()[pri:9, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:38:06 GMT+07:00" name="testSelectFullVehicle" description="TC_UC05.2_09: Chọn xe đang đầy" finished-at="2026-05-02T20:38:17 GMT+07:00" duration-ms="10211" status="PASS">
           <reporter-output>
           </reporter-output>
-        </test-method> <!-- testReadOnlyCustomerList -->
-        <test-method is-config="true" signature="tearDown(org.testng.ITestResult)[pri:0, instance:tests.UC07_2_CustomerListTest@3b2c72c2]" started-at="2026-05-02T16:32:50 GMT+07:00" name="tearDown" finished-at="2026-05-02T16:32:50 GMT+07:00" duration-ms="281" status="PASS">
+        </test-method> <!-- testSelectFullVehicle -->
+        <test-method is-config="true" signature="tearDown(org.testng.ITestResult)[pri:0, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:38:17 GMT+07:00" name="tearDown" finished-at="2026-05-02T20:38:17 GMT+07:00" duration-ms="486" status="PASS">
           <params>
             <param index="0">
               <value>
-                <![CDATA[[TestResult name=testReadOnlyCustomerList status=SUCCESS method=UC07_2_CustomerListTest.testReadOnlyCustomerList()[pri:9, instance:tests.UC07_2_CustomerListTest@3b2c72c2] output={null}]]]>
+                <![CDATA[[TestResult name=testSelectFullVehicle status=SUCCESS method=RoutePlanningTest.testSelectFullVehicle()[pri:9, instance:tests.RoutePlanningTest@3901d134] output={null}]]]>
               </value>
             </param>
           </params>
           <reporter-output>
           </reporter-output>
         </test-method> <!-- tearDown -->
-        <test-method is-config="true" signature="setUp()[pri:0, instance:tests.UC07_2_CustomerListTest@3b2c72c2]" started-at="2026-05-02T16:32:50 GMT+07:00" name="setUp" finished-at="2026-05-02T16:32:51 GMT+07:00" duration-ms="882" status="PASS">
+        <test-method is-config="true" signature="setUp()[pri:0, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:38:17 GMT+07:00" name="setUp" finished-at="2026-05-02T20:38:18 GMT+07:00" duration-ms="1292" status="PASS">
           <reporter-output>
           </reporter-output>
         </test-method> <!-- setUp -->
-        <test-method is-config="true" signature="setupPages()[pri:0, instance:tests.UC07_2_CustomerListTest@3b2c72c2]" started-at="2026-05-02T16:32:51 GMT+07:00" name="setupPages" finished-at="2026-05-02T16:32:51 GMT+07:00" duration-ms="1" status="PASS">
+        <test-method is-config="true" signature="prepareTest()[pri:0, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:38:18 GMT+07:00" name="prepareTest" finished-at="2026-05-02T20:38:24 GMT+07:00" duration-ms="5789" status="PASS">
           <reporter-output>
           </reporter-output>
-        </test-method> <!-- setupPages -->
-        <test-method signature="testCustomerStatusIndicators()[pri:10, instance:tests.UC07_2_CustomerListTest@3b2c72c2]" started-at="2026-05-02T16:32:51 GMT+07:00" name="testCustomerStatusIndicators" description="TC_UC07.2_10: Kiểm tra cập nhật trạng thái khách hàng" finished-at="2026-05-02T16:33:05 GMT+07:00" duration-ms="13666" status="PASS">
+        </test-method> <!-- prepareTest -->
+        <test-method signature="testCancelVehicleSelection()[pri:10, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:38:24 GMT+07:00" name="testCancelVehicleSelection" description="TC_UC05.2_10: Hủy thao tác phân công xe" finished-at="2026-05-02T20:38:35 GMT+07:00" duration-ms="10471" status="PASS">
           <reporter-output>
           </reporter-output>
-        </test-method> <!-- testCustomerStatusIndicators -->
-        <test-method is-config="true" signature="tearDown(org.testng.ITestResult)[pri:0, instance:tests.UC07_2_CustomerListTest@3b2c72c2]" started-at="2026-05-02T16:33:05 GMT+07:00" name="tearDown" finished-at="2026-05-02T16:33:05 GMT+07:00" duration-ms="267" status="PASS">
+        </test-method> <!-- testCancelVehicleSelection -->
+        <test-method is-config="true" signature="tearDown(org.testng.ITestResult)[pri:0, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:38:35 GMT+07:00" name="tearDown" finished-at="2026-05-02T20:38:35 GMT+07:00" duration-ms="793" status="PASS">
           <params>
             <param index="0">
               <value>
-                <![CDATA[[TestResult name=testCustomerStatusIndicators status=SUCCESS method=UC07_2_CustomerListTest.testCustomerStatusIndicators()[pri:10, instance:tests.UC07_2_CustomerListTest@3b2c72c2] output={null}]]]>
+                <![CDATA[[TestResult name=testCancelVehicleSelection status=SUCCESS method=RoutePlanningTest.testCancelVehicleSelection()[pri:10, instance:tests.RoutePlanningTest@3901d134] output={null}]]]>
               </value>
             </param>
           </params>
           <reporter-output>
           </reporter-output>
         </test-method> <!-- tearDown -->
-      </class> <!-- tests.UC07_2_CustomerListTest -->
-    </test> <!-- Surefire test -->
-  </suite> <!-- Surefire suite -->
+        <test-method is-config="true" signature="setUp()[pri:0, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:38:35 GMT+07:00" name="setUp" finished-at="2026-05-02T20:38:36 GMT+07:00" duration-ms="999" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- setUp -->
+        <test-method is-config="true" signature="prepareTest()[pri:0, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:38:36 GMT+07:00" name="prepareTest" finished-at="2026-05-02T20:38:40 GMT+07:00" duration-ms="3767" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- prepareTest -->
+        <test-method signature="testSelectValidDriver()[pri:11, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:38:40 GMT+07:00" name="testSelectValidDriver" description="TC_UC05.2_11: Chọn tài xế hợp lệ" finished-at="2026-05-02T20:38:50 GMT+07:00" duration-ms="10122" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- testSelectValidDriver -->
+        <test-method is-config="true" signature="tearDown(org.testng.ITestResult)[pri:0, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:38:50 GMT+07:00" name="tearDown" finished-at="2026-05-02T20:38:52 GMT+07:00" duration-ms="1284" status="PASS">
+          <params>
+            <param index="0">
+              <value>
+                <![CDATA[[TestResult name=testSelectValidDriver status=SUCCESS method=RoutePlanningTest.testSelectValidDriver()[pri:11, instance:tests.RoutePlanningTest@3901d134] output={null}]]]>
+              </value>
+            </param>
+          </params>
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- tearDown -->
+        <test-method is-config="true" signature="setUp()[pri:0, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:38:52 GMT+07:00" name="setUp" finished-at="2026-05-02T20:38:52 GMT+07:00" duration-ms="825" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- setUp -->
+        <test-method is-config="true" signature="prepareTest()[pri:0, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:38:52 GMT+07:00" name="prepareTest" finished-at="2026-05-02T20:38:56 GMT+07:00" duration-ms="3685" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- prepareTest -->
+        <test-method signature="testNoDriverSelected()[pri:12, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:38:56 GMT+07:00" name="testNoDriverSelected" description="TC_UC05.2_12: Không chọn tài xế" finished-at="2026-05-02T20:39:06 GMT+07:00" duration-ms="10293" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- testNoDriverSelected -->
+        <test-method is-config="true" signature="tearDown(org.testng.ITestResult)[pri:0, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:39:06 GMT+07:00" name="tearDown" finished-at="2026-05-02T20:39:08 GMT+07:00" duration-ms="1180" status="PASS">
+          <params>
+            <param index="0">
+              <value>
+                <![CDATA[[TestResult name=testNoDriverSelected status=SUCCESS method=RoutePlanningTest.testNoDriverSelected()[pri:12, instance:tests.RoutePlanningTest@3901d134] output={null}]]]>
+              </value>
+            </param>
+          </params>
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- tearDown -->
+        <test-method is-config="true" signature="setUp()[pri:0, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:39:08 GMT+07:00" name="setUp" finished-at="2026-05-02T20:39:09 GMT+07:00" duration-ms="971" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- setUp -->
+        <test-method is-config="true" signature="prepareTest()[pri:0, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:39:09 GMT+07:00" name="prepareTest" finished-at="2026-05-02T20:39:12 GMT+07:00" duration-ms="3806" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- prepareTest -->
+        <test-method signature="testSelectBusyDriver()[pri:13, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:39:12 GMT+07:00" name="testSelectBusyDriver" description="TC_UC05.2_13: Chọn tài xế đang bận" finished-at="2026-05-02T20:39:22 GMT+07:00" duration-ms="10121" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- testSelectBusyDriver -->
+        <test-method is-config="true" signature="tearDown(org.testng.ITestResult)[pri:0, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:39:22 GMT+07:00" name="tearDown" finished-at="2026-05-02T20:39:26 GMT+07:00" duration-ms="3951" status="PASS">
+          <params>
+            <param index="0">
+              <value>
+                <![CDATA[[TestResult name=testSelectBusyDriver status=SUCCESS method=RoutePlanningTest.testSelectBusyDriver()[pri:13, instance:tests.RoutePlanningTest@3901d134] output={null}]]]>
+              </value>
+            </param>
+          </params>
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- tearDown -->
+        <test-method is-config="true" signature="setUp()[pri:0, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:39:26 GMT+07:00" name="setUp" finished-at="2026-05-02T20:39:27 GMT+07:00" duration-ms="1060" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- setUp -->
+        <test-method is-config="true" signature="prepareTest()[pri:0, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:39:27 GMT+07:00" name="prepareTest" finished-at="2026-05-02T20:39:35 GMT+07:00" duration-ms="7642" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- prepareTest -->
+        <test-method signature="testSelectAssignedDriver()[pri:14, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:39:35 GMT+07:00" name="testSelectAssignedDriver" description="TC_UC05.2_14: Chọn tài xế đã được phân công" finished-at="2026-05-02T20:39:46 GMT+07:00" duration-ms="11020" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- testSelectAssignedDriver -->
+        <test-method is-config="true" signature="tearDown(org.testng.ITestResult)[pri:0, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:39:46 GMT+07:00" name="tearDown" finished-at="2026-05-02T20:39:47 GMT+07:00" duration-ms="1178" status="PASS">
+          <params>
+            <param index="0">
+              <value>
+                <![CDATA[[TestResult name=testSelectAssignedDriver status=SUCCESS method=RoutePlanningTest.testSelectAssignedDriver()[pri:14, instance:tests.RoutePlanningTest@3901d134] output={null}]]]>
+              </value>
+            </param>
+          </params>
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- tearDown -->
+        <test-method is-config="true" signature="setUp()[pri:0, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:39:47 GMT+07:00" name="setUp" finished-at="2026-05-02T20:39:49 GMT+07:00" duration-ms="1315" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- setUp -->
+        <test-method is-config="true" signature="prepareTest()[pri:0, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:39:49 GMT+07:00" name="prepareTest" finished-at="2026-05-02T20:39:52 GMT+07:00" duration-ms="3717" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- prepareTest -->
+        <test-method signature="testCancelDriverSelection()[pri:15, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:39:52 GMT+07:00" name="testCancelDriverSelection" description="TC_UC05.2_15: Hủy phân công tài xế" finished-at="2026-05-02T20:40:03 GMT+07:00" duration-ms="10259" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- testCancelDriverSelection -->
+        <test-method is-config="true" signature="tearDown(org.testng.ITestResult)[pri:0, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:40:03 GMT+07:00" name="tearDown" finished-at="2026-05-02T20:40:05 GMT+07:00" duration-ms="1999" status="PASS">
+          <params>
+            <param index="0">
+              <value>
+                <![CDATA[[TestResult name=testCancelDriverSelection status=SUCCESS method=RoutePlanningTest.testCancelDriverSelection()[pri:15, instance:tests.RoutePlanningTest@3901d134] output={null}]]]>
+              </value>
+            </param>
+          </params>
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- tearDown -->
+        <test-method is-config="true" signature="setUp()[pri:0, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:40:05 GMT+07:00" name="setUp" finished-at="2026-05-02T20:40:07 GMT+07:00" duration-ms="2018" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- setUp -->
+        <test-method is-config="true" signature="prepareTest()[pri:0, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:40:07 GMT+07:00" name="prepareTest" finished-at="2026-05-02T20:40:12 GMT+07:00" duration-ms="5106" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- prepareTest -->
+        <test-method signature="testSearchByTicketCode()[pri:16, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:40:12 GMT+07:00" name="testSearchByTicketCode" description="TC_UC05.2_16: Tìm kiếm khách hàng theo mã vé" finished-at="2026-05-02T20:40:22 GMT+07:00" duration-ms="10136" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- testSearchByTicketCode -->
+        <test-method is-config="true" signature="tearDown(org.testng.ITestResult)[pri:0, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:40:22 GMT+07:00" name="tearDown" finished-at="2026-05-02T20:40:23 GMT+07:00" duration-ms="1250" status="PASS">
+          <params>
+            <param index="0">
+              <value>
+                <![CDATA[[TestResult name=testSearchByTicketCode status=SUCCESS method=RoutePlanningTest.testSearchByTicketCode()[pri:16, instance:tests.RoutePlanningTest@3901d134] output={null}]]]>
+              </value>
+            </param>
+          </params>
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- tearDown -->
+        <test-method is-config="true" signature="setUp()[pri:0, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:40:23 GMT+07:00" name="setUp" finished-at="2026-05-02T20:40:24 GMT+07:00" duration-ms="1142" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- setUp -->
+        <test-method is-config="true" signature="prepareTest()[pri:0, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:40:24 GMT+07:00" name="prepareTest" finished-at="2026-05-02T20:40:30 GMT+07:00" duration-ms="5543" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- prepareTest -->
+        <test-method signature="testSearchByCustomerName()[pri:17, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:40:30 GMT+07:00" name="testSearchByCustomerName" description="TC_UC05.2_17: Tìm kiếm khách hàng theo tên" finished-at="2026-05-02T20:40:40 GMT+07:00" duration-ms="10131" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- testSearchByCustomerName -->
+        <test-method is-config="true" signature="tearDown(org.testng.ITestResult)[pri:0, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:40:40 GMT+07:00" name="tearDown" finished-at="2026-05-02T20:40:41 GMT+07:00" duration-ms="865" status="PASS">
+          <params>
+            <param index="0">
+              <value>
+                <![CDATA[[TestResult name=testSearchByCustomerName status=SUCCESS method=RoutePlanningTest.testSearchByCustomerName()[pri:17, instance:tests.RoutePlanningTest@3901d134] output={null}]]]>
+              </value>
+            </param>
+          </params>
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- tearDown -->
+        <test-method is-config="true" signature="setUp()[pri:0, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:40:41 GMT+07:00" name="setUp" finished-at="2026-05-02T20:40:42 GMT+07:00" duration-ms="1567" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- setUp -->
+        <test-method is-config="true" signature="prepareTest()[pri:0, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:40:42 GMT+07:00" name="prepareTest" finished-at="2026-05-02T20:40:48 GMT+07:00" duration-ms="5862" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- prepareTest -->
+        <test-method signature="testSearchByPhone()[pri:18, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:40:48 GMT+07:00" name="testSearchByPhone" description="TC_UC05.2_18: Tìm kiếm khách hàng theo số điện thoại" finished-at="2026-05-02T20:40:59 GMT+07:00" duration-ms="10273" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- testSearchByPhone -->
+        <test-method is-config="true" signature="tearDown(org.testng.ITestResult)[pri:0, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:40:59 GMT+07:00" name="tearDown" finished-at="2026-05-02T20:40:59 GMT+07:00" duration-ms="792" status="PASS">
+          <params>
+            <param index="0">
+              <value>
+                <![CDATA[[TestResult name=testSearchByPhone status=SUCCESS method=RoutePlanningTest.testSearchByPhone()[pri:18, instance:tests.RoutePlanningTest@3901d134] output={null}]]]>
+              </value>
+            </param>
+          </params>
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- tearDown -->
+        <test-method is-config="true" signature="setUp()[pri:0, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:40:59 GMT+07:00" name="setUp" finished-at="2026-05-02T20:41:03 GMT+07:00" duration-ms="3636" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- setUp -->
+        <test-method is-config="true" signature="prepareTest()[pri:0, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:41:03 GMT+07:00" name="prepareTest" finished-at="2026-05-02T20:41:08 GMT+07:00" duration-ms="5406" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- prepareTest -->
+        <test-method signature="testSearchNonExistent()[pri:19, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:41:08 GMT+07:00" name="testSearchNonExistent" description="TC_UC05.2_19: Tìm kiếm với từ khóa không tồn tại" finished-at="2026-05-02T20:41:19 GMT+07:00" duration-ms="10382" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- testSearchNonExistent -->
+        <test-method is-config="true" signature="tearDown(org.testng.ITestResult)[pri:0, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:41:19 GMT+07:00" name="tearDown" finished-at="2026-05-02T20:41:20 GMT+07:00" duration-ms="916" status="PASS">
+          <params>
+            <param index="0">
+              <value>
+                <![CDATA[[TestResult name=testSearchNonExistent status=SUCCESS method=RoutePlanningTest.testSearchNonExistent()[pri:19, instance:tests.RoutePlanningTest@3901d134] output={null}]]]>
+              </value>
+            </param>
+          </params>
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- tearDown -->
+        <test-method is-config="true" signature="setUp()[pri:0, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:41:20 GMT+07:00" name="setUp" finished-at="2026-05-02T20:41:21 GMT+07:00" duration-ms="950" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- setUp -->
+        <test-method is-config="true" signature="prepareTest()[pri:0, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:41:21 GMT+07:00" name="prepareTest" finished-at="2026-05-02T20:41:25 GMT+07:00" duration-ms="4241" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- prepareTest -->
+        <test-method signature="testClearSearch()[pri:20, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:41:25 GMT+07:00" name="testClearSearch" description="TC_UC05.2_20: Xóa từ khóa sau khi tìm kiếm" finished-at="2026-05-02T20:41:35 GMT+07:00" duration-ms="10152" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- testClearSearch -->
+        <test-method is-config="true" signature="tearDown(org.testng.ITestResult)[pri:0, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:41:35 GMT+07:00" name="tearDown" finished-at="2026-05-02T20:41:36 GMT+07:00" duration-ms="499" status="PASS">
+          <params>
+            <param index="0">
+              <value>
+                <![CDATA[[TestResult name=testClearSearch status=SUCCESS method=RoutePlanningTest.testClearSearch()[pri:20, instance:tests.RoutePlanningTest@3901d134] output={null}]]]>
+              </value>
+            </param>
+          </params>
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- tearDown -->
+        <test-method is-config="true" signature="setUp()[pri:0, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:41:36 GMT+07:00" name="setUp" finished-at="2026-05-02T20:41:37 GMT+07:00" duration-ms="1331" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- setUp -->
+        <test-method is-config="true" signature="prepareTest()[pri:0, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:41:37 GMT+07:00" name="prepareTest" finished-at="2026-05-02T20:41:41 GMT+07:00" duration-ms="4067" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- prepareTest -->
+        <test-method signature="testAccessVehicleStep()[pri:21, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:41:41 GMT+07:00" name="testAccessVehicleStep" description="TC_UC05.2_21: Truy cập bước chọn xe trung chuyển" finished-at="2026-05-02T20:41:51 GMT+07:00" duration-ms="10157" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- testAccessVehicleStep -->
+        <test-method is-config="true" signature="tearDown(org.testng.ITestResult)[pri:0, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:41:51 GMT+07:00" name="tearDown" finished-at="2026-05-02T20:41:52 GMT+07:00" duration-ms="416" status="PASS">
+          <params>
+            <param index="0">
+              <value>
+                <![CDATA[[TestResult name=testAccessVehicleStep status=SUCCESS method=RoutePlanningTest.testAccessVehicleStep()[pri:21, instance:tests.RoutePlanningTest@3901d134] output={null}]]]>
+              </value>
+            </param>
+          </params>
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- tearDown -->
+        <test-method is-config="true" signature="setUp()[pri:0, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:41:52 GMT+07:00" name="setUp" finished-at="2026-05-02T20:41:53 GMT+07:00" duration-ms="1263" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- setUp -->
+        <test-method is-config="true" signature="prepareTest()[pri:0, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:41:53 GMT+07:00" name="prepareTest" finished-at="2026-05-02T20:41:58 GMT+07:00" duration-ms="5417" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- prepareTest -->
+        <test-method signature="testSearchVehicleByPlate()[pri:22, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:41:58 GMT+07:00" name="testSearchVehicleByPlate" description="TC_UC05.2_22: Tìm kiếm xe theo biển số" finished-at="2026-05-02T20:42:08 GMT+07:00" duration-ms="10204" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- testSearchVehicleByPlate -->
+        <test-method is-config="true" signature="tearDown(org.testng.ITestResult)[pri:0, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:42:08 GMT+07:00" name="tearDown" finished-at="2026-05-02T20:42:09 GMT+07:00" duration-ms="284" status="PASS">
+          <params>
+            <param index="0">
+              <value>
+                <![CDATA[[TestResult name=testSearchVehicleByPlate status=SUCCESS method=RoutePlanningTest.testSearchVehicleByPlate()[pri:22, instance:tests.RoutePlanningTest@3901d134] output={null}]]]>
+              </value>
+            </param>
+          </params>
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- tearDown -->
+        <test-method is-config="true" signature="setUp()[pri:0, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:42:09 GMT+07:00" name="setUp" finished-at="2026-05-02T20:42:10 GMT+07:00" duration-ms="1042" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- setUp -->
+        <test-method is-config="true" signature="prepareTest()[pri:0, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:42:10 GMT+07:00" name="prepareTest" finished-at="2026-05-02T20:42:16 GMT+07:00" duration-ms="6608" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- prepareTest -->
+        <test-method signature="testSearchVehicleByType()[pri:23, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:42:16 GMT+07:00" name="testSearchVehicleByType" description="TC_UC05.2_23: Tìm kiếm xe theo loại xe" finished-at="2026-05-02T20:42:27 GMT+07:00" duration-ms="10313" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- testSearchVehicleByType -->
+        <test-method is-config="true" signature="tearDown(org.testng.ITestResult)[pri:0, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:42:27 GMT+07:00" name="tearDown" finished-at="2026-05-02T20:42:27 GMT+07:00" duration-ms="389" status="PASS">
+          <params>
+            <param index="0">
+              <value>
+                <![CDATA[[TestResult name=testSearchVehicleByType status=SUCCESS method=RoutePlanningTest.testSearchVehicleByType()[pri:23, instance:tests.RoutePlanningTest@3901d134] output={null}]]]>
+              </value>
+            </param>
+          </params>
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- tearDown -->
+        <test-method is-config="true" signature="setUp()[pri:0, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:42:27 GMT+07:00" name="setUp" finished-at="2026-05-02T20:42:28 GMT+07:00" duration-ms="1123" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- setUp -->
+        <test-method is-config="true" signature="prepareTest()[pri:0, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:42:28 GMT+07:00" name="prepareTest" finished-at="2026-05-02T20:42:31 GMT+07:00" duration-ms="3115" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- prepareTest -->
+        <test-method signature="testSearchVehicleNonExistent()[pri:24, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:42:31 GMT+07:00" name="testSearchVehicleNonExistent" description="TC_UC05.2_24: Tìm kiếm xe với từ khóa không tồn tại" finished-at="2026-05-02T20:42:41 GMT+07:00" duration-ms="10197" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- testSearchVehicleNonExistent -->
+        <test-method is-config="true" signature="tearDown(org.testng.ITestResult)[pri:0, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:42:41 GMT+07:00" name="tearDown" finished-at="2026-05-02T20:42:43 GMT+07:00" duration-ms="1796" status="PASS">
+          <params>
+            <param index="0">
+              <value>
+                <![CDATA[[TestResult name=testSearchVehicleNonExistent status=SUCCESS method=RoutePlanningTest.testSearchVehicleNonExistent()[pri:24, instance:tests.RoutePlanningTest@3901d134] output={null}]]]>
+              </value>
+            </param>
+          </params>
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- tearDown -->
+        <test-method is-config="true" signature="setUp()[pri:0, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:42:43 GMT+07:00" name="setUp" finished-at="2026-05-02T20:42:44 GMT+07:00" duration-ms="636" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- setUp -->
+        <test-method is-config="true" signature="prepareTest()[pri:0, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:42:44 GMT+07:00" name="prepareTest" finished-at="2026-05-02T20:42:47 GMT+07:00" duration-ms="3217" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- prepareTest -->
+        <test-method signature="testClearVehicleSearch()[pri:25, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:42:47 GMT+07:00" name="testClearVehicleSearch" description="TC_UC05.2_25: Xóa từ khóa tìm kiếm xe" finished-at="2026-05-02T20:42:57 GMT+07:00" duration-ms="10132" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- testClearVehicleSearch -->
+        <test-method is-config="true" signature="tearDown(org.testng.ITestResult)[pri:0, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:42:57 GMT+07:00" name="tearDown" finished-at="2026-05-02T20:42:59 GMT+07:00" duration-ms="1831" status="PASS">
+          <params>
+            <param index="0">
+              <value>
+                <![CDATA[[TestResult name=testClearVehicleSearch status=SUCCESS method=RoutePlanningTest.testClearVehicleSearch()[pri:25, instance:tests.RoutePlanningTest@3901d134] output={null}]]]>
+              </value>
+            </param>
+          </params>
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- tearDown -->
+        <test-method is-config="true" signature="setUp()[pri:0, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:42:59 GMT+07:00" name="setUp" finished-at="2026-05-02T20:43:00 GMT+07:00" duration-ms="995" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- setUp -->
+        <test-method is-config="true" signature="prepareTest()[pri:0, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:43:00 GMT+07:00" name="prepareTest" finished-at="2026-05-02T20:43:03 GMT+07:00" duration-ms="2845" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- prepareTest -->
+        <test-method signature="testAccessDriverStep()[pri:26, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:43:03 GMT+07:00" name="testAccessDriverStep" description="TC_UC05.2_26: Truy cập bước chọn tài xế phù hợp" finished-at="2026-05-02T20:43:13 GMT+07:00" duration-ms="10127" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- testAccessDriverStep -->
+        <test-method is-config="true" signature="tearDown(org.testng.ITestResult)[pri:0, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:43:13 GMT+07:00" name="tearDown" finished-at="2026-05-02T20:43:13 GMT+07:00" duration-ms="180" status="PASS">
+          <params>
+            <param index="0">
+              <value>
+                <![CDATA[[TestResult name=testAccessDriverStep status=SUCCESS method=RoutePlanningTest.testAccessDriverStep()[pri:26, instance:tests.RoutePlanningTest@3901d134] output={null}]]]>
+              </value>
+            </param>
+          </params>
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- tearDown -->
+        <test-method is-config="true" signature="setUp()[pri:0, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:43:13 GMT+07:00" name="setUp" finished-at="2026-05-02T20:43:14 GMT+07:00" duration-ms="626" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- setUp -->
+        <test-method is-config="true" signature="prepareTest()[pri:0, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:43:14 GMT+07:00" name="prepareTest" finished-at="2026-05-02T20:43:17 GMT+07:00" duration-ms="3135" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- prepareTest -->
+        <test-method signature="testSearchDriverById()[pri:27, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:43:17 GMT+07:00" name="testSearchDriverById" description="TC_UC05.2_27: Tìm kiếm tài xế theo mã" finished-at="2026-05-02T20:43:27 GMT+07:00" duration-ms="10099" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- testSearchDriverById -->
+        <test-method is-config="true" signature="tearDown(org.testng.ITestResult)[pri:0, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:43:27 GMT+07:00" name="tearDown" finished-at="2026-05-02T20:43:27 GMT+07:00" duration-ms="217" status="PASS">
+          <params>
+            <param index="0">
+              <value>
+                <![CDATA[[TestResult name=testSearchDriverById status=SUCCESS method=RoutePlanningTest.testSearchDriverById()[pri:27, instance:tests.RoutePlanningTest@3901d134] output={null}]]]>
+              </value>
+            </param>
+          </params>
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- tearDown -->
+        <test-method is-config="true" signature="setUp()[pri:0, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:43:27 GMT+07:00" name="setUp" finished-at="2026-05-02T20:43:28 GMT+07:00" duration-ms="679" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- setUp -->
+        <test-method is-config="true" signature="prepareTest()[pri:0, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:43:28 GMT+07:00" name="prepareTest" finished-at="2026-05-02T20:43:33 GMT+07:00" duration-ms="5352" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- prepareTest -->
+        <test-method signature="testSearchDriverByName()[pri:28, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:43:33 GMT+07:00" name="testSearchDriverByName" description="TC_UC05.2_28: Tìm kiếm tài xế theo tên" finished-at="2026-05-02T20:43:44 GMT+07:00" duration-ms="10215" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- testSearchDriverByName -->
+        <test-method is-config="true" signature="tearDown(org.testng.ITestResult)[pri:0, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:43:44 GMT+07:00" name="tearDown" finished-at="2026-05-02T20:43:44 GMT+07:00" duration-ms="308" status="PASS">
+          <params>
+            <param index="0">
+              <value>
+                <![CDATA[[TestResult name=testSearchDriverByName status=SUCCESS method=RoutePlanningTest.testSearchDriverByName()[pri:28, instance:tests.RoutePlanningTest@3901d134] output={null}]]]>
+              </value>
+            </param>
+          </params>
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- tearDown -->
+        <test-method is-config="true" signature="setUp()[pri:0, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:43:44 GMT+07:00" name="setUp" finished-at="2026-05-02T20:43:46 GMT+07:00" duration-ms="2004" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- setUp -->
+        <test-method is-config="true" signature="prepareTest()[pri:0, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:43:46 GMT+07:00" name="prepareTest" finished-at="2026-05-02T20:43:54 GMT+07:00" duration-ms="7713" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- prepareTest -->
+        <test-method signature="testSearchDriverByPhone()[pri:29, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:43:54 GMT+07:00" name="testSearchDriverByPhone" description="TC_UC05.2_29: Tìm kiếm tài xế theo số điện thoại" finished-at="2026-05-02T20:44:05 GMT+07:00" duration-ms="11187" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- testSearchDriverByPhone -->
+        <test-method is-config="true" signature="tearDown(org.testng.ITestResult)[pri:0, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:44:05 GMT+07:00" name="tearDown" finished-at="2026-05-02T20:44:07 GMT+07:00" duration-ms="2061" status="PASS">
+          <params>
+            <param index="0">
+              <value>
+                <![CDATA[[TestResult name=testSearchDriverByPhone status=SUCCESS method=RoutePlanningTest.testSearchDriverByPhone()[pri:29, instance:tests.RoutePlanningTest@3901d134] output={null}]]]>
+              </value>
+            </param>
+          </params>
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- tearDown -->
+        <test-method is-config="true" signature="setUp()[pri:0, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:44:07 GMT+07:00" name="setUp" finished-at="2026-05-02T20:44:08 GMT+07:00" duration-ms="1577" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- setUp -->
+        <test-method is-config="true" signature="prepareTest()[pri:0, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:44:08 GMT+07:00" name="prepareTest" finished-at="2026-05-02T20:44:12 GMT+07:00" duration-ms="3796" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- prepareTest -->
+        <test-method signature="testSearchDriverNonExistent()[pri:30, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:44:12 GMT+07:00" name="testSearchDriverNonExistent" description="TC_UC05.2_30: Tìm kiếm tài xế với từ khóa không tồn tại" finished-at="2026-05-02T20:44:22 GMT+07:00" duration-ms="10166" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- testSearchDriverNonExistent -->
+        <test-method is-config="true" signature="tearDown(org.testng.ITestResult)[pri:0, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:44:22 GMT+07:00" name="tearDown" finished-at="2026-05-02T20:44:23 GMT+07:00" duration-ms="260" status="PASS">
+          <params>
+            <param index="0">
+              <value>
+                <![CDATA[[TestResult name=testSearchDriverNonExistent status=SUCCESS method=RoutePlanningTest.testSearchDriverNonExistent()[pri:30, instance:tests.RoutePlanningTest@3901d134] output={null}]]]>
+              </value>
+            </param>
+          </params>
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- tearDown -->
+        <test-method is-config="true" signature="setUp()[pri:0, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:44:23 GMT+07:00" name="setUp" finished-at="2026-05-02T20:44:24 GMT+07:00" duration-ms="1079" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- setUp -->
+        <test-method is-config="true" signature="prepareTest()[pri:0, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:44:24 GMT+07:00" name="prepareTest" finished-at="2026-05-02T20:44:26 GMT+07:00" duration-ms="2393" status="FAIL">
+          <exception class="org.openqa.selenium.WebDriverException">
+            <message>
+              <![CDATA[Remote browser did not respond to getCurrentUrl
+Build info: version: '4.20.0', revision: '866c76ca80'
+System info: os.name: 'Windows 11', os.arch: 'amd64', os.version: '10.0', java.version: '25.0.2'
+Driver info: driver.version: RemoteWebDriver]]>
+            </message>
+            <full-stacktrace>
+              <![CDATA[org.openqa.selenium.WebDriverException: Remote browser did not respond to getCurrentUrl
+Build info: version: '4.20.0', revision: '866c76ca80'
+System info: os.name: 'Windows 11', os.arch: 'amd64', os.version: '10.0', java.version: '25.0.2'
+Driver info: driver.version: RemoteWebDriver
+at org.openqa.selenium.remote.RemoteWebDriver.getCurrentUrl(RemoteWebDriver.java:314)
+at org.openqa.selenium.support.ui.ExpectedConditions$4.apply(ExpectedConditions.java:124)
+at org.openqa.selenium.support.ui.ExpectedConditions$4.apply(ExpectedConditions.java:119)
+at org.openqa.selenium.support.ui.FluentWait.until(FluentWait.java:203)
+at pages.RoutePlanningPage.navigateToPlan(RoutePlanningPage.java:56)
+at tests.RoutePlanningTest.prepareTest(RoutePlanningTest.java:20)
+at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104)
+at java.base/java.lang.reflect.Method.invoke(Method.java:565)
+at org.testng.internal.invokers.MethodInvocationHelper.invokeMethod(MethodInvocationHelper.java:139)
+at org.testng.internal.invokers.MethodInvocationHelper.invokeMethodConsideringTimeout(MethodInvocationHelper.java:69)
+at org.testng.internal.invokers.ConfigInvoker.invokeConfigurationMethod(ConfigInvoker.java:393)
+at org.testng.internal.invokers.ConfigInvoker.invokeConfigurations(ConfigInvoker.java:326)
+at org.testng.internal.invokers.TestInvoker.runConfigMethods(TestInvoker.java:810)
+at org.testng.internal.invokers.TestInvoker.invokeMethod(TestInvoker.java:578)
+at org.testng.internal.invokers.TestInvoker.invokeTestMethod(TestInvoker.java:228)
+at org.testng.internal.invokers.MethodRunner.runInSequence(MethodRunner.java:63)
+at org.testng.internal.invokers.TestInvoker$MethodInvocationAgent.invoke(TestInvoker.java:961)
+at org.testng.internal.invokers.TestInvoker.invokeTestMethods(TestInvoker.java:201)
+at org.testng.internal.invokers.TestMethodWorker.invokeTestMethods(TestMethodWorker.java:148)
+at org.testng.internal.invokers.TestMethodWorker.run(TestMethodWorker.java:128)
+at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+at org.testng.TestRunner.privateRun(TestRunner.java:819)
+at org.testng.TestRunner.run(TestRunner.java:619)
+at org.testng.SuiteRunner.runTest(SuiteRunner.java:443)
+at org.testng.SuiteRunner.runSequentially(SuiteRunner.java:437)
+at org.testng.SuiteRunner.privateRun(SuiteRunner.java:397)
+at org.testng.SuiteRunner.run(SuiteRunner.java:336)
+at org.testng.SuiteRunnerWorker.runSuite(SuiteRunnerWorker.java:52)
+at org.testng.SuiteRunnerWorker.run(SuiteRunnerWorker.java:95)
+at org.testng.TestNG.runSuitesSequentially(TestNG.java:1301)
+at org.testng.TestNG.runSuitesLocally(TestNG.java:1228)
+at org.testng.TestNG.runSuites(TestNG.java:1134)
+at org.testng.TestNG.run(TestNG.java:1101)
+at org.apache.maven.surefire.testng.TestNGExecutor.run(TestNGExecutor.java:308)
+at org.apache.maven.surefire.testng.TestNGXmlTestSuite.execute(TestNGXmlTestSuite.java:71)
+at org.apache.maven.surefire.testng.TestNGProvider.invoke(TestNGProvider.java:113)
+at org.apache.maven.surefire.booter.ForkedBooter.runSuitesInProcess(ForkedBooter.java:385)
+at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162)
+at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507)
+at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495)
+]]>
+            </full-stacktrace>
+          </exception> <!-- org.openqa.selenium.WebDriverException -->
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- prepareTest -->
+        <test-method signature="testClearDriverSearch()[pri:31, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:44:26 GMT+07:00" name="testClearDriverSearch" description="TC_UC05.2_31: Xóa từ khóa tìm kiếm tài xế" finished-at="2026-05-02T20:44:26 GMT+07:00" duration-ms="1" status="SKIP">
+          <exception class="org.openqa.selenium.WebDriverException">
+            <message>
+              <![CDATA[Remote browser did not respond to getCurrentUrl
+Build info: version: '4.20.0', revision: '866c76ca80'
+System info: os.name: 'Windows 11', os.arch: 'amd64', os.version: '10.0', java.version: '25.0.2'
+Driver info: driver.version: RemoteWebDriver]]>
+            </message>
+            <full-stacktrace>
+              <![CDATA[org.openqa.selenium.WebDriverException: Remote browser did not respond to getCurrentUrl
+Build info: version: '4.20.0', revision: '866c76ca80'
+System info: os.name: 'Windows 11', os.arch: 'amd64', os.version: '10.0', java.version: '25.0.2'
+Driver info: driver.version: RemoteWebDriver
+at org.openqa.selenium.remote.RemoteWebDriver.getCurrentUrl(RemoteWebDriver.java:314)
+at org.openqa.selenium.support.ui.ExpectedConditions$4.apply(ExpectedConditions.java:124)
+at org.openqa.selenium.support.ui.ExpectedConditions$4.apply(ExpectedConditions.java:119)
+at org.openqa.selenium.support.ui.FluentWait.until(FluentWait.java:203)
+at pages.RoutePlanningPage.navigateToPlan(RoutePlanningPage.java:56)
+at tests.RoutePlanningTest.prepareTest(RoutePlanningTest.java:20)
+at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104)
+at java.base/java.lang.reflect.Method.invoke(Method.java:565)
+at org.testng.internal.invokers.MethodInvocationHelper.invokeMethod(MethodInvocationHelper.java:139)
+at org.testng.internal.invokers.MethodInvocationHelper.invokeMethodConsideringTimeout(MethodInvocationHelper.java:69)
+at org.testng.internal.invokers.ConfigInvoker.invokeConfigurationMethod(ConfigInvoker.java:393)
+at org.testng.internal.invokers.ConfigInvoker.invokeConfigurations(ConfigInvoker.java:326)
+at org.testng.internal.invokers.TestInvoker.runConfigMethods(TestInvoker.java:810)
+at org.testng.internal.invokers.TestInvoker.invokeMethod(TestInvoker.java:578)
+at org.testng.internal.invokers.TestInvoker.invokeTestMethod(TestInvoker.java:228)
+at org.testng.internal.invokers.MethodRunner.runInSequence(MethodRunner.java:63)
+at org.testng.internal.invokers.TestInvoker$MethodInvocationAgent.invoke(TestInvoker.java:961)
+at org.testng.internal.invokers.TestInvoker.invokeTestMethods(TestInvoker.java:201)
+at org.testng.internal.invokers.TestMethodWorker.invokeTestMethods(TestMethodWorker.java:148)
+at org.testng.internal.invokers.TestMethodWorker.run(TestMethodWorker.java:128)
+at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+at org.testng.TestRunner.privateRun(TestRunner.java:819)
+at org.testng.TestRunner.run(TestRunner.java:619)
+at org.testng.SuiteRunner.runTest(SuiteRunner.java:443)
+at org.testng.SuiteRunner.runSequentially(SuiteRunner.java:437)
+at org.testng.SuiteRunner.privateRun(SuiteRunner.java:397)
+at org.testng.SuiteRunner.run(SuiteRunner.java:336)
+at org.testng.SuiteRunnerWorker.runSuite(SuiteRunnerWorker.java:52)
+at org.testng.SuiteRunnerWorker.run(SuiteRunnerWorker.java:95)
+at org.testng.TestNG.runSuitesSequentially(TestNG.java:1301)
+at org.testng.TestNG.runSuitesLocally(TestNG.java:1228)
+at org.testng.TestNG.runSuites(TestNG.java:1134)
+at org.testng.TestNG.run(TestNG.java:1101)
+at org.apache.maven.surefire.testng.TestNGExecutor.run(TestNGExecutor.java:308)
+at org.apache.maven.surefire.testng.TestNGXmlTestSuite.execute(TestNGXmlTestSuite.java:71)
+at org.apache.maven.surefire.testng.TestNGProvider.invoke(TestNGProvider.java:113)
+at org.apache.maven.surefire.booter.ForkedBooter.runSuitesInProcess(ForkedBooter.java:385)
+at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162)
+at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507)
+at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495)
+]]>
+            </full-stacktrace>
+          </exception> <!-- org.openqa.selenium.WebDriverException -->
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- testClearDriverSearch -->
+        <test-method is-config="true" signature="tearDown(org.testng.ITestResult)[pri:0, instance:tests.RoutePlanningTest@3901d134]" started-at="2026-05-02T20:44:26 GMT+07:00" name="tearDown" finished-at="2026-05-02T20:44:26 GMT+07:00" duration-ms="0" status="SKIP">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- tearDown -->
+      </class> <!-- tests.RoutePlanningTest -->
+    </test> <!-- Route Planning Tests -->
+  </suite> <!-- Route Planning Test Suite -->
 </testng-results>
