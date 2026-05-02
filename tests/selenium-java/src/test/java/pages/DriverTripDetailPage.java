@@ -113,6 +113,11 @@ public class DriverTripDetailPage {
         ((org.openqa.selenium.JavascriptExecutor) driver).executeScript("arguments[0].click();", btn);
     }
 
+    public void clickCustomerListTab() {
+        WebElement btn = wait.until(ExpectedConditions.presenceOfElementLocated(btnCustomerList));
+        ((org.openqa.selenium.JavascriptExecutor) driver).executeScript("arguments[0].click();", btn);
+    }
+
     public String getSuccessMessageText() {
         return wait.until(ExpectedConditions.visibilityOfElementLocated(successMessage)).getText();
     }

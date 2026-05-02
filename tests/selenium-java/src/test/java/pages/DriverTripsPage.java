@@ -1,6 +1,7 @@
 package pages;
 
 import org.openqa.selenium.By;
+import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
@@ -8,6 +9,7 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Map;
 
 public class DriverTripsPage {
     private WebDriver driver;
@@ -23,6 +25,85 @@ public class DriverTripsPage {
     public DriverTripsPage(WebDriver driver) {
         this.driver = driver;
         this.wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+    }
+
+    public void openTripDetailWithCustomers() {
+        waitUntilLoggedIn();
+
+        Object result = ((JavascriptExecutor) driver).executeAsyncScript("""
+                const done = arguments[arguments.length - 1];
+
+                (async () => {
+                  const rawUser = localStorage.getItem('user') || sessionStorage.getItem('user');
+                  const token = localStorage.getItem('accessToken') || sessionStorage.getItem('accessToken');
+
+                  if (!rawUser || !token) {
+                    done({ error: 'Missing driver login session.' });
+                    return;
+                  }
+
+                  const user = JSON.parse(rawUser);
+                  const driverId = Number(user.MaTaiXe);
+
+                  if (!Number.isFinite(driverId)) {
+                    done({ error: 'Logged in user does not have MaTaiXe.' });
+                    return;
+                  }
+
+                  const apiBase = `${window.location.protocol}//${window.location.hostname}:5000/api/v1`;
+                  const response = await fetch(`${apiBase}/routes/by-driver/${driverId}`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                  });
+
+                  if (!response.ok) {
+                    done({ error: `Cannot load driver routes: HTTP ${response.status}` });
+                    return;
+                  }
+
+                  const payload = await response.json();
+                  const routes = Array.isArray(payload?.data)
+                    ? payload.data
+                    : (Array.isArray(payload) ? payload : []);
+                  const routesWithCustomers = routes.filter((route) => Number(route.SoKhach || 0) > 0);
+                  const selected = routesWithCustomers[0] || null;
+
+                  done({
+                    routeId: selected ? selected.MaLoTrinh : null,
+                    routeCount: routes.length,
+                    customerRouteCount: routesWithCustomers.length
+                  });
+                })().catch((error) => done({ error: String(error?.message || error) }));
+                """);
+
+        if (!(result instanceof Map<?, ?> resultMap)) {
+            throw new IllegalStateException("Unexpected route lookup result: " + result);
+        }
+
+        Object error = resultMap.get("error");
+        if (error != null) {
+            throw new IllegalStateException(String.valueOf(error));
+        }
+
+        Object routeIdValue = resultMap.get("routeId");
+        if (routeIdValue == null) {
+            throw new IllegalStateException(
+                    "No assigned driver trip with customers. Routes: " + resultMap.get("routeCount")
+                            + ", routes with customers: " + resultMap.get("customerRouteCount"));
+        }
+
+        String routeId = routeIdValue instanceof Number
+                ? String.valueOf(((Number) routeIdValue).longValue())
+                : String.valueOf(routeIdValue);
+
+        String origin = String.valueOf(((JavascriptExecutor) driver).executeScript("return window.location.origin;"));
+        driver.get(origin + "/driver/trips/" + routeId);
+        wait.until(ExpectedConditions.urlContains("/driver/trips/" + routeId));
+    }
+
+    private void waitUntilLoggedIn() {
+        wait.until(webDriver -> Boolean.TRUE.equals(((JavascriptExecutor) webDriver).executeScript(
+                "return Boolean((localStorage.getItem('user') || sessionStorage.getItem('user'))"
+                        + " && (localStorage.getItem('accessToken') || sessionStorage.getItem('accessToken')));")));
     }
 
     // Nhấn nút More (3 chấm) của dòng chuyến xe đầu tiên
