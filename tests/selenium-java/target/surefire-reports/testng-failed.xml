@@ -3,14 +3,6 @@
 <suite name="Failed suite [Shuttle Selenium Suite]" guice-stage="DEVELOPMENT" verbose="0">
   <test thread-count="5" name="UI Automation Tests(failed)" verbose="0">
     <classes>
-      <class name="tests.UC07_2_CustomerListTest">
-        <methods>
-          <include name="setUp"/>
-          <include name="tearDown"/>
-          <include name="testCustomerInfoFields"/>
-          <include name="setupPages"/>
-        </methods>
-      </class> <!-- tests.UC07_2_CustomerListTest -->
       <class name="tests.TripStatusTest">
         <methods>
           <include name="setUp"/>
@@ -18,23 +10,18 @@
           <include name="tearDown"/>
           <include name="testUpdateCustomerStatus"/>
           <include name="setupPages"/>
+          <include name="testStartTrip"/>
           <include name="testCompleteTrip"/>
           <include name="testCustomerCancelled"/>
           <include name="testReportIncident"/>
         </methods>
       </class> <!-- tests.TripStatusTest -->
-      <class name="tests.TC_UC07_1_03">
-        <methods>
-          <include name="testShowStops"/>
-          <include name="setUp"/>
-          <include name="tearDown"/>
-        </methods>
-      </class> <!-- tests.TC_UC07_1_03 -->
       <class name="tests.TheoDoiTrangThaiTrungChuyenTest">
         <methods>
-          <include name="setUp"/>
           <include name="testGPSRealTimeUpdate"/>
+          <include name="setUp"/>
           <include name="tearDown"/>
+          <include name="testClearSearchKeyword"/>
           <include name="testTrackRunningRoute"/>
           <include name="setupPages"/>
           <include name="testSearchByRouteCode"/>
@@ -48,24 +35,21 @@
           <include name="testStopSequence"/>
         </methods>
       </class> <!-- tests.TC_UC07_1_06 -->
-      <class name="tests.TC_UC07_1_04">
+      <class name="tests.TC_UC07_1_03">
         <methods>
-          <include name="tearDown"/>
+          <include name="testShowStops"/>
           <include name="setUp"/>
-          <include name="testUpdateStopStatus"/>
+          <include name="tearDown"/>
         </methods>
-      </class> <!-- tests.TC_UC07_1_04 -->
+      </class> <!-- tests.TC_UC07_1_03 -->
       <class name="tests.DieuChinhLoTrinhTest">
         <methods>
           <include name="setUp"/>
           <include name="tearDown"/>
           <include name="testChangeDriver"/>
+          <include name="testClearSearchKeyword"/>
           <include name="setupPages"/>
-          <include name="testCancelAfterWarning"/>
-          <include name="testChangeInfoAndConfirm"/>
-          <include name="testPastTimeInProgressRoute"/>
           <include name="testSearchByRouteCode"/>
-          <include name="testValidTimeInProgressRoute"/>
         </methods>
       </class> <!-- tests.DieuChinhLoTrinhTest -->
     </classes>

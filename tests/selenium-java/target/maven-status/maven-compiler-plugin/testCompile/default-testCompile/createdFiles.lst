@@ -1,6 +1,7 @@
 tests\DieuChinhLoTrinhTest.class
 tests\TC_UC07_1_01.class
 pages\LoginPage.class
+tests\RoutePlanningTest.class
 tests\TC_UC07_1_03.class
 tests\TheoDoiTrangThaiTrungChuyenTest.class
 tests\TripStatusTest.class
@@ -11,6 +12,7 @@ base\BaseTest.class
 tests\TC_UC07_1_04.class
 tests\TC_UC07_1_05.class
 pages\DriverCustomerListPage.class
+pages\RoutePlanningPage.class
 pages\DriverTripDetailPage.class
 tests\TC_UC07_1_02.class
 tests\UC07_2_CustomerListTest.class

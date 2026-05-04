@@ -8,6 +8,7 @@ D:\KiemThuNew\07_KiemThuPhanMem\tests\selenium-java\src\test\java\tests\DieuChin
 D:\KiemThuNew\07_KiemThuPhanMem\tests\selenium-java\src\test\java\tests\TC_UC07_1_01.java
 D:\KiemThuNew\07_KiemThuPhanMem\tests\selenium-java\src\test\java\tests\TheoDoiTrangThaiTrungChuyenTest.java
 D:\KiemThuNew\07_KiemThuPhanMem\tests\selenium-java\src\test\java\base\BaseTest.java
+D:\KiemThuNew\07_KiemThuPhanMem\tests\selenium-java\src\test\java\pages\RoutePlanningPage.java
 D:\KiemThuNew\07_KiemThuPhanMem\tests\selenium-java\src\test\java\pages\DriverTripDetailPage.java
 D:\KiemThuNew\07_KiemThuPhanMem\tests\selenium-java\src\test\java\pages\TheoDoiTrangThaiTrungChuyenPage.java
 D:\KiemThuNew\07_KiemThuPhanMem\tests\selenium-java\src\test\java\tests\TC_UC07_1_04.java
@@ -15,3 +16,4 @@ D:\KiemThuNew\07_KiemThuPhanMem\tests\selenium-java\src\test\java\tests\TC_UC07_
 D:\KiemThuNew\07_KiemThuPhanMem\tests\selenium-java\src\test\java\pages\LoginPage.java
 D:\KiemThuNew\07_KiemThuPhanMem\tests\selenium-java\src\test\java\tests\UC07_2_CustomerListTest.java
 D:\KiemThuNew\07_KiemThuPhanMem\tests\selenium-java\src\test\java\tests\TC_UC07_1_05.java
+D:\KiemThuNew\07_KiemThuPhanMem\tests\selenium-java\src\test\java\tests\RoutePlanningTest.java
