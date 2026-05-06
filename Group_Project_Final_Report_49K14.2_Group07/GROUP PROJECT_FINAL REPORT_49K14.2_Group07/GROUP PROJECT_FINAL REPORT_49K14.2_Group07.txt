@@ -1,5 +1,0 @@
-Dạ em chào cô,
-Nhóm em xin phép nộp báo cáo môn bằng link GitHub do dung lượng file (bao gồm source code và test script) khá lớn nên không thể nén file zip để nộp trực tiếp.
-Link GitHub: https://github.com/nhquoc912005/07_KiemThuPhanMem
-Nhóm em rất mong cô xem xét và chấp nhận hình thức nộp này ạ.
-Em xin cảm ơn cô!
